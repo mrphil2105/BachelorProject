@@ -7,3 +7,4 @@ edition = "2021"
 
 [dependencies]
 apachi_shared = { path = "../apachi_shared" }
+rand = "0.8.5"
