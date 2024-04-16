@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebApi", "WebApi\WebApi.csp
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AvaloniaApp", "AvaloniaApp\AvaloniaApp.csproj", "{14874620-1D6C-40A2-AE15-E4ABE3C9A83A}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ViewModels", "ViewModels\ViewModels.csproj", "{7E2013A8-632D-4261-B509-212FB3127ADF}"
+EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Shared", "Shared\Shared.csproj", "{E2166BA5-893F-4410-B58C-F60C0D92863C}"
 EndProject
 Global
@@ -26,6 +28,10 @@ Global
 		{14874620-1D6C-40A2-AE15-E4ABE3C9A83A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{14874620-1D6C-40A2-AE15-E4ABE3C9A83A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{14874620-1D6C-40A2-AE15-E4ABE3C9A83A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7E2013A8-632D-4261-B509-212FB3127ADF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7E2013A8-632D-4261-B509-212FB3127ADF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7E2013A8-632D-4261-B509-212FB3127ADF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7E2013A8-632D-4261-B509-212FB3127ADF}.Release|Any CPU.Build.0 = Release|Any CPU
 		{E2166BA5-893F-4410-B58C-F60C0D92863C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{E2166BA5-893F-4410-B58C-F60C0D92863C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E2166BA5-893F-4410-B58C-F60C0D92863C}.Release|Any CPU.ActiveCfg = Release|Any CPU
