@@ -15,5 +15,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\ViewModels\ViewModels.csproj" />
+    <ProjectReference Include="..\MvvmElegance\src\MvvmElegance.Avalonia\MvvmElegance.Avalonia.csproj" />
+    <ProjectReference Include="..\MvvmElegance\src\MvvmElegance.Avalonia.Autofac\MvvmElegance.Avalonia.Autofac.csproj" />
   </ItemGroup>
 </Project>

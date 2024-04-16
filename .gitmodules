@@ -1,0 +1,3 @@
+[submodule "MvvmElegance"]
+	path = MvvmElegance
+	url = https://github.com/mrphil2105/MvvmElegance.git
