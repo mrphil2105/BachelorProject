@@ -20,4 +20,18 @@ public static class KeyUtils
         var keyPair = generator.GenerateKeyPair();
         return keyPair;
     }
+
+    public static ReadOnlyMemory<byte> PublicKeyToBytes(ECPublicKeyParameters publicKey)
+    {
+        var keyInfo = SubjectPublicKeyInfoFactory.CreateSubjectPublicKeyInfo(publicKey);
+        var keyBytes = keyInfo.GetEncoded();
+        return keyBytes;
+    }
+
+    public static ECPublicKeyParameters PublicKeyFromBytes(ReadOnlyMemory<byte> keyBytes)
+    {
+        var keyByteArray = keyBytes.ToArray();
+        var keyParameters = (ECPublicKeyParameters)PublicKeyFactory.CreateKey(keyByteArray);
+        return keyParameters;
+    }
 }
