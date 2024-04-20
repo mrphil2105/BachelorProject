@@ -9,9 +9,9 @@
     Title="AvaloniaApp"
     Width="500"
     Height="400"
+    MinWidth="400"
+    MinHeight="300"
     x:DataType="vm:MainViewModel"
     mc:Ignorable="d">
-    <StackPanel>
-        <TextBlock Text="Hello, World!" />
-    </StackPanel>
+    <ContentControl e:View.Model="{Binding ActiveItem}" />
 </Window>

@@ -1,0 +1,40 @@
+<UserControl
+    x:Class="AvaloniaApp.Views.RegisterView"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:e="https://github.com/mrphil2105/MvvmElegance"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:vm="using:Apachi.ViewModels"
+    x:DataType="vm:RegisterViewModel"
+    mc:Ignorable="d">
+    <StackPanel Width="250" Margin="40">
+        <TextBlock FontSize="24" Text="Register" />
+        <TextBox Text="{Binding Username}" Watermark="Username" />
+        <TextBox
+            PasswordChar="*"
+            Text="{Binding Password}"
+            Watermark="Password" />
+        <TextBox
+            PasswordChar="*"
+            Text="{Binding PasswordConfirmation}"
+            Watermark="Confirm Password" />
+        <CheckBox IsChecked="{Binding IsReviewer}">Sign up as reviewer</CheckBox>
+        <Grid ColumnDefinitions="*,*">
+            <Button
+                HorizontalAlignment="Stretch"
+                Command="{e:Action Login}"
+                Content="Login" />
+            <Button
+                Grid.Column="1"
+                HorizontalAlignment="Stretch"
+                Command="{e:Action Register}"
+                Content="Register"
+                IsEnabled="{Binding !HasErrors}" />
+        </Grid>
+        <TextBlock
+            Foreground="Red"
+            Text="{Binding ErrorMessage}"
+            TextWrapping="Wrap" />
+    </StackPanel>
+</UserControl>
