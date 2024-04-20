@@ -29,7 +29,8 @@
                 Grid.Column="1"
                 HorizontalAlignment="Stretch"
                 Command="{e:Action Register}"
-                Content="Register" />
+                Content="Register"
+                IsEnabled="{Binding !HasErrors}" />
         </Grid>
         <TextBlock
             Foreground="Red"

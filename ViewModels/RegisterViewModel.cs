@@ -1,4 +1,5 @@
 using Apachi.ViewModels.Auth;
+using Apachi.ViewModels.Validation;
 
 namespace Apachi.ViewModels;
 
@@ -14,6 +15,7 @@ public class RegisterViewModel : PageViewModel
     public RegisterViewModel(ISession session)
     {
         _session = session;
+        Validator = new ValidationAdapter<RegisterViewModel>(new RegisterViewModelValidator());
     }
 
     public string Username
@@ -53,6 +55,13 @@ public class RegisterViewModel : PageViewModel
 
     public async Task Register()
     {
+        var isValid = await ValidateAsync();
+
+        if (!isValid)
+        {
+            return;
+        }
+
         ErrorMessage = string.Empty;
         var success = await _session.RegisterAsync(
             Username,
