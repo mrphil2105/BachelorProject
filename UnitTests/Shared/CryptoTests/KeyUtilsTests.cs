@@ -1,20 +1,19 @@
-using Apachi.Shared.Crypt;
+using Apachi.Shared.Crypto;
 using AutoFixture;
 using Org.BouncyCastle.Crypto;
 using Org.BouncyCastle.Crypto.Parameters;
-using Org.BouncyCastle.Math;
 
-namespace Apachi.UnitTests.Shared.CryptTests;
+namespace Apachi.UnitTests.Shared.CryptoTests;
 
 public class KeyUtilsTests
 {
+    private const string CurveName = "P-521";
+
     private readonly Fixture _fixture;
     private readonly AsymmetricCipherKeyPair _keyPair;
-    private readonly string _curveName;
 
     public KeyUtilsTests()
     {
-        _curveName = "P-521";
         _fixture = new Fixture();
         _keyPair = KeyUtils.GenerateKeyPair();
     }
@@ -22,7 +21,7 @@ public class KeyUtilsTests
     [Fact]
     public void GenerateKeyPair_ShouldReturnKeyPair_WhenCalled()
     {
-        AsymmetricCipherKeyPair actual = KeyUtils.GenerateKeyPair(_curveName);
+        AsymmetricCipherKeyPair actual = KeyUtils.GenerateKeyPair(CurveName);
         actual.Should().NotBeNull();
     }
 
@@ -31,13 +30,11 @@ public class KeyUtilsTests
     {
         var data = _fixture.Create<byte[]>();
 
-        (BigInteger point, BigInteger signature) actual = KeyUtils.CreateSignature(
-            data,
-            (ECPrivateKeyParameters)_keyPair.Private
-        );
+        var actual = KeyUtils.CreateSignature(data, (ECPrivateKeyParameters)_keyPair.Private);
+        var integers = DataUtils.DeserializeBigIntegers(actual);
 
-        actual.point.Should().NotBeNull();
-        actual.signature.Should().NotBeNull();
+        integers[0].Should().NotBeNull();
+        integers[1].Should().NotBeNull();
     }
 
     [Fact]
