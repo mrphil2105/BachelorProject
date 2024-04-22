@@ -5,18 +5,19 @@ using Autofac;
 using Microsoft.EntityFrameworkCore;
 using MvvmElegance;
 
-namespace Apachi.AvaloniaApp;
-
-public class Bootstrapper : AutofacBootstrapper<MainViewModel>
+namespace Apachi.AvaloniaApp
 {
-    protected override void ConfigureServices(ContainerBuilder builder)
+    public class Bootstrapper : AutofacBootstrapper<MainViewModel>
     {
-        builder.RegisterAssemblyModules(Assembly.GetExecutingAssembly());
-    }
+        protected override void ConfigureServices(ContainerBuilder builder)
+        {
+            builder.RegisterAssemblyModules(Assembly.GetExecutingAssembly());
+        }
 
-    protected override void Configure()
-    {
-        using var dbContext = GetService<AppDbContext>();
-        dbContext.Database.Migrate();
+        protected override void Configure()
+        {
+            using var dbContext = GetService<AppDbContext>();
+            dbContext.Database.Migrate();
+        }
     }
 }

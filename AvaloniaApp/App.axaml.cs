@@ -1,12 +1,13 @@
 using Avalonia;
 using Avalonia.Markup.Xaml;
 
-namespace Apachi.AvaloniaApp;
-
-public partial class App : Application
+namespace Apachi.AvaloniaApp
 {
-    public override void Initialize()
+    public partial class App : Application
     {
-        AvaloniaXamlLoader.Load(this);
+        public override void Initialize()
+        {
+            AvaloniaXamlLoader.Load(this);
+        }
     }
 }

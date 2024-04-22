@@ -1,7 +1,8 @@
-namespace Apachi.ViewModels.Auth;
-
-public enum UserRole
+namespace Apachi.ViewModels.Auth
 {
-    Submitter,
-    Reviewer
+    public enum UserRole
+    {
+        Submitter,
+        Reviewer
+    }
 }
