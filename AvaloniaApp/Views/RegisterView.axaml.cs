@@ -1,12 +1,11 @@
 using Avalonia.Controls;
 
-namespace AvaloniaApp.Views
+namespace Apachi.AvaloniaApp.Views;
+
+public partial class RegisterView : UserControl
 {
-    public partial class RegisterView : UserControl
+    public RegisterView()
     {
-        public RegisterView()
-        {
-            InitializeComponent();
-        }
+        InitializeComponent();
     }
 }
