@@ -1,6 +1,7 @@
-namespace Apachi.ViewModels;
-
-public class PageViewModel : Screen
+namespace Apachi.ViewModels
 {
-    public new MainViewModel? Parent => (MainViewModel?)base.Parent;
+    public class PageViewModel : Screen
+    {
+        public new MainViewModel? Parent => (MainViewModel?)base.Parent;
+    }
 }

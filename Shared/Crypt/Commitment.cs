@@ -5,104 +5,105 @@ using Org.BouncyCastle.Math;
 using Org.BouncyCastle.Security;
 using ECPoint = Org.BouncyCastle.Math.EC.ECPoint;
 
-namespace Apachi.Shared.Crypt;
-
-public class Commitment
+namespace Apachi.Shared.Crypt
 {
-    private readonly ECPoint _point;
-    private readonly BigInteger _randomness;
-    private const string CurveName = "P-521";
-
-    private Commitment(ECPoint point, BigInteger randomness)
+    public class Commitment
     {
-        _point = point;
-        _randomness = randomness;
-    }
+        private readonly ECPoint _point;
+        private readonly BigInteger _randomness;
+        private const string CurveName = "P-521";
 
-    public static Commitment Create(byte[] value)
-    {
-        var hashedValue = SHA512.HashData(value);
-        var bigVal = new BigInteger(hashedValue);
+        private Commitment(ECPoint point, BigInteger randomness)
+        {
+            _point = point;
+            _randomness = randomness;
+        }
 
-        var ec = NistNamedCurves.GetByName(CurveName);
-        var domainParameters = new ECDomainParameters(ec);
+        public static Commitment Create(byte[] value)
+        {
+            var hashedValue = SHA512.HashData(value);
+            var bigVal = new BigInteger(hashedValue);
 
-        var random = new SecureRandom();
-        var randomness = new BigInteger(domainParameters.N.BitLength, random);
-        var commitment = domainParameters.G.Multiply(bigVal).Add(domainParameters.G.Multiply(randomness));
+            var ec = NistNamedCurves.GetByName(CurveName);
+            var domainParameters = new ECDomainParameters(ec);
 
-        return new Commitment(commitment, randomness);
-    }
+            var random = new SecureRandom();
+            var randomness = new BigInteger(domainParameters.N.BitLength, random);
+            var commitment = domainParameters.G.Multiply(bigVal).Add(domainParameters.G.Multiply(randomness));
 
-    public byte[] ToBytes()
-    {
-        var normalizedPoint = _point.Normalize();
-        var xCoord = normalizedPoint.AffineXCoord.ToBigInteger().ToByteArray();
-        var yCoord = normalizedPoint.AffineYCoord.ToBigInteger().ToByteArray();
-        var rand = _randomness.ToByteArray();
+            return new Commitment(commitment, randomness);
+        }
 
-        var serializedBytes = new byte[2 + xCoord.Length + yCoord.Length + rand.Length];
-        serializedBytes[0] = (byte)xCoord.Length;
-        serializedBytes[1] = (byte)yCoord.Length;
+        public byte[] ToBytes()
+        {
+            var normalizedPoint = _point.Normalize();
+            var xCoord = normalizedPoint.AffineXCoord.ToBigInteger().ToByteArray();
+            var yCoord = normalizedPoint.AffineYCoord.ToBigInteger().ToByteArray();
+            var rand = _randomness.ToByteArray();
 
-        var intOffset = 2;
+            var serializedBytes = new byte[2 + xCoord.Length + yCoord.Length + rand.Length];
+            serializedBytes[0] = (byte)xCoord.Length;
+            serializedBytes[1] = (byte)yCoord.Length;
 
-        Buffer.BlockCopy(xCoord, 0, serializedBytes, intOffset, xCoord.Length);
+            var intOffset = 2;
 
-        intOffset += xCoord.Length;
+            Buffer.BlockCopy(xCoord, 0, serializedBytes, intOffset, xCoord.Length);
 
-        Buffer.BlockCopy(yCoord, 0, serializedBytes, intOffset, yCoord.Length);
+            intOffset += xCoord.Length;
 
-        intOffset += yCoord.Length;
+            Buffer.BlockCopy(yCoord, 0, serializedBytes, intOffset, yCoord.Length);
 
-        Buffer.BlockCopy(rand, 0, serializedBytes, intOffset, rand.Length);
+            intOffset += yCoord.Length;
 
-        return serializedBytes;
-    }
+            Buffer.BlockCopy(rand, 0, serializedBytes, intOffset, rand.Length);
 
-    public static Commitment FromBytes(byte[] bytes)
-    {
-        var xLength = bytes[0];
-        var yLength = bytes[1];
-        var xCoord = new byte[xLength];
-        var yCoord = new byte[yLength];
+            return serializedBytes;
+        }
 
-        var intOffset = 2;
+        public static Commitment FromBytes(byte[] bytes)
+        {
+            var xLength = bytes[0];
+            var yLength = bytes[1];
+            var xCoord = new byte[xLength];
+            var yCoord = new byte[yLength];
 
-        Buffer.BlockCopy(bytes, intOffset, xCoord, 0, xLength);
+            var intOffset = 2;
 
-        intOffset += xLength;
+            Buffer.BlockCopy(bytes, intOffset, xCoord, 0, xLength);
 
-        Buffer.BlockCopy(bytes, intOffset, yCoord, 0, yLength);
+            intOffset += xLength;
 
-        intOffset += yLength;
+            Buffer.BlockCopy(bytes, intOffset, yCoord, 0, yLength);
 
-        var rand = new byte[bytes.Length - intOffset];
+            intOffset += yLength;
 
-        Buffer.BlockCopy(bytes, intOffset, rand, 0, rand.Length);
+            var rand = new byte[bytes.Length - intOffset];
 
-        var ec = NistNamedCurves.GetByName(CurveName);
-        var domainParameters = new ECDomainParameters(ec);
+            Buffer.BlockCopy(bytes, intOffset, rand, 0, rand.Length);
 
-        var x = new BigInteger(xCoord);
-        var y = new BigInteger(yCoord);
+            var ec = NistNamedCurves.GetByName(CurveName);
+            var domainParameters = new ECDomainParameters(ec);
 
-        var point = domainParameters.Curve.CreatePoint(x, y);
-        var randomness = new BigInteger(rand);
+            var x = new BigInteger(xCoord);
+            var y = new BigInteger(yCoord);
 
-        return new Commitment(point, randomness);
-    }
+            var point = domainParameters.Curve.CreatePoint(x, y);
+            var randomness = new BigInteger(rand);
 
-public bool MatchesValue(byte[] value)
-    {
-        var ec = NistNamedCurves.GetByName(CurveName); 
-        var domainParameters = new ECDomainParameters(ec.Curve, ec.G, ec.N, ec.H, ec.GetSeed());
-        
-        var hashedValue = SHA512.HashData(value);
-        var bigVal = new BigInteger(hashedValue);
-        
-        var check = domainParameters.G.Multiply(bigVal).Add(domainParameters.G.Multiply(_randomness));
+            return new Commitment(point, randomness);
+        }
 
-        return _point.Equals(check);
+        public bool MatchesValue(byte[] value)
+        {
+            var ec = NistNamedCurves.GetByName(CurveName);
+            var domainParameters = new ECDomainParameters(ec.Curve, ec.G, ec.N, ec.H, ec.GetSeed());
+
+            var hashedValue = SHA512.HashData(value);
+            var bigVal = new BigInteger(hashedValue);
+
+            var check = domainParameters.G.Multiply(bigVal).Add(domainParameters.G.Multiply(_randomness));
+
+            return _point.Equals(check);
+        }
     }
 }

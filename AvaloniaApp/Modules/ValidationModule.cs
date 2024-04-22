@@ -1,14 +1,15 @@
 using Apachi.ViewModels;
 using Autofac;
 
-namespace Apachi.AvaloniaApp.Modules;
-
-public class ValidationModule : Module
+namespace Apachi.AvaloniaApp.Modules
 {
-    protected override void Load(ContainerBuilder builder)
+    public class ValidationModule : Module
     {
-        builder
-            .RegisterAssemblyTypes(typeof(MainViewModel).Assembly)
-            .Where(t => t.Namespace?.EndsWith("Validation") ?? false);
+        protected override void Load(ContainerBuilder builder)
+        {
+            builder
+                .RegisterAssemblyTypes(typeof(MainViewModel).Assembly)
+                .Where(t => t.Namespace?.EndsWith("Validation") ?? false);
+        }
     }
 }
