@@ -1,6 +1,6 @@
 using Org.BouncyCastle.Math;
 
-namespace Apachi.Shared.Crypt;
+namespace Apachi.Shared.Crypto;
 
 public static class DataUtils
 {

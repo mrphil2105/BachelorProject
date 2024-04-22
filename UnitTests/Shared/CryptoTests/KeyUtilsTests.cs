@@ -1,9 +1,9 @@
-using Apachi.Shared.Crypt;
+using Apachi.Shared.Crypto;
 using AutoFixture;
 using Org.BouncyCastle.Crypto;
 using Org.BouncyCastle.Crypto.Parameters;
 
-namespace Apachi.UnitTests.Shared.CryptTests;
+namespace Apachi.UnitTests.Shared.CryptoTests;
 
 public class KeyUtilsTests
 {

@@ -13,7 +13,7 @@ using Org.BouncyCastle.Crypto.Signers;
 using Org.BouncyCastle.Security;
 using Org.BouncyCastle.X509;
 
-namespace Apachi.Shared.Crypt
+namespace Apachi.Shared.Crypto
 {
     public static class KeyUtils
     {

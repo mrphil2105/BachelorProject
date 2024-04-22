@@ -1,7 +1,7 @@
-using Apachi.Shared.Crypt;
+using Apachi.Shared.Crypto;
 using AutoFixture;
 
-namespace Apachi.UnitTests.Shared.CryptTests;
+namespace Apachi.UnitTests.Shared.CryptoTests;
 
 public class CommitmentTests
 {

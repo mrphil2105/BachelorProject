@@ -5,7 +5,7 @@ using Org.BouncyCastle.Math;
 using Org.BouncyCastle.Security;
 using ECPoint = Org.BouncyCastle.Math.EC.ECPoint;
 
-namespace Apachi.Shared.Crypt
+namespace Apachi.Shared.Crypto
 {
     public class Commitment
     {
