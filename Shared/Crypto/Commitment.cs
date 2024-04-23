@@ -9,41 +9,36 @@ namespace Apachi.Shared.Crypto
 {
     public class Commitment
     {
-        private const string CurveName = "P-521";
-
         private readonly ECPoint _point;
-        private readonly BigInteger _randomness;
 
-        private Commitment(ECPoint point, BigInteger randomness)
+        private Commitment(ECPoint point)
         {
             _point = point;
-            _randomness = randomness;
         }
 
-        public static Commitment Create(byte[] value)
+        public static Commitment Create(
+            byte[] value,
+            BigInteger randomness,
+            string curveName = Constants.DefaultCurveName
+        )
         {
             var hash = SHA512.HashData(value);
             var hashInteger = new BigInteger(hash);
 
-            var curve = NistNamedCurves.GetByName(CurveName);
-            var domainParameters = new ECDomainParameters(curve);
+            var parameters = NistNamedCurves.GetByName(curveName);
+            var point = parameters.G.Multiply(hashInteger).Add(parameters.G.Multiply(randomness));
 
-            var random = new SecureRandom();
-            var randomness = new BigInteger(domainParameters.N.BitLength, random);
-
-            var point = domainParameters.G.Multiply(hashInteger).Add(domainParameters.G.Multiply(randomness));
-            var commitment = new Commitment(point, randomness);
+            var commitment = new Commitment(point);
             return commitment;
         }
 
-        public bool MatchesValue(byte[] value)
+        public bool MatchesValue(byte[] value, BigInteger randomness, string curveName = Constants.DefaultCurveName)
         {
-            var curve = NistNamedCurves.GetByName(CurveName);
-            var domainParameters = new ECDomainParameters(curve);
-
             var hash = SHA512.HashData(value);
             var hashInteger = new BigInteger(hash);
-            var otherPoint = domainParameters.G.Multiply(hashInteger).Add(domainParameters.G.Multiply(_randomness));
+
+            var parameters = NistNamedCurves.GetByName(curveName);
+            var otherPoint = parameters.G.Multiply(hashInteger).Add(parameters.G.Multiply(randomness));
             return _point.Equals(otherPoint);
         }
 
@@ -52,22 +47,21 @@ namespace Apachi.Shared.Crypto
             var normalizedPoint = _point.Normalize();
             var xCoord = normalizedPoint.AffineXCoord.ToBigInteger();
             var yCoord = normalizedPoint.AffineYCoord.ToBigInteger();
-            var commitmentBytes = DataUtils.SerializeBigIntegers(xCoord, yCoord, _randomness);
+
+            var commitmentBytes = DataUtils.SerializeBigIntegers(xCoord, yCoord);
             return commitmentBytes;
         }
 
-        public static Commitment FromBytes(byte[] bytes)
+        public static Commitment FromBytes(byte[] bytes, string curveName = Constants.DefaultCurveName)
         {
             var integers = DataUtils.DeserializeBigIntegers(bytes);
             var xCoord = integers[0];
             var yCoord = integers[1];
-            var randomness = integers[2];
 
-            var curve = NistNamedCurves.GetByName(CurveName);
-            var domainParameters = new ECDomainParameters(curve);
+            var parameters = NistNamedCurves.GetByName(curveName);
+            var point = parameters.Curve.CreatePoint(xCoord, yCoord);
 
-            var point = domainParameters.Curve.CreatePoint(xCoord, yCoord);
-            var commitment = new Commitment(point, randomness);
+            var commitment = new Commitment(point);
             return commitment;
         }
     }

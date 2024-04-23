@@ -1,9 +1,19 @@
+using Org.BouncyCastle.Asn1.Nist;
 using Org.BouncyCastle.Math;
+using Org.BouncyCastle.Security;
 
 namespace Apachi.Shared.Crypto;
 
 public static class DataUtils
 {
+    public static BigInteger GenerateBigInteger(string curveName = Constants.DefaultCurveName)
+    {
+        var curve = NistNamedCurves.GetByName(curveName);
+        var random = new SecureRandom();
+        var randomness = new BigInteger(curve.N.BitLength, random);
+        return randomness;
+    }
+
     public static byte[] SerializeBigIntegers(params BigInteger[] integers)
     {
         var count = integers.Length;

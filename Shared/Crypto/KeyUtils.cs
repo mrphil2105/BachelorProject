@@ -30,7 +30,7 @@ namespace Apachi.Shared.Crypto
             return keyParameters;
         }
 
-        public static AsymmetricCipherKeyPair GenerateKeyPair(string curveName = "P-521")
+        public static AsymmetricCipherKeyPair GenerateKeyPair(string curveName = Constants.DefaultCurveName)
         {
             var curveParameters = NistNamedCurves.GetByName(curveName);
             var domainParameters = new ECDomainParameters(curveParameters);
