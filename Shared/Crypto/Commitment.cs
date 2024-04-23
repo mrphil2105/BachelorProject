@@ -1,8 +1,6 @@
 using System.Security.Cryptography;
 using Org.BouncyCastle.Asn1.Nist;
-using Org.BouncyCastle.Crypto.Parameters;
 using Org.BouncyCastle.Math;
-using Org.BouncyCastle.Security;
 using ECPoint = Org.BouncyCastle.Math.EC.ECPoint;
 
 namespace Apachi.Shared.Crypto
