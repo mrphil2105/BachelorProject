@@ -7,8 +7,6 @@ namespace Apachi.UnitTests.Shared.CryptoTests;
 
 public class KeyUtilsTests
 {
-    private const string CurveName = "P-521";
-
     private readonly Fixture _fixture;
     private readonly AsymmetricCipherKeyPair _keyPair;
 
@@ -21,7 +19,7 @@ public class KeyUtilsTests
     [Fact]
     public void GenerateKeyPair_ShouldReturnKeyPair_WhenCalled()
     {
-        AsymmetricCipherKeyPair actual = KeyUtils.GenerateKeyPair(CurveName);
+        AsymmetricCipherKeyPair actual = KeyUtils.GenerateKeyPair();
         actual.Should().NotBeNull();
     }
 
