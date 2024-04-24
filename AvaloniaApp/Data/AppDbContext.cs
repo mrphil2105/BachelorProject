@@ -9,6 +9,8 @@ namespace Apachi.AvaloniaApp.Data
 
         public DbSet<User> Users => Set<User>();
 
+        public DbSet<Submission> Submissions => Set<Submission>();
+
         protected override void OnModelCreating(ModelBuilder builder)
         {
             builder.Entity<User>().HasIndex(user => user.Username).IsUnique();

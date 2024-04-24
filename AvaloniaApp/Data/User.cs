@@ -13,5 +13,7 @@ namespace Apachi.AvaloniaApp.Data
         public byte[] AuthenticationHash { get; set; } = null!;
 
         public UserRole Role { get; set; }
+
+        public List<Submission> Submissions { get; set; } = new List<Submission>();
     }
 }
