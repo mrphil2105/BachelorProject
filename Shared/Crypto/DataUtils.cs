@@ -68,4 +68,17 @@ public static class DataUtils
 
         return integers;
     }
+
+    public static byte[] CombineByteArrays(params byte[][] byteArrays)
+    {
+        var totalLength = byteArrays.Sum(bytes => bytes.Length);
+        using var memoryStream = new MemoryStream(totalLength);
+
+        foreach (var bytes in byteArrays)
+        {
+            memoryStream.Write(bytes);
+        }
+
+        return memoryStream.GetBuffer();
+    }
 }
