@@ -106,11 +106,11 @@ namespace Apachi.AvaloniaApp.Auth
             byte[] salt
         )
         {
-            var derivedKey = Rfc2898DeriveBytes.Pbkdf2(password, salt, HashIterations, HashAlgorithmName.SHA512, 512);
-            var aesKey = new byte[256];
-            var hmacKey = new byte[256];
-            Buffer.BlockCopy(derivedKey, 0, aesKey, 0, 256);
-            Buffer.BlockCopy(derivedKey, 256, hmacKey, 0, 256);
+            var derivedKey = Rfc2898DeriveBytes.Pbkdf2(password, salt, HashIterations, HashAlgorithmName.SHA512, 64);
+            var aesKey = new byte[32];
+            var hmacKey = new byte[32];
+            Buffer.BlockCopy(derivedKey, 0, aesKey, 0, 32);
+            Buffer.BlockCopy(derivedKey, 32, hmacKey, 0, 32);
             var authenticationHash = SHA256.HashData(derivedKey);
             return (aesKey, hmacKey, authenticationHash);
         }
