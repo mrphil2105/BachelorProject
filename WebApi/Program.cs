@@ -3,6 +3,15 @@ using Apachi.Shared.Crypto;
 using Apachi.WebApi.Data;
 using Microsoft.EntityFrameworkCore;
 
+if (args.Length > 0 && args[0] == "--generate-keypair")
+{
+    var (publicKey, privateKey) = KeyUtils.GenerateKeyPair();
+    var publicKeyBase64 = Convert.ToBase64String(publicKey);
+    var privateKeyBase64 = Convert.ToBase64String(privateKey);
+    Console.WriteLine("Public Key: {0}", publicKeyBase64);
+    Console.WriteLine("Private Key: {0}", privateKeyBase64);
+    return;
+}
 
 var builder = WebApplication.CreateBuilder(args);
 
