@@ -1,20 +1,15 @@
 using Apachi.Shared.Crypto;
-using AutoFixture;
-using Org.BouncyCastle.Asn1.Nist;
-using Org.BouncyCastle.Asn1.X9;
 using Org.BouncyCastle.Math;
 
 namespace Apachi.UnitTests.Shared.CryptoTests;
 
 public class CommitmentTests
 {
-    private readonly X9ECParameters _ec;
     private readonly BigInteger _randomness;
 
     public CommitmentTests()
     {
-        _ec = NistNamedCurves.GetByName(Constants.DefaultCurveName);
-        _randomness = new BigInteger(_ec.N.BitLength, new Random());
+        _randomness = DataUtils.GenerateBigInteger();
     }
 
     [AutoData]

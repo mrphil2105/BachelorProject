@@ -1,12 +1,11 @@
 using Avalonia.Controls;
 
-namespace AvaloniaApp.Views
+namespace Apachi.AvaloniaApp.Views;
+
+public partial class LoginView : UserControl
 {
-    public partial class LoginView : UserControl
+    public LoginView()
     {
-        public LoginView()
-        {
-            InitializeComponent();
-        }
+        InitializeComponent();
     }
 }
