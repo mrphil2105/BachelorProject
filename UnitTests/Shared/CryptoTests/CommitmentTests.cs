@@ -1,5 +1,4 @@
 using Apachi.Shared.Crypto;
-using AutoFixture;
 using Org.BouncyCastle.Math;
 
 namespace Apachi.UnitTests.Shared.CryptoTests;
