@@ -50,4 +50,13 @@ public class LoginViewModel : Screen
     {
         return ((MainViewModel)Parent!).GoToRegister();
     }
+
+    protected override async Task OnActivateAsync(CancellationToken cancellationToken)
+    {
+#if DEBUG
+        Username = "foo";
+        Password = "bar";
+        await Login();
+#endif
+    }
 }
