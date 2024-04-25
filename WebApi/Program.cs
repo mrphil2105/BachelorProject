@@ -1,4 +1,3 @@
-using System.Text.Json;
 using Apachi.Shared.Crypto;
 using Apachi.WebApi.Data;
 using Microsoft.EntityFrameworkCore;
@@ -23,6 +22,12 @@ builder.Services.AddSwaggerGen();
 builder.Configuration.AddEnvironmentVariables("APACHI_");
 
 var app = builder.Build();
+
+using (var serviceScope = app.Services.CreateScope())
+using (var dbContext = serviceScope.ServiceProvider.GetRequiredService<AppDbContext>())
+{
+    dbContext.Database.Migrate();
+}
 
 if (app.Environment.IsDevelopment())
 {
