@@ -5,33 +5,31 @@ namespace Apachi.UnitTests.Shared.CryptoTests;
 
 public class DataUtilsTests
 {
-    private readonly BigInteger[] _integers;
-    private readonly Random _random;
+    private readonly BigInteger[] _bigIntegers;
 
     public DataUtilsTests()
     {
-        _random = new Random();
-
-        // arbitrary number of BigIntegers
-        _integers = new BigInteger[10];
-
-        for (int i = 0; i < _integers.Length; i++)
-        {
-            _integers[i] = GenerateBigInteger();
-        }
+        Random random = new Random();
+        int randomCount = random.Next(1, 256);
+        _bigIntegers = GenerateBigIntegerList(randomCount);
     }
-
-    private BigInteger GenerateBigInteger()
+    
+    private BigInteger[] GenerateBigIntegerList(int count)
     {
-        byte[] bytes = new byte[32];
-        _random.NextBytes(bytes);
-        return new BigInteger(bytes);
-    }
+        BigInteger[] integers = new BigInteger[count];
 
+        for (int i = 0; i < integers.Length; i++)
+        {
+            integers[i] = DataUtils.GenerateBigInteger();
+        }
+
+        return integers;
+    }
+    
     [Fact]
     public void SerializeBigIntegers_ShouldReturnSerializedIntegers_WhenCalled()
     {
-        byte[] actual = DataUtils.SerializeBigIntegers(_integers);
+        byte[] actual = DataUtils.SerializeBigIntegers(_bigIntegers);
 
         actual.Should().NotBeNull();
     }
@@ -39,7 +37,7 @@ public class DataUtilsTests
     [Fact]
     public void DeserializeBigIntegers_ShouldReturnDeserializedIntegers_WhenCalled()
     {
-        byte[] serialized = DataUtils.SerializeBigIntegers(_integers);
+        byte[] serialized = DataUtils.SerializeBigIntegers(_bigIntegers);
         List<BigInteger> actual = DataUtils.DeserializeBigIntegers(serialized);
 
         actual.Should().NotBeNull();
@@ -48,12 +46,7 @@ public class DataUtilsTests
     [Fact]
     public void SerializeBigIntegers_ShouldThrowArgumentException_WhenIntegersExceedByteMaxValue()
     {
-        BigInteger[] integers = new BigInteger[256];
-
-        for (int i = 0; i < integers.Length; i++)
-        {
-            integers[i] = GenerateBigInteger();
-        }
+        BigInteger[] integers = GenerateBigIntegerList(byte.MaxValue + 1);
 
         Action action = () => DataUtils.SerializeBigIntegers(integers);
 
