@@ -1,0 +1,27 @@
+<UserControl
+    x:Class="Apachi.AvaloniaApp.Views.Submitter.SubmitView"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:e="https://github.com/mrphil2105/MvvmElegance"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:vm="using:Apachi.ViewModels.Submitter"
+    x:DataType="vm:SubmitViewModel"
+    mc:Ignorable="d">
+    <StackPanel>
+        <TextBlock FontSize="24" Text="Submit Paper" />
+        <DockPanel>
+            <Button
+                VerticalAlignment="Top"
+                Command="{e:Action BrowseFile}"
+                Content="Browse"
+                DockPanel.Dock="Right" />
+            <TextBox Text="{Binding PaperFilePath}" Watermark="Paper File Path" />
+        </DockPanel>
+        <Button
+            HorizontalAlignment="Right"
+            Command="{e:Action SubmitPaper}"
+            Content="Submit"
+            IsEnabled="{Binding !HasErrors}" />
+    </StackPanel>
+</UserControl>
