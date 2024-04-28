@@ -100,7 +100,7 @@ public class SubmissionService : ISubmissionService
         var submissionKey = RandomNumberGenerator.GetBytes(32);
 
         var fileStream = File.OpenRead(paperFilePath);
-        var encryptedPaper = await EncryptionUtils.SymmetricEncryptAsync(fileStream, submissionKey);
+        var encryptedPaper = await EncryptionUtils.SymmetricEncryptAsync(fileStream, submissionKey, null);
 
         var encryptedSubmissionKey = await Task.Run(
             () => EncryptionUtils.AsymmetricEncrypt(submissionKey, programCommitteePublicKey)
@@ -115,7 +115,8 @@ public class SubmissionService : ISubmissionService
 
         var encryptedSecrets = await EncryptionUtils.SymmetricEncryptAsync(
             secretsBytes,
-            _session.AesKey!.Value.ToArray()
+            _session.AesKey!.Value.ToArray(),
+            null
         );
         var secretsHmac = await Task.Run(() => HMACSHA256.HashData(_session.HmacKey!.Value.Span, encryptedSecrets));
 

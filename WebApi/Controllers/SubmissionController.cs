@@ -59,7 +59,7 @@ public class SubmissionController : ControllerBase
         var submissionKey = await Task.Run(
             () => EncryptionUtils.AsymmetricDecrypt(submitDto.EncryptedSubmissionKey, programCommitteePrivateKey)
         );
-        var paperBytes = await EncryptionUtils.SymmetricDecryptAsync(submitDto.EncryptedPaper, submissionKey);
+        var paperBytes = await EncryptionUtils.SymmetricDecryptAsync(submitDto.EncryptedPaper, submissionKey, null);
         var papersDirectory = _configuration.GetSection("Storage").GetValue<string>("Paper");
 
         if (papersDirectory == null)
