@@ -1,4 +1,3 @@
-using Apachi.ViewModels.Auth;
 using Apachi.ViewModels.Services;
 using Apachi.ViewModels.Validation;
 
@@ -19,7 +18,7 @@ public class SubmitViewModel : Screen, IMenuPageViewModel
 
     public string PageName => "Submit";
 
-    public UserRole Role => UserRole.Submitter;
+    public bool IsReviewer => false;
 
     public string PaperFilePath
     {

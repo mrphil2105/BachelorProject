@@ -1,20 +1,20 @@
-using Apachi.ViewModels.Auth;
+using Apachi.ViewModels.Services;
 using Apachi.ViewModels.Validation;
 
 namespace Apachi.ViewModels;
 
 public class RegisterViewModel : Screen
 {
-    private readonly ISession _session;
+    private readonly ISessionService _sessionService;
     private string _username = string.Empty;
     private string _password = string.Empty;
     private string _passwordConfirmation = string.Empty;
     private bool _isReviewer;
     private string _errorMessage = string.Empty;
 
-    public RegisterViewModel(ISession session)
+    public RegisterViewModel(ISessionService sessionService)
     {
-        _session = session;
+        _sessionService = sessionService;
         Validator = new ValidationAdapter<RegisterViewModel>(new RegisterViewModelValidator());
     }
 
@@ -63,11 +63,7 @@ public class RegisterViewModel : Screen
         }
 
         ErrorMessage = string.Empty;
-        var success = await _session.RegisterAsync(
-            Username,
-            Password,
-            IsReviewer ? UserRole.Reviewer : UserRole.Submitter
-        );
+        var success = await _sessionService.RegisterAsync(Username, Password, IsReviewer);
 
         if (!success)
         {
@@ -75,7 +71,7 @@ public class RegisterViewModel : Screen
             return;
         }
 
-        await _session.LoginAsync(Username, Password);
+        await _sessionService.LoginAsync(Username, Password, IsReviewer);
         await ((MainViewModel)Parent!).UpdateLoginState();
     }
 }

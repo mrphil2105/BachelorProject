@@ -15,6 +15,7 @@
             PasswordChar="*"
             Text="{Binding Password}"
             Watermark="Password" />
+        <CheckBox IsChecked="{Binding IsReviewer}">Login as reviewer</CheckBox>
         <Grid ColumnDefinitions="*,*">
             <Button
                 HorizontalAlignment="Stretch"

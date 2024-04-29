@@ -1,5 +1,3 @@
-using Apachi.ViewModels.Auth;
-
 namespace Apachi.ViewModels;
 
 public class MenuViewModel : Conductor<IMenuPageViewModel>.Collection.OneActive
@@ -16,10 +14,10 @@ public class MenuViewModel : Conductor<IMenuPageViewModel>.Collection.OneActive
         return ActivateItemAsync(menuPage);
     }
 
-    public void DisplayUserPages(UserRole role)
+    public void DisplayUserPages(bool isReviewer)
     {
         Reset();
-        var userPageViewModels = _pageViewModels.Where(model => model.Role == role);
+        var userPageViewModels = _pageViewModels.Where(model => model.IsReviewer == isReviewer);
         Items.AddRange(userPageViewModels);
     }
 

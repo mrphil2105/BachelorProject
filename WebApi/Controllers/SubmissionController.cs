@@ -50,6 +50,7 @@ public class SubmissionController : ControllerBase
         await _dbContext.SaveChangesAsync();
 
         var submittedDto = new SubmittedDto(submissionId, submissionCommitmentSignature);
+        _logger.LogInformation($"User created new submission with id: {submission}");
         return submittedDto;
     }
 

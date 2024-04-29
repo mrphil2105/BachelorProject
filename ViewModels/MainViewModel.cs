@@ -1,22 +1,22 @@
-using Apachi.ViewModels.Auth;
+using Apachi.ViewModels.Services;
 
 namespace Apachi.ViewModels;
 
 public class MainViewModel : Conductor<Screen>
 {
-    private readonly ISession _session;
+    private readonly ISessionService _sessionService;
     private readonly LoginViewModel _loginViewModel;
     private readonly RegisterViewModel _registerViewModel;
     private readonly MenuViewModel _menuViewModel;
 
     public MainViewModel(
-        ISession session,
+        ISessionService sessionService,
         LoginViewModel loginViewModel,
         RegisterViewModel registerViewModel,
         MenuViewModel menuViewModel
     )
     {
-        _session = session;
+        _sessionService = sessionService;
         _loginViewModel = loginViewModel;
         _registerViewModel = registerViewModel;
         _menuViewModel = menuViewModel;
@@ -34,14 +34,14 @@ public class MainViewModel : Conductor<Screen>
 
     public async Task UpdateLoginState()
     {
-        if (!_session.IsLoggedIn)
+        if (!_sessionService.IsLoggedIn)
         {
             _menuViewModel.Reset();
             await GoToLogin();
             return;
         }
 
-        _menuViewModel.DisplayUserPages(_session.Role.Value);
+        _menuViewModel.DisplayUserPages(_sessionService.IsReviewer);
         await ActivateItemAsync(_menuViewModel);
     }
 

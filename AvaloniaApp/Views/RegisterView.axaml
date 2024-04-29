@@ -19,7 +19,7 @@
             PasswordChar="*"
             Text="{Binding PasswordConfirmation}"
             Watermark="Confirm Password" />
-        <CheckBox IsChecked="{Binding IsReviewer}">Sign up as reviewer</CheckBox>
+        <CheckBox IsChecked="{Binding IsReviewer}">Register as reviewer</CheckBox>
         <Grid ColumnDefinitions="*,*">
             <Button
                 HorizontalAlignment="Stretch"
