@@ -7,10 +7,28 @@ public static class EncryptionUtils
     public static async Task<byte[]> SymmetricEncryptAsync(byte[] value, byte[] aesKey, byte[]? hmacKey)
     {
         await using var inputStream = new MemoryStream(value);
-        return await SymmetricEncryptAsync(inputStream, aesKey, hmacKey);
+        return await SymmetricEncryptAsync(inputStream, aesKey, hmacKey).ConfigureAwait(false);
     }
 
     public static async Task<byte[]> SymmetricEncryptAsync(Stream inputStream, byte[] aesKey, byte[]? hmacKey)
+    {
+        await using var outputStream = new MemoryStream();
+        await SymmetricEncryptAsync(inputStream, outputStream, aesKey, hmacKey).ConfigureAwait(false);
+        return outputStream.ToArray();
+    }
+
+    public static async Task SymmetricEncryptAsync(byte[] value, Stream outputStream, byte[] aesKey, byte[]? hmacKey)
+    {
+        await using var inputStream = new MemoryStream(value);
+        await SymmetricEncryptAsync(inputStream, outputStream, aesKey, hmacKey).ConfigureAwait(false);
+    }
+
+    public static async Task SymmetricEncryptAsync(
+        Stream inputStream,
+        Stream outputStream,
+        byte[] aesKey,
+        byte[]? hmacKey
+    )
     {
         if (aesKey.Length != 32)
         {
@@ -29,15 +47,15 @@ public static class EncryptionUtils
         using var encryptor = aes.CreateEncryptor();
         HMACSHA256? hmac = null;
 
-        var outputStream = new MemoryStream();
-        var cryptoStream = new CryptoStream(outputStream, encryptor, CryptoStreamMode.Write);
+        var initialPosition = outputStream.Position;
+        var cryptoStream = new CryptoStream(outputStream, encryptor, CryptoStreamMode.Write, true);
 
         // Create an HMAC CryptoStream that wraps the AES CryptoStream.
         if (hmacKey != null)
         {
             hmac = new HMACSHA256(hmacKey);
             cryptoStream = new CryptoStream(cryptoStream, hmac, CryptoStreamMode.Write);
-            // Advance the output stream with the hash size, because we want to write the HMAC at position 0 later.
+            // Advance the output stream with the hash size, because we want to write the HMAC at initial position.
             outputStream.Position += hmac.HashSize / 8;
         }
 
@@ -45,20 +63,18 @@ public static class EncryptionUtils
         {
             await outputStream.WriteAsync(aes.IV).ConfigureAwait(false);
             await inputStream.CopyToAsync(cryptoStream).ConfigureAwait(false);
-            await cryptoStream.FlushFinalBlockAsync();
+            await cryptoStream.FlushFinalBlockAsync().ConfigureAwait(false);
 
-            // Check if we need to write the HMAC to position 0.
+            // Check if we need to write the HMAC to initial position.
             if (hmac != null)
             {
-                outputStream.Position = 0;
-                await outputStream.WriteAsync(hmac.Hash);
+                outputStream.Position = initialPosition;
+                await outputStream.WriteAsync(hmac.Hash).ConfigureAwait(false);
             }
-
-            return outputStream.ToArray();
         }
         finally
         {
-            await cryptoStream.DisposeAsync();
+            await cryptoStream.DisposeAsync().ConfigureAwait(false);
             hmac?.Dispose();
         }
     }
@@ -66,10 +82,33 @@ public static class EncryptionUtils
     public static async Task<byte[]> SymmetricDecryptAsync(byte[] encrypted, byte[] aesKey, byte[]? hmacKey)
     {
         await using var inputStream = new MemoryStream(encrypted);
-        return await SymmetricDecryptAsync(inputStream, aesKey, hmacKey);
+        return await SymmetricDecryptAsync(inputStream, aesKey, hmacKey).ConfigureAwait(false);
     }
 
     public static async Task<byte[]> SymmetricDecryptAsync(Stream inputStream, byte[] aesKey, byte[]? hmacKey)
+    {
+        await using var outputStream = new MemoryStream();
+        await SymmetricDecryptAsync(inputStream, outputStream, aesKey, hmacKey).ConfigureAwait(false);
+        return outputStream.ToArray();
+    }
+
+    public static async Task SymmetricDecryptAsync(
+        byte[] encrypted,
+        Stream outputStream,
+        byte[] aesKey,
+        byte[]? hmacKey
+    )
+    {
+        await using var inputStream = new MemoryStream(encrypted);
+        await SymmetricDecryptAsync(inputStream, outputStream, aesKey, hmacKey).ConfigureAwait(false);
+    }
+
+    public static async Task SymmetricDecryptAsync(
+        Stream inputStream,
+        Stream outputStream,
+        byte[] aesKey,
+        byte[]? hmacKey
+    )
     {
         if (aesKey.Length != 32)
         {
@@ -108,7 +147,6 @@ public static class EncryptionUtils
             aes.IV = iv;
 
             using var decryptor = aes.CreateDecryptor();
-            await using var outputStream = new MemoryStream();
             await using var aesStream = new CryptoStream(
                 hmacStream ?? inputStream,
                 decryptor,
@@ -127,14 +165,12 @@ public static class EncryptionUtils
                     throw new CryptographicException("The HMAC in the input buffer does the match the computed HMAC.");
                 }
             }
-
-            return outputStream.ToArray();
         }
         finally
         {
             if (hmacStream != null)
             {
-                await hmacStream.DisposeAsync();
+                await hmacStream.DisposeAsync().ConfigureAwait(false);
             }
 
             hmac?.Dispose();
