@@ -4,10 +4,10 @@ namespace Apachi.Shared.Crypto;
 
 public static class EncryptionUtils
 {
-    public static async Task<byte[]> SymmetricEncryptAsync(byte[] value, byte[] key, byte[]? hmacKey)
+    public static async Task<byte[]> SymmetricEncryptAsync(byte[] value, byte[] aesKey, byte[]? hmacKey)
     {
         await using var inputStream = new MemoryStream(value);
-        return await SymmetricEncryptAsync(inputStream, key, hmacKey);
+        return await SymmetricEncryptAsync(inputStream, aesKey, hmacKey);
     }
 
     public static async Task<byte[]> SymmetricEncryptAsync(Stream inputStream, byte[] aesKey, byte[]? hmacKey)
@@ -63,11 +63,17 @@ public static class EncryptionUtils
         }
     }
 
-    public static async Task<byte[]> SymmetricDecryptAsync(byte[] encrypted, byte[] key, byte[]? hmacKey)
+    public static async Task<byte[]> SymmetricDecryptAsync(byte[] encrypted, byte[] aesKey, byte[]? hmacKey)
     {
-        if (key.Length != 32)
+        await using var inputStream = new MemoryStream(encrypted);
+        return await SymmetricDecryptAsync(inputStream, aesKey, hmacKey);
+    }
+
+    public static async Task<byte[]> SymmetricDecryptAsync(Stream inputStream, byte[] aesKey, byte[]? hmacKey)
+    {
+        if (aesKey.Length != 32)
         {
-            throw new ArgumentException("The key must be 256 bits long.", nameof(key));
+            throw new ArgumentException("The key must be 256 bits long.", nameof(aesKey));
         }
 
         if (hmacKey != null && hmacKey.Length != 32)
@@ -79,7 +85,7 @@ public static class EncryptionUtils
         var iv = new byte[16];
 
         HMACSHA256? hmac = null;
-        Stream inputStream = new MemoryStream(encrypted);
+        CryptoStream? hmacStream = null;
 
         try
         {
@@ -90,7 +96,7 @@ public static class EncryptionUtils
                 await inputStream.ReadAsync(iv).ConfigureAwait(false);
 
                 hmac = new HMACSHA256(hmacKey);
-                inputStream = new CryptoStream(inputStream, hmac, CryptoStreamMode.Read);
+                hmacStream = new CryptoStream(inputStream, hmac, CryptoStreamMode.Read, true);
             }
             else
             {
@@ -98,12 +104,17 @@ public static class EncryptionUtils
             }
 
             using var aes = Aes.Create();
-            aes.Key = key;
+            aes.Key = aesKey;
             aes.IV = iv;
 
             using var decryptor = aes.CreateDecryptor();
             await using var outputStream = new MemoryStream();
-            await using var aesStream = new CryptoStream(inputStream, decryptor, CryptoStreamMode.Read);
+            await using var aesStream = new CryptoStream(
+                hmacStream ?? inputStream,
+                decryptor,
+                CryptoStreamMode.Read,
+                true
+            );
 
             await aesStream.CopyToAsync(outputStream).ConfigureAwait(false);
 
@@ -121,7 +132,11 @@ public static class EncryptionUtils
         }
         finally
         {
-            await inputStream.DisposeAsync();
+            if (hmacStream != null)
+            {
+                await hmacStream.DisposeAsync();
+            }
+
             hmac?.Dispose();
         }
     }
