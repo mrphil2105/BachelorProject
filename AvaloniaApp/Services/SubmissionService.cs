@@ -96,7 +96,7 @@ public class SubmissionService : ISubmissionService
 
     private async Task<(byte[] EncryptedPaper, byte[] EncryptedSubmissionKey)> EncryptPaperAsync(string paperFilePath)
     {
-        var programCommitteePublicKey = GetProgramCommitteePublicKey();
+        var programCommitteePublicKey = KeyUtils.GetProgramCommitteePublicKey();
         var submissionKey = RandomNumberGenerator.GetBytes(32);
 
         var fileStream = File.OpenRead(paperFilePath);
@@ -122,18 +122,5 @@ public class SubmissionService : ISubmissionService
 
         var submission = new Submission { EncryptedSecrets = encryptedSecrets, SecretsHmac = secretsHmac };
         return submission;
-    }
-
-    private static byte[] GetProgramCommitteePublicKey()
-    {
-        var publicKeyBase64 = Environment.GetEnvironmentVariable("APACHI_PC_PUBLIC_KEY");
-
-        if (publicKeyBase64 == null)
-        {
-            throw new InvalidOperationException("Enviroment variable APACHI_PC_PUBLIC_KEY must be set.");
-        }
-
-        var publicKey = Convert.FromBase64String(publicKeyBase64);
-        return publicKey;
     }
 }

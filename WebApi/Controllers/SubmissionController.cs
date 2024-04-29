@@ -27,7 +27,7 @@ public class SubmissionController : ControllerBase
     [HttpPost]
     public async Task<SubmittedDto> Create([FromBody] SubmitDto submitDto)
     {
-        var programCommitteePrivateKey = GetProgramCommitteePrivateKey();
+        var programCommitteePrivateKey = KeyUtils.GetProgramCommitteePrivateKey();
         var submissionCommitmentSignature = KeyUtils.CalculateSignature(
             submitDto.SubmissionCommitment,
             programCommitteePrivateKey
@@ -55,7 +55,7 @@ public class SubmissionController : ControllerBase
 
     private async Task SavePaperAsync(SubmitDto submitDto, Guid submissionId)
     {
-        var programCommitteePrivateKey = GetProgramCommitteePrivateKey();
+        var programCommitteePrivateKey = KeyUtils.GetProgramCommitteePrivateKey();
         var submissionKey = await Task.Run(
             () => EncryptionUtils.AsymmetricDecrypt(submitDto.EncryptedSubmissionKey, programCommitteePrivateKey)
         );
@@ -70,18 +70,5 @@ public class SubmissionController : ControllerBase
         var paperFilePath = Path.Combine(papersDirectory, submissionId.ToString());
         Directory.CreateDirectory(papersDirectory);
         await System.IO.File.WriteAllBytesAsync(paperFilePath, paperBytes);
-    }
-
-    private byte[] GetProgramCommitteePrivateKey()
-    {
-        var privateKeyBase64 = _configuration.GetValue<string>("APACHI_PC_PRIVATE_KEY");
-
-        if (privateKeyBase64 == null)
-        {
-            throw new InvalidOperationException("Enviroment variable APACHI_PC_PRIVATE_KEY must be set.");
-        }
-
-        var privateKey = Convert.FromBase64String(privateKeyBase64);
-        return privateKey;
     }
 }
