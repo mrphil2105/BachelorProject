@@ -8,11 +8,12 @@ namespace Apachi.Shared.Crypto;
 
 public class Commitment
 {
-    private const string HPointBase64 = "AkJCAYmEWsv4dBo49yya0gRk9+xnUGRRzrSP3oIz30Vrc/dy6tu0lSuxbT4wG0HvyORvpl3jRt4NDCUw9uQstM94XmsYAQCQfxnUJ0Pb9VQ7ZOyW3lai/wfwvjSKN/zvlhUdbPnCvKl1yo4nzbsC0rnepFGQeeh1INu6cXabklrzMzuqd2y4";
-    private static readonly ECPoint HPoint; 
-    
+    private const string HPointBase64 =
+        "AkJCAYmEWsv4dBo49yya0gRk9+xnUGRRzrSP3oIz30Vrc/dy6tu0lSuxbT4wG0HvyORvpl3jRt4NDCUw9uQstM94XmsYAQCQfxnUJ0Pb9VQ7ZOyW3lai/wfwvjSKN/zvlhUdbPnCvKl1yo4nzbsC0rnepFGQeeh1INu6cXabklrzMzuqd2y4";
+    private static readonly ECPoint HPoint;
+
     private readonly ECPoint _point;
-    
+
     static Commitment()
     {
         var hBytes = Convert.FromBase64String(HPointBase64);
@@ -23,7 +24,7 @@ public class Commitment
         var parameters = NistNamedCurves.GetByName(Constants.DefaultCurveName);
         HPoint = parameters.Curve.CreatePoint(xCoord, yCoord);
     }
-    
+
     private Commitment(ECPoint point)
     {
         _point = point;
@@ -33,10 +34,9 @@ public class Commitment
     {
         var hash = SHA512.HashData(value);
         var hashInteger = new BigInteger(hash);
-        
-        
+
         var parameters = NistNamedCurves.GetByName(curveName);
-        
+
         var point = parameters.G.Multiply(hashInteger).Add(HPoint.Multiply(randomness));
 
         var commitment = new Commitment(point);
