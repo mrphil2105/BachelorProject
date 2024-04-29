@@ -4,25 +4,23 @@ using System.Text.Json;
 using Apachi.AvaloniaApp.Data;
 using Apachi.Shared.Crypto;
 using Apachi.Shared.Dtos;
-using Apachi.ViewModels.Auth;
 using Apachi.ViewModels.Services;
-using Microsoft.EntityFrameworkCore;
 
 namespace Apachi.AvaloniaApp.Services;
 
 public class SubmissionService : ISubmissionService
 {
-    private readonly ISession _session;
+    private readonly ISessionService _sessionService;
     private readonly Func<AppDbContext> _dbContextFactory;
     private readonly IHttpClientFactory _httpClientFactory;
 
     public SubmissionService(
-        ISession session,
+        ISessionService sessionService,
         Func<AppDbContext> dbContextFactory,
         IHttpClientFactory httpClientFactory
     )
     {
-        _session = session;
+        _sessionService = sessionService;
         _dbContextFactory = dbContextFactory;
         _httpClientFactory = httpClientFactory;
     }
@@ -30,9 +28,9 @@ public class SubmissionService : ISubmissionService
     public async Task SubmitPaperAsync(string paperFilePath)
     {
         var (submitDto, submission) = await CreateSubmissionModelsAsync(paperFilePath);
-        var httpClient = _httpClientFactory.CreateClient();
         var submitJson = JsonSerializer.Serialize(submitDto);
         var jsonContent = new StringContent(submitJson, Encoding.UTF8, "application/json");
+        var httpClient = _httpClientFactory.CreateClient();
 
         using var response = await httpClient.PostAsync("Submission/Create", jsonContent);
         var submittedJson = await response.Content.ReadAsStringAsync();
@@ -41,8 +39,7 @@ public class SubmissionService : ISubmissionService
         submission.SubmissionCommitmentSignature = submittedDto.SubmissionCommitmentSignature;
 
         await using var dbContext = _dbContextFactory();
-        var user = await dbContext.Users.FirstAsync(user => user.Username == _session.Username);
-        submission.User = user;
+        submission.SubmitterId = _sessionService.UserId!.Value;
         dbContext.Submissions.Add(submission);
         await dbContext.SaveChangesAsync().ConfigureAwait(false);
     }
@@ -96,11 +93,11 @@ public class SubmissionService : ISubmissionService
 
     private async Task<(byte[] EncryptedPaper, byte[] EncryptedSubmissionKey)> EncryptPaperAsync(string paperFilePath)
     {
-        var programCommitteePublicKey = GetProgramCommitteePublicKey();
+        var programCommitteePublicKey = KeyUtils.GetProgramCommitteePublicKey();
         var submissionKey = RandomNumberGenerator.GetBytes(32);
 
         var fileStream = File.OpenRead(paperFilePath);
-        var encryptedPaper = await EncryptionUtils.SymmetricEncryptAsync(fileStream, submissionKey);
+        var encryptedPaper = await EncryptionUtils.SymmetricEncryptAsync(fileStream, submissionKey, null);
 
         var encryptedSubmissionKey = await Task.Run(
             () => EncryptionUtils.AsymmetricEncrypt(submissionKey, programCommitteePublicKey)
@@ -110,29 +107,14 @@ public class SubmissionService : ISubmissionService
 
     private async Task<Submission> CreateSubmissionEntityAsync(byte[] submissionPrivateKey, byte[] identityRandomness)
     {
-        var submissionSecrets = new SubmissionSecrets(submissionPrivateKey, identityRandomness);
-        var secretsBytes = JsonSerializer.SerializeToUtf8Bytes(submissionSecrets);
+        var encryptedSubmissionPrivateKey = await _sessionService.SymmetricEncryptAsync(submissionPrivateKey);
+        var encryptedIdentityRandomness = await _sessionService.SymmetricEncryptAsync(identityRandomness);
 
-        var encryptedSecrets = await EncryptionUtils.SymmetricEncryptAsync(
-            secretsBytes,
-            _session.AesKey!.Value.ToArray()
-        );
-        var secretsHmac = await Task.Run(() => HMACSHA256.HashData(_session.HmacKey!.Value.Span, encryptedSecrets));
-
-        var submission = new Submission { EncryptedSecrets = encryptedSecrets, SecretsHmac = secretsHmac };
-        return submission;
-    }
-
-    private static byte[] GetProgramCommitteePublicKey()
-    {
-        var publicKeyBase64 = Environment.GetEnvironmentVariable("APACHI_PC_PUBLIC_KEY");
-
-        if (publicKeyBase64 == null)
+        var submission = new Submission
         {
-            throw new InvalidOperationException("Enviroment variable APACHI_PC_PUBLIC_KEY must be set.");
-        }
-
-        var publicKey = Convert.FromBase64String(publicKeyBase64);
-        return publicKey;
+            EncryptedPrivateKey = encryptedSubmissionPrivateKey,
+            EncryptedIdentityRandomness = encryptedIdentityRandomness
+        };
+        return submission;
     }
 }

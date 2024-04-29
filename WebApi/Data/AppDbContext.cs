@@ -8,4 +8,6 @@ public class AppDbContext : DbContext
         : base(options) { }
 
     public DbSet<Submission> Submissions => Set<Submission>();
+
+    public DbSet<Reviewer> Reviewers => Set<Reviewer>();
 }

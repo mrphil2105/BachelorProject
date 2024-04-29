@@ -1,5 +1,6 @@
 using System.Reflection;
 using Apachi.AvaloniaApp.Services;
+using Apachi.ViewModels.Services;
 using Autofac;
 using Module = Autofac.Module;
 
@@ -13,5 +14,6 @@ public class ServicesModule : Module
             .RegisterAssemblyTypes(Assembly.GetExecutingAssembly())
             .Where(t => t.IsInNamespaceOf<SubmissionService>())
             .AsImplementedInterfaces();
+        builder.RegisterType<SessionService>().As<ISessionService>().SingleInstance();
     }
 }

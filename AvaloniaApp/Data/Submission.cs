@@ -4,11 +4,13 @@ public class Submission
 {
     public Guid Id { get; set; }
 
-    public byte[] EncryptedSecrets { get; set; } = null!;
+    public byte[] EncryptedPrivateKey { get; set; } = null!;
 
-    public byte[] SecretsHmac { get; set; } = null!;
+    public byte[] EncryptedIdentityRandomness { get; set; } = null!;
 
     public byte[] SubmissionCommitmentSignature { get; set; } = null!;
 
-    public User User { get; set; } = null!;
+    public Guid SubmitterId { get; set; }
+
+    public Submitter Submitter { get; set; } = null!;
 }

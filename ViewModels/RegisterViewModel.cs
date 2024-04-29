@@ -1,20 +1,23 @@
-using Apachi.ViewModels.Auth;
+using Apachi.ViewModels.Services;
 using Apachi.ViewModels.Validation;
 
 namespace Apachi.ViewModels;
 
 public class RegisterViewModel : Screen
 {
-    private readonly ISession _session;
+    private readonly ISessionService _sessionService;
+    private readonly IViewService _viewService;
+
     private string _username = string.Empty;
     private string _password = string.Empty;
     private string _passwordConfirmation = string.Empty;
     private bool _isReviewer;
     private string _errorMessage = string.Empty;
 
-    public RegisterViewModel(ISession session)
+    public RegisterViewModel(ISessionService sessionService, IViewService viewService)
     {
-        _session = session;
+        _sessionService = sessionService;
+        _viewService = viewService;
         Validator = new ValidationAdapter<RegisterViewModel>(new RegisterViewModelValidator());
     }
 
@@ -63,11 +66,22 @@ public class RegisterViewModel : Screen
         }
 
         ErrorMessage = string.Empty;
-        var success = await _session.RegisterAsync(
-            Username,
-            Password,
-            IsReviewer ? UserRole.Reviewer : UserRole.Submitter
-        );
+        bool success;
+
+        try
+        {
+            success = await _sessionService.RegisterAsync(Username, Password, IsReviewer);
+        }
+        catch (HttpRequestException exception)
+        {
+            await _viewService.ShowMessageBoxAsync(
+                this,
+                $"Unable to register as reviewer: {exception.Message}",
+                "Registration Failure",
+                kind: MessageBoxKind.Error
+            );
+            return;
+        }
 
         if (!success)
         {
@@ -75,7 +89,7 @@ public class RegisterViewModel : Screen
             return;
         }
 
-        await _session.LoginAsync(Username, Password);
+        await _sessionService.LoginAsync(Username, Password, IsReviewer);
         await ((MainViewModel)Parent!).UpdateLoginState();
     }
 }

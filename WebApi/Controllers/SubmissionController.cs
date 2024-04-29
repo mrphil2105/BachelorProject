@@ -27,7 +27,7 @@ public class SubmissionController : ControllerBase
     [HttpPost]
     public async Task<SubmittedDto> Create([FromBody] SubmitDto submitDto)
     {
-        var programCommitteePrivateKey = GetProgramCommitteePrivateKey();
+        var programCommitteePrivateKey = KeyUtils.GetProgramCommitteePrivateKey();
         var submissionCommitmentSignature = KeyUtils.CalculateSignature(
             submitDto.SubmissionCommitment,
             programCommitteePrivateKey
@@ -50,16 +50,17 @@ public class SubmissionController : ControllerBase
         await _dbContext.SaveChangesAsync();
 
         var submittedDto = new SubmittedDto(submissionId, submissionCommitmentSignature);
+        _logger.LogInformation($"User created new submission with id: {submission}");
         return submittedDto;
     }
 
     private async Task SavePaperAsync(SubmitDto submitDto, Guid submissionId)
     {
-        var programCommitteePrivateKey = GetProgramCommitteePrivateKey();
+        var programCommitteePrivateKey = KeyUtils.GetProgramCommitteePrivateKey();
         var submissionKey = await Task.Run(
             () => EncryptionUtils.AsymmetricDecrypt(submitDto.EncryptedSubmissionKey, programCommitteePrivateKey)
         );
-        var paperBytes = await EncryptionUtils.SymmetricDecryptAsync(submitDto.EncryptedPaper, submissionKey);
+        var paperBytes = await EncryptionUtils.SymmetricDecryptAsync(submitDto.EncryptedPaper, submissionKey, null);
         var papersDirectory = _configuration.GetSection("Storage").GetValue<string>("Paper");
 
         if (papersDirectory == null)
@@ -70,18 +71,5 @@ public class SubmissionController : ControllerBase
         var paperFilePath = Path.Combine(papersDirectory, submissionId.ToString());
         Directory.CreateDirectory(papersDirectory);
         await System.IO.File.WriteAllBytesAsync(paperFilePath, paperBytes);
-    }
-
-    private byte[] GetProgramCommitteePrivateKey()
-    {
-        var privateKeyBase64 = _configuration.GetValue<string>("APACHI_PC_PRIVATE_KEY");
-
-        if (privateKeyBase64 == null)
-        {
-            throw new InvalidOperationException("Enviroment variable APACHI_PC_PRIVATE_KEY must be set.");
-        }
-
-        var privateKey = Convert.FromBase64String(privateKeyBase64);
-        return privateKey;
     }
 }

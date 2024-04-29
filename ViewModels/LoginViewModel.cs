@@ -1,17 +1,18 @@
-using Apachi.ViewModels.Auth;
+using Apachi.ViewModels.Services;
 
 namespace Apachi.ViewModels;
 
 public class LoginViewModel : Screen
 {
-    private readonly ISession _session;
+    private readonly ISessionService _sessionService;
     private string _username = string.Empty;
     private string _password = string.Empty;
+    private bool _isReviewer;
     private string _errorMessage = string.Empty;
 
-    public LoginViewModel(ISession session)
+    public LoginViewModel(ISessionService sessionService)
     {
-        _session = session;
+        _sessionService = sessionService;
     }
 
     public string Username
@@ -26,6 +27,12 @@ public class LoginViewModel : Screen
         set => Set(ref _password, value);
     }
 
+    public bool IsReviewer
+    {
+        get => _isReviewer;
+        set => Set(ref _isReviewer, value);
+    }
+
     public string ErrorMessage
     {
         get => _errorMessage;
@@ -35,7 +42,7 @@ public class LoginViewModel : Screen
     public async Task Login()
     {
         ErrorMessage = string.Empty;
-        var success = await _session.LoginAsync(Username, Password);
+        var success = await _sessionService.LoginAsync(Username, Password, IsReviewer);
 
         if (!success)
         {

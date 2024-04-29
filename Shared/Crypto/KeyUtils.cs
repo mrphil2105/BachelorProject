@@ -27,4 +27,30 @@ public static class KeyUtils
         var isValid = rsa.VerifyData(data, signature, HashAlgorithmName.SHA256, RSASignaturePadding.Pss);
         return isValid;
     }
+
+    public static byte[] GetProgramCommitteePublicKey()
+    {
+        var publicKeyBase64 = Environment.GetEnvironmentVariable("APACHI_PC_PUBLIC_KEY");
+
+        if (publicKeyBase64 == null)
+        {
+            throw new InvalidOperationException("Enviroment variable APACHI_PC_PUBLIC_KEY must be set.");
+        }
+
+        var publicKey = Convert.FromBase64String(publicKeyBase64);
+        return publicKey;
+    }
+
+    public static byte[] GetProgramCommitteePrivateKey()
+    {
+        var privateKeyBase64 = Environment.GetEnvironmentVariable("APACHI_PC_PRIVATE_KEY");
+
+        if (privateKeyBase64 == null)
+        {
+            throw new InvalidOperationException("Enviroment variable APACHI_PC_PRIVATE_KEY must be set.");
+        }
+
+        var privateKey = Convert.FromBase64String(privateKeyBase64);
+        return privateKey;
+    }
 }
