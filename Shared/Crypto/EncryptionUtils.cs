@@ -1,3 +1,4 @@
+using System.Buffers.Binary;
 using System.Security.Cryptography;
 
 namespace Apachi.Shared.Crypto;
@@ -177,19 +178,50 @@ public static class EncryptionUtils
         }
     }
 
-    public static byte[] AsymmetricEncrypt(byte[] data, byte[] publicKey)
+    public static byte[] AsymmetricEncrypt(byte[] value, byte[] publicKey)
     {
         using var rsa = RSA.Create(Constants.DefaultRSAKeySize);
         rsa.ImportRSAPublicKey(publicKey, out _);
-        var encryptedBytes = rsa.Encrypt(data, RSAEncryptionPadding.OaepSHA256);
-        return encryptedBytes;
+        var encrypted = rsa.Encrypt(value, RSAEncryptionPadding.OaepSHA256);
+        return encrypted;
     }
 
-    public static byte[] AsymmetricDecrypt(byte[] data, byte[] privateKey)
+    public static byte[] AsymmetricDecrypt(byte[] encrypted, byte[] privateKey)
     {
         using var rsa = RSA.Create(Constants.DefaultRSAKeySize);
         rsa.ImportRSAPrivateKey(privateKey, out _);
-        var decryptedBytes = rsa.Decrypt(data, RSAEncryptionPadding.OaepSHA256);
-        return decryptedBytes;
+        var decrypted = rsa.Decrypt(encrypted, RSAEncryptionPadding.OaepSHA256);
+        return decrypted;
+    }
+
+    public static async Task<byte[]> AsymmetricLargeEncryptAsync(byte[] value, byte[] publicKey)
+    {
+        var key = RandomNumberGenerator.GetBytes(32);
+        var encryptedKey = await Task.Run(() => AsymmetricEncrypt(key, publicKey)).ConfigureAwait(false);
+
+        var lengthPrefix = new byte[sizeof(ushort)];
+        BinaryPrimitives.WriteUInt16BigEndian(lengthPrefix, (ushort)encryptedKey.Length);
+
+        await using var outputStream = new MemoryStream();
+        await outputStream.WriteAsync(lengthPrefix).ConfigureAwait(false);
+        await outputStream.WriteAsync(encryptedKey).ConfigureAwait(false);
+        await SymmetricEncryptAsync(value, outputStream, key, null).ConfigureAwait(false);
+
+        return outputStream.ToArray();
+    }
+
+    public static async Task<byte[]> AsymmetricLargeDecryptAsync(byte[] value, byte[] privateKey)
+    {
+        await using var inputStream = new MemoryStream(value);
+
+        var lengthPrefix = new byte[sizeof(ushort)];
+        await inputStream.ReadAsync(lengthPrefix).ConfigureAwait(false);
+        var encryptedKeyLength = BinaryPrimitives.ReadUInt16BigEndian(lengthPrefix);
+
+        var encryptedKey = new byte[encryptedKeyLength];
+        await inputStream.ReadAsync(encryptedKey).ConfigureAwait(false);
+
+        var key = await Task.Run(() => AsymmetricDecrypt(encryptedKey, privateKey)).ConfigureAwait(false);
+        return await SymmetricDecryptAsync(inputStream, key, null).ConfigureAwait(false);
     }
 }
