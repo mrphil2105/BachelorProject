@@ -13,7 +13,7 @@ public class DataUtilsTests
         int randomCount = random.Next(1, 256);
         _bigIntegers = GenerateBigIntegerList(randomCount);
     }
-    
+
     private BigInteger[] GenerateBigIntegerList(int count)
     {
         BigInteger[] integers = new BigInteger[count];
@@ -25,7 +25,7 @@ public class DataUtilsTests
 
         return integers;
     }
-    
+
     [Fact]
     public void SerializeBigIntegers_ShouldReturnSerializedIntegers_WhenCalled()
     {
