@@ -6,15 +6,18 @@ namespace Apachi.ViewModels;
 public class RegisterViewModel : Screen
 {
     private readonly ISessionService _sessionService;
+    private readonly IViewService _viewService;
+
     private string _username = string.Empty;
     private string _password = string.Empty;
     private string _passwordConfirmation = string.Empty;
     private bool _isReviewer;
     private string _errorMessage = string.Empty;
 
-    public RegisterViewModel(ISessionService sessionService)
+    public RegisterViewModel(ISessionService sessionService, IViewService viewService)
     {
         _sessionService = sessionService;
+        _viewService = viewService;
         Validator = new ValidationAdapter<RegisterViewModel>(new RegisterViewModelValidator());
     }
 
@@ -63,7 +66,22 @@ public class RegisterViewModel : Screen
         }
 
         ErrorMessage = string.Empty;
-        var success = await _sessionService.RegisterAsync(Username, Password, IsReviewer);
+        bool success;
+
+        try
+        {
+            success = await _sessionService.RegisterAsync(Username, Password, IsReviewer);
+        }
+        catch (HttpRequestException exception)
+        {
+            await _viewService.ShowMessageBoxAsync(
+                this,
+                $"Unable to register as reviewer: {exception.Message}",
+                "Registration Failure",
+                kind: MessageBoxKind.Error
+            );
+            return;
+        }
 
         if (!success)
         {
