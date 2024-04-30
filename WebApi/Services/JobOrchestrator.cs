@@ -23,10 +23,17 @@ public class JobOrchestrator : BackgroundService
         {
             await using var scope = _scopeFactory.CreateAsyncScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            var scheduledJobs = dbContext.Jobs.Where(job => job.Status == JobStatus.Scheduled).AsAsyncEnumerable();
+            var jobs = dbContext
+                .Jobs.Where(job => job.Status == JobStatus.Scheduled || job.Status == JobStatus.Running)
+                .AsAsyncEnumerable();
 
-            await foreach (var job in scheduledJobs)
+            await foreach (var job in jobs)
             {
+                if (job.Status == JobStatus.Running)
+                {
+                    _logger.LogInformation("Attempting to resume job {Type}:{Id}.", job.Type, job.Id);
+                }
+
                 job.Status = JobStatus.Running;
                 job.StartDate = DateTimeOffset.Now;
                 await dbContext.SaveChangesAsync();
@@ -45,6 +52,11 @@ public class JobOrchestrator : BackgroundService
                         job.Result = await processor.ProcessJobAsync(job, cancellationToken);
                         job.Status = JobStatus.Completed;
                     }
+                }
+                catch (OperationCanceledException)
+                {
+                    // We still want Status to be Running still, so that the job can be resumed.
+                    break;
                 }
                 catch (Exception exception)
                 {
