@@ -1,6 +1,7 @@
 using Apachi.Shared.Crypto;
 using Apachi.Shared.Dtos;
 using Apachi.WebApi.Data;
+using Apachi.WebApi.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Apachi.WebApi.Controllers;
@@ -11,16 +12,19 @@ public class SubmissionController : ControllerBase
 {
     private readonly IConfiguration _configuration;
     private readonly AppDbContext _dbContext;
+    private readonly JobScheduler _jobScheduler;
     private readonly ILogger<SubmissionController> _logger;
 
     public SubmissionController(
         IConfiguration configuration,
         AppDbContext dbContext,
+        JobScheduler jobScheduler,
         ILogger<SubmissionController> logger
     )
     {
         _configuration = configuration;
         _dbContext = dbContext;
+        _jobScheduler = jobScheduler;
         _logger = logger;
     }
 
@@ -49,27 +53,32 @@ public class SubmissionController : ControllerBase
         _dbContext.Submissions.Add(submission);
         await _dbContext.SaveChangesAsync();
 
+        await _jobScheduler.ScheduleJobAsync(JobType.CreateReviews, submissionId.ToString());
+
         var submittedDto = new SubmittedDto(submissionId, submissionCommitmentSignature);
-        _logger.LogInformation($"User created new submission with id: {submission}");
+        _logger.LogInformation("User created new submission with id: {Id}", submissionId);
         return submittedDto;
     }
 
     private async Task SavePaperAsync(SubmitDto submitDto, Guid submissionId)
     {
         var programCommitteePrivateKey = KeyUtils.GetProgramCommitteePrivateKey();
-        var submissionKey = await Task.Run(
-            () => EncryptionUtils.AsymmetricDecrypt(submitDto.EncryptedSubmissionKey, programCommitteePrivateKey)
+        var submissionKey = EncryptionUtils.AsymmetricDecrypt(
+            submitDto.EncryptedSubmissionKey,
+            programCommitteePrivateKey
         );
         var paperBytes = await EncryptionUtils.SymmetricDecryptAsync(submitDto.EncryptedPaper, submissionKey, null);
-        var papersDirectory = _configuration.GetSection("Storage").GetValue<string>("Paper");
+        var submissionsDirectoryPath = _configuration.GetSection("Storage").GetValue<string>("Submissions");
 
-        if (papersDirectory == null)
+        if (submissionsDirectoryPath == null)
         {
-            throw new InvalidOperationException("A paper storage directory must be specified in application settings.");
+            throw new InvalidOperationException(
+                "A Submissions storage directory must be specified in application settings."
+            );
         }
 
-        var paperFilePath = Path.Combine(papersDirectory, submissionId.ToString());
-        Directory.CreateDirectory(papersDirectory);
+        var paperFilePath = Path.Combine(submissionsDirectoryPath, submissionId.ToString());
+        Directory.CreateDirectory(submissionsDirectoryPath);
         await System.IO.File.WriteAllBytesAsync(paperFilePath, paperBytes);
     }
 }

@@ -47,7 +47,7 @@ public class ReviewerController : ControllerBase
         var reviewerEncryptedSharedKey = EncryptionUtils.AsymmetricEncrypt(sharedKey, registerDto.ReviewerPublicKey);
         var registeredDto = new ReviewerRegisteredDto(reviewer.Id, reviewerEncryptedSharedKey);
 
-        _logger.LogInformation($"Reviewer registered new account with id: {reviewer.Id}");
+        _logger.LogInformation("Reviewer registered new account with id: {Id}", reviewer.Id);
         return registeredDto;
     }
 }
