@@ -11,10 +11,14 @@ public class AppDbContext : DbContext
 
     public DbSet<Reviewer> Reviewers => Set<Reviewer>();
 
+    public DbSet<Review> Reviews => Set<Review>();
+
     public DbSet<Job> Jobs => Set<Job>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
+        builder.Entity<Review>().Property(review => review.Status).HasConversion<string>();
+
         builder.Entity<Job>().Property(job => job.Type).HasConversion<string>();
         builder.Entity<Job>().Property(job => job.Status).HasConversion<string>();
     }

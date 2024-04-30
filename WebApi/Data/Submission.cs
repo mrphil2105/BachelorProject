@@ -15,4 +15,6 @@ public class Submission
     public byte[] SubmissionPublicKey { get; set; } = null!;
 
     public byte[] SubmissionSignature { get; set; } = null!;
+
+    public List<Review> Reviews { get; set; } = new List<Review>();
 }
