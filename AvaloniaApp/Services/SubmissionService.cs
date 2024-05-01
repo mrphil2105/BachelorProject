@@ -35,6 +35,22 @@ public class SubmissionService : ISubmissionService
         using var response = await httpClient.PostAsync("Submission/Create", jsonContent);
         var submittedJson = await response.Content.ReadAsStringAsync();
         var submittedDto = JsonSerializer.Deserialize<SubmittedDto>(submittedJson)!;
+
+        var programCommitteePublicKey = KeyUtils.GetProgramCommitteePublicKey();
+        var isSignatureValid = await Task.Run(
+            () =>
+                KeyUtils.VerifySignature(
+                    submitDto.SubmissionCommitment,
+                    submittedDto.SubmissionCommitmentSignature,
+                    programCommitteePublicKey
+                )
+        );
+
+        if (!isSignatureValid)
+        {
+            throw new CryptographicException("The received submission commitment signature is invalid.");
+        }
+
         submission.Id = submittedDto.SubmissionId;
         submission.SubmissionCommitmentSignature = submittedDto.SubmissionCommitmentSignature;
 
