@@ -405,3 +405,5 @@ App.db-wal
 
 # Storage
 papers/
+submissions/
+reviews/
