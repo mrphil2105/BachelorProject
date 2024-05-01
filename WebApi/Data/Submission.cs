@@ -16,5 +16,11 @@ public class Submission
 
     public byte[] SubmissionSignature { get; set; } = null!; // Signed by K_S^-1
 
+    public byte[] PaperSignature { get; set; } = null!; // Signed by K_PC^1
+
+    public DateTimeOffset CreatedDate { get; set; }
+
+    public DateTimeOffset? ClosedDate { get; set; }
+
     public List<Review> Reviews { get; set; } = new List<Review>();
 }

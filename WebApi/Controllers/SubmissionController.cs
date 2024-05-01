@@ -41,7 +41,8 @@ public class SubmissionController : ControllerBase
         );
 
         var submissionId = Guid.NewGuid();
-        await SavePaperAsync(submitDto, submissionId);
+        var paperBytes = await SavePaperAsync(submitDto, submissionId);
+        var paperSignature = KeyUtils.CalculateSignature(paperBytes, programCommitteePrivateKey);
 
         var submission = new Submission
         {
@@ -51,7 +52,9 @@ public class SubmissionController : ControllerBase
             SubmissionCommitment = submitDto.SubmissionCommitment,
             IdentityCommitment = submitDto.IdentityCommitment,
             SubmissionPublicKey = submitDto.SubmissionPublicKey,
-            SubmissionSignature = submitDto.SubmissionSignature
+            SubmissionSignature = submitDto.SubmissionSignature,
+            PaperSignature = paperSignature,
+            CreatedDate = DateTimeOffset.Now
         };
         _dbContext.Submissions.Add(submission);
         await _dbContext.SaveChangesAsync();
@@ -85,14 +88,14 @@ public class SubmissionController : ControllerBase
         }
     }
 
-    private async Task SavePaperAsync(SubmitDto submitDto, Guid submissionId)
+    private async Task<byte[]> SavePaperAsync(SubmitDto submitDto, Guid submissionId)
     {
         var programCommitteePrivateKey = KeyUtils.GetProgramCommitteePrivateKey();
         var submissionKey = EncryptionUtils.AsymmetricDecrypt(
             submitDto.EncryptedSubmissionKey,
             programCommitteePrivateKey
         );
-        var paperBytes = await EncryptionUtils.SymmetricDecryptAsync(submitDto.EncryptedPaper, submissionKey, null);
+
         var submissionsDirectoryPath = _configuration.GetSection("Storage").GetValue<string>("Submissions");
 
         if (submissionsDirectoryPath == null)
@@ -104,6 +107,9 @@ public class SubmissionController : ControllerBase
 
         var paperFilePath = Path.Combine(submissionsDirectoryPath, submissionId.ToString());
         Directory.CreateDirectory(submissionsDirectoryPath);
+
+        var paperBytes = await EncryptionUtils.SymmetricDecryptAsync(submitDto.EncryptedPaper, submissionKey, null);
         await System.IO.File.WriteAllBytesAsync(paperFilePath, paperBytes);
+        return paperBytes;
     }
 }
