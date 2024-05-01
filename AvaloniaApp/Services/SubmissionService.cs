@@ -49,7 +49,8 @@ public class SubmissionService : ISubmissionService
     {
         var (submissionPublicKey, submissionPrivateKey) = await Task.Run(KeyUtils.GenerateKeyPair)
             .ConfigureAwait(false);
-        var (encryptedPaper, encryptedSubmissionKey) = await EncryptPaperAsync(paperFilePath).ConfigureAwait(false);
+        var paperBytes = await File.ReadAllBytesAsync(paperFilePath);
+        var (encryptedPaper, encryptedSubmissionKey) = await EncryptPaperAsync(paperBytes).ConfigureAwait(false);
 
         var submissionRandomness = DataUtils.GenerateBigInteger();
         var reviewRandomness = DataUtils.GenerateBigInteger();
@@ -59,8 +60,8 @@ public class SubmissionService : ISubmissionService
         var reviewRandomnessBytes = reviewRandomness.ToByteArray();
         var identityRandomnessBytes = identityRandomness.ToByteArray();
 
-        var submissionCommitment = Commitment.Create(encryptedPaper, submissionRandomness);
-        var identityCommitment = Commitment.Create(encryptedPaper, identityRandomness);
+        var submissionCommitment = Commitment.Create(paperBytes, submissionRandomness);
+        var identityCommitment = Commitment.Create(paperBytes, identityRandomness);
 
         var submissionCommitmentBytes = submissionCommitment.ToBytes();
         var identityCommitmentBytes = identityCommitment.ToBytes();
@@ -91,14 +92,12 @@ public class SubmissionService : ISubmissionService
         return (submitDto, submission);
     }
 
-    private async Task<(byte[] EncryptedPaper, byte[] EncryptedSubmissionKey)> EncryptPaperAsync(string paperFilePath)
+    private async Task<(byte[] EncryptedPaper, byte[] EncryptedSubmissionKey)> EncryptPaperAsync(byte[] paperBytes)
     {
         var programCommitteePublicKey = KeyUtils.GetProgramCommitteePublicKey();
         var submissionKey = RandomNumberGenerator.GetBytes(32);
 
-        var fileStream = File.OpenRead(paperFilePath);
-        var encryptedPaper = await EncryptionUtils.SymmetricEncryptAsync(fileStream, submissionKey, null);
-
+        var encryptedPaper = await EncryptionUtils.SymmetricEncryptAsync(paperBytes, submissionKey, null);
         var encryptedSubmissionKey = await Task.Run(
             () => EncryptionUtils.AsymmetricEncrypt(submissionKey, programCommitteePublicKey)
         );
