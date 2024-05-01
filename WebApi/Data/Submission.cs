@@ -1,8 +1,12 @@
+using Apachi.Shared;
+
 namespace Apachi.WebApi.Data;
 
 public class Submission
 {
     public Guid Id { get; set; }
+
+    public SubmissionStatus Status { get; set; }
 
     public byte[] SubmissionRandomness { get; set; } = null!; // r_s
 
@@ -19,6 +23,8 @@ public class Submission
     public byte[] PaperSignature { get; set; } = null!; // Signed by K_PC^1
 
     public DateTimeOffset CreatedDate { get; set; }
+
+    public DateTimeOffset UpdatedDate { get; set; }
 
     public DateTimeOffset? ClosedDate { get; set; }
 

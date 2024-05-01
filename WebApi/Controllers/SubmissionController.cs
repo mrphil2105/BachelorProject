@@ -44,6 +44,7 @@ public class SubmissionController : ControllerBase
         var paperBytes = await SavePaperAsync(submitDto, submissionId);
         var paperSignature = KeyUtils.CalculateSignature(paperBytes, programCommitteePrivateKey);
 
+        var createdDate = DateTimeOffset.Now;
         var submission = new Submission
         {
             Id = submissionId,
@@ -54,7 +55,8 @@ public class SubmissionController : ControllerBase
             SubmissionPublicKey = submitDto.SubmissionPublicKey,
             SubmissionSignature = submitDto.SubmissionSignature,
             PaperSignature = paperSignature,
-            CreatedDate = DateTimeOffset.Now
+            CreatedDate = createdDate,
+            UpdatedDate = createdDate
         };
         _dbContext.Submissions.Add(submission);
         await _dbContext.SaveChangesAsync();
