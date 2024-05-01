@@ -1,3 +1,4 @@
+using System.Security.Cryptography;
 using Apachi.Shared.Crypto;
 using Apachi.Shared.Dtos;
 using Apachi.WebApi.Data;
@@ -31,6 +32,8 @@ public class SubmissionController : ControllerBase
     [HttpPost]
     public async Task<SubmittedDto> Create([FromBody] SubmitDto submitDto)
     {
+        ThrowIfInvalidSubmissionSignature(submitDto);
+
         var programCommitteePrivateKey = KeyUtils.GetProgramCommitteePrivateKey();
         var submissionCommitmentSignature = KeyUtils.CalculateSignature(
             submitDto.SubmissionCommitment,
@@ -58,6 +61,28 @@ public class SubmissionController : ControllerBase
         var submittedDto = new SubmittedDto(submissionId, submissionCommitmentSignature);
         _logger.LogInformation("User created new submission with id: {Id}", submissionId);
         return submittedDto;
+    }
+
+    private void ThrowIfInvalidSubmissionSignature(SubmitDto submitDto)
+    {
+        var bytesToVerified = DataUtils.CombineByteArrays(
+            submitDto.EncryptedPaper,
+            submitDto.EncryptedSubmissionKey,
+            submitDto.SubmissionRandomness,
+            submitDto.ReviewRandomness,
+            submitDto.SubmissionCommitment,
+            submitDto.IdentityCommitment
+        );
+        var isValid = KeyUtils.VerifySignature(
+            bytesToVerified,
+            submitDto.SubmissionSignature,
+            submitDto.SubmissionPublicKey
+        );
+
+        if (!isValid)
+        {
+            throw new CryptographicException("The received submission signature is invalid.");
+        }
     }
 
     private async Task SavePaperAsync(SubmitDto submitDto, Guid submissionId)
