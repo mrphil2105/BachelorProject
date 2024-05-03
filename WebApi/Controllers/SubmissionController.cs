@@ -98,15 +98,7 @@ public class SubmissionController : ControllerBase
             programCommitteePrivateKey
         );
 
-        var submissionsDirectoryPath = _configuration.GetSection("Storage").GetValue<string>("Submissions");
-
-        if (submissionsDirectoryPath == null)
-        {
-            throw new InvalidOperationException(
-                "A Submissions storage directory must be specified in application settings."
-            );
-        }
-
+        var submissionsDirectoryPath = _configuration.GetSubmissionsStorage();
         var paperFilePath = Path.Combine(submissionsDirectoryPath, submissionId.ToString());
         Directory.CreateDirectory(submissionsDirectoryPath);
 

@@ -20,13 +20,7 @@ public class CreateReviewsJobProcessor : IJobProcessor
         var programCommitteePrivateKey = KeyUtils.GetProgramCommitteePrivateKey();
         var submissionId = Guid.Parse(job.Payload!);
 
-        var submissionsDirectoryPath = _configuration.GetSection("Storage").GetValue<string>("Submissions");
-
-        if (submissionsDirectoryPath == null)
-        {
-            throw new InvalidOperationException("A paper storage directory must be specified in application settings.");
-        }
-
+        var submissionsDirectoryPath = _configuration.GetSubmissionsStorage();
         var paperFilePath = Path.Combine(submissionsDirectoryPath, submissionId.ToString());
         var paperBytes = await File.ReadAllBytesAsync(paperFilePath);
 
@@ -58,15 +52,7 @@ public class CreateReviewsJobProcessor : IJobProcessor
 
     private async Task SavePaperAsync(Guid submissionId, Guid reviewerId, byte[] paperBytes, byte[] sharedKey)
     {
-        var reviewsDirectoryPath = _configuration.GetSection("Storage").GetValue<string>("Reviews");
-
-        if (reviewsDirectoryPath == null)
-        {
-            throw new InvalidOperationException(
-                "A Reviews storage directory must be specified in application settings."
-            );
-        }
-
+        var reviewsDirectoryPath = _configuration.GetReviewsStorage();
         var submissionDirectoryPath = Path.Combine(reviewsDirectoryPath, submissionId.ToString());
         var encryptedPaperFilePath = Path.Combine(submissionDirectoryPath, reviewerId.ToString());
         Directory.CreateDirectory(submissionDirectoryPath);
