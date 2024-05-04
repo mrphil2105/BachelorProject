@@ -13,6 +13,10 @@ public class LoginViewModel : Screen
     public LoginViewModel(ISessionService sessionService)
     {
         _sessionService = sessionService;
+#if DEBUG
+        Username = "foo";
+        Password = "bar";
+#endif
     }
 
     public string Username
@@ -56,14 +60,5 @@ public class LoginViewModel : Screen
     public Task Register()
     {
         return ((MainViewModel)Parent!).GoToRegister();
-    }
-
-    protected override async Task OnActivateAsync(CancellationToken cancellationToken)
-    {
-#if DEBUG
-        Username = "foo";
-        Password = "bar";
-        await Login();
-#endif
     }
 }
