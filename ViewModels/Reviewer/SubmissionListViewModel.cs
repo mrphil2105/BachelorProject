@@ -63,9 +63,4 @@ public class SubmissionListViewModel : Conductor<SubmissionToReviewModel>.Collec
         Items.AddRange(submissionToReviewModels);
         IsLoading = false;
     }
-
-    public void Reset()
-    {
-        Items.Clear();
-    }
 }

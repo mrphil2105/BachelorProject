@@ -2,11 +2,11 @@ namespace Apachi.ViewModels;
 
 public class MenuViewModel : Conductor<IMenuPageViewModel>.Collection.OneActive
 {
-    private readonly List<IMenuPageViewModel> _pageViewModels;
+    private readonly Func<IEnumerable<IMenuPageViewModel>> _pageViewModelsFactory;
 
-    public MenuViewModel(IEnumerable<IMenuPageViewModel> pageViewModels)
+    public MenuViewModel(Func<IEnumerable<IMenuPageViewModel>> pageViewModelsFactory)
     {
-        _pageViewModels = new List<IMenuPageViewModel>(pageViewModels);
+        _pageViewModelsFactory = pageViewModelsFactory;
     }
 
     public Task GoToMenuPage(IMenuPageViewModel menuPage)
@@ -17,7 +17,8 @@ public class MenuViewModel : Conductor<IMenuPageViewModel>.Collection.OneActive
     public void DisplayUserPages(bool isReviewer)
     {
         Reset();
-        var userPageViewModels = _pageViewModels.Where(model => model.IsReviewer == isReviewer);
+        var pageViewModels = _pageViewModelsFactory();
+        var userPageViewModels = pageViewModels.Where(model => model.IsReviewer == isReviewer);
         Items.AddRange(userPageViewModels);
     }
 
@@ -25,7 +26,10 @@ public class MenuViewModel : Conductor<IMenuPageViewModel>.Collection.OneActive
     {
         foreach (var pageViewModel in Items)
         {
-            pageViewModel.Reset();
+            if (pageViewModel is IDisposable disposable)
+            {
+                disposable.Dispose();
+            }
         }
 
         Items.Clear();

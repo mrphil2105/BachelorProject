@@ -5,6 +5,4 @@ public interface IMenuPageViewModel
     string PageName { get; }
 
     bool IsReviewer { get; }
-
-    void Reset();
 }
