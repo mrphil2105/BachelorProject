@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
@@ -167,6 +166,7 @@ public class SessionService : ISessionService
 
         var reviewer = new Reviewer
         {
+            Id = registeredDto.ReviewerId,
             Username = username,
             PasswordSalt = salt,
             AuthenticationHash = authenticationHash,

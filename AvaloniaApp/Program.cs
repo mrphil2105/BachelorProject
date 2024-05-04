@@ -1,4 +1,3 @@
-using Apachi.Shared.Crypto;
 using Avalonia;
 
 namespace Apachi.AvaloniaApp;

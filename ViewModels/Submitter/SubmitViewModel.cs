@@ -66,5 +66,8 @@ public class SubmitViewModel : Screen, IMenuPageViewModel
         }
     }
 
-    public void Reset() { }
+    public void Reset()
+    {
+        PaperFilePath = string.Empty;
+    }
 }

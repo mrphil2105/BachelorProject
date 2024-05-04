@@ -16,13 +16,13 @@ public class ReviewerController : ControllerBase
     private readonly IConfiguration _configuration;
     private readonly AppDbContext _dbContext;
     private readonly JobScheduler _jobScheduler;
-    private readonly ILogger<SubmissionController> _logger;
+    private readonly ILogger<ReviewerController> _logger;
 
     public ReviewerController(
         IConfiguration configuration,
         AppDbContext dbContext,
         JobScheduler jobScheduler,
-        ILogger<SubmissionController> logger
+        ILogger<ReviewerController> logger
     )
     {
         _configuration = configuration;
