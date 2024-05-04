@@ -37,7 +37,7 @@ public class SubmissionListViewModel : Conductor<SubmissionToReviewModel>.Collec
         await _reviewService.DownloadPaperAsync(submissionToReviewModel.Id, paperFilePath);
     }
 
-    protected override async Task OnActivateAsync(CancellationToken cancellationToken)
+    protected override async Task OnInitializeAsync(CancellationToken cancellationToken)
     {
         List<SubmissionToReviewDto> submissionToReviewDtos;
 
