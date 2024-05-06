@@ -1,3 +1,4 @@
+using Apachi.Shared;
 using Apachi.Shared.Dtos;
 using Apachi.WebApi.Data;
 using Microsoft.AspNetCore.Mvc;
@@ -24,7 +25,8 @@ public class ReviewController : ControllerBase
     public async Task<List<SubmissionToReviewDto>> GetSubmissionsToReview()
     {
         var paperDtos = await _dbContext
-            .Submissions.Select(submission => new SubmissionToReviewDto(
+            .Submissions.Where(submission => submission.Status == SubmissionStatus.Open)
+            .Select(submission => new SubmissionToReviewDto(
                 submission.Id,
                 submission.Status,
                 submission.PaperSignature,

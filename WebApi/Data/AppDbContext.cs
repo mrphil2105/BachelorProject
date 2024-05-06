@@ -17,6 +17,8 @@ public class AppDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
+        builder.Entity<Submission>().Property(submission => submission.Status).HasConversion<string>();
+
         builder.Entity<Review>().Property(review => review.Status).HasConversion<string>();
 
         builder.Entity<Job>().Property(job => job.Type).HasConversion<string>();
