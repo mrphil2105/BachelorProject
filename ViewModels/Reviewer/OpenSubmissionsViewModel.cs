@@ -34,7 +34,11 @@ public class OpenSubmissionsViewModel : Conductor<OpenSubmissionModel>.Collectio
             return;
         }
 
-        await _reviewService.DownloadPaperAsync(openSubmissionModel.Id, paperFilePath);
+        await _reviewService.DownloadPaperAsync(
+            openSubmissionModel.Id,
+            openSubmissionModel.PaperSignature,
+            paperFilePath
+        );
     }
 
     public Task BidReview(OpenSubmissionModel openSubmissionModel)

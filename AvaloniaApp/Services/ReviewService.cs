@@ -1,3 +1,4 @@
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using Apachi.AvaloniaApp.Data;
@@ -38,7 +39,7 @@ public class ReviewService : IReviewService
         return openSubmissionDtos ?? new List<OpenSubmissionDto>();
     }
 
-    public async Task DownloadPaperAsync(Guid submissionId, string paperFilePath)
+    public async Task DownloadPaperAsync(Guid submissionId, byte[] paperSignature, string paperFilePath)
     {
         var reviewerId = _sessionService.UserId!.Value;
         var queryParameters = $"?submissionId={submissionId}&reviewerId={reviewerId}";
@@ -51,8 +52,18 @@ public class ReviewService : IReviewService
         var reviewer = await dbContext.Reviewers.SingleOrDefaultAsync(reviewer => reviewer.Id == reviewerId);
         var sharedKey = await _sessionService.SymmetricDecryptAsync(reviewer!.EncryptedSharedKey);
 
-        await using var fileStream = File.Create(paperFilePath);
-        await EncryptionUtils.SymmetricDecryptAsync(contentStream, fileStream, sharedKey, null);
+        var paperBytes = await EncryptionUtils.SymmetricDecryptAsync(contentStream, sharedKey, null);
+        var programCommitteePublicKey = KeyUtils.GetProgramCommitteePublicKey();
+        var isSignatureValid = await Task.Run(
+            () => KeyUtils.VerifySignature(paperBytes, paperSignature, programCommitteePublicKey)
+        );
+
+        if (!isSignatureValid)
+        {
+            throw new CryptographicException("The received paper signature is invalid.");
+        }
+
+        await File.WriteAllBytesAsync(paperFilePath, paperBytes);
     }
 
     public async Task SendBidAsync(Guid submissionId, bool wantsToReview)

@@ -16,5 +16,7 @@ public class OpenSubmissionModel
 
     public SubmissionStatus Status => _openSubmissionDto.SubmissionStatus;
 
+    public byte[] PaperSignature => _openSubmissionDto.PaperSignature;
+
     public DateTimeOffset CreatedDate => _openSubmissionDto.CreatedDate;
 }
