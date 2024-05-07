@@ -1,3 +1,4 @@
+using System.Text;
 using System.Text.Json;
 using Apachi.AvaloniaApp.Data;
 using Apachi.Shared.Crypto;
@@ -49,5 +50,17 @@ public class ReviewService : IReviewService
 
         await using var fileStream = File.Create(paperFilePath);
         await EncryptionUtils.SymmetricDecryptAsync(contentStream, fileStream, sharedKey, null);
+    }
+
+    public async Task SendBidAsync(Guid submissionId, bool wantsToReview)
+    {
+        var reviewerId = _sessionService.UserId!.Value;
+        var bidDto = new BidDto(submissionId, reviewerId, wantsToReview);
+        var bidJson = JsonSerializer.Serialize(bidDto);
+        var jsonContent = new StringContent(bidJson, Encoding.UTF8, "application/json");
+        var httpClient = _httpClientFactory.CreateClient();
+
+        using var response = await httpClient.PostAsync("Review/CreateBid", jsonContent);
+        response.EnsureSuccessStatusCode();
     }
 }

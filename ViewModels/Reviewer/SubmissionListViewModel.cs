@@ -37,6 +37,33 @@ public class SubmissionListViewModel : Conductor<SubmissionToReviewModel>.Collec
         await _reviewService.DownloadPaperAsync(submissionToReviewModel.Id, paperFilePath);
     }
 
+    public Task BidReview(SubmissionToReviewModel submissionToReviewModel)
+    {
+        return SendBidAsync(submissionToReviewModel, true);
+    }
+
+    public Task BidAbstain(SubmissionToReviewModel submissionToReviewModel)
+    {
+        return SendBidAsync(submissionToReviewModel, false);
+    }
+
+    private async Task SendBidAsync(SubmissionToReviewModel submissionToReviewModel, bool wantsToReview)
+    {
+        try
+        {
+            await _reviewService.SendBidAsync(submissionToReviewModel.Id, wantsToReview);
+        }
+        catch (HttpRequestException exception)
+        {
+            await _viewService.ShowMessageBoxAsync(
+                this,
+                $"Unable to send bid: {exception.Message}",
+                "Bid Failure",
+                kind: MessageBoxKind.Error
+            );
+        }
+    }
+
     protected override async Task OnInitializeAsync(CancellationToken cancellationToken)
     {
         List<SubmissionToReviewDto> submissionToReviewDtos;
@@ -46,7 +73,7 @@ public class SubmissionListViewModel : Conductor<SubmissionToReviewModel>.Collec
             IsLoading = true;
             submissionToReviewDtos = await _reviewService.GetSubmissionsToReviewAsync();
         }
-        catch (Exception exception)
+        catch (HttpRequestException exception)
         {
             await _viewService.ShowMessageBoxAsync(
                 this,

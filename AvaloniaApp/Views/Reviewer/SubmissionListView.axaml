@@ -16,10 +16,20 @@
                     <StackPanel>
                         <TextBlock FontWeight="Medium" Text="{Binding Id}" />
                         <TextBlock Text="{Binding CreatedDate, Converter={x:Static c:CustomConverters.DateTimeOffset}}" />
-                        <Button
-                            Command="{e:Action DownloadPaper}"
-                            CommandParameter="{Binding}"
-                            Content="Download" />
+                        <StackPanel Orientation="Horizontal">
+                            <Button
+                                Command="{e:Action DownloadPaper}"
+                                CommandParameter="{Binding}"
+                                Content="Download" />
+                            <Button
+                                Command="{e:Action BidReview}"
+                                CommandParameter="{Binding}"
+                                Content="Review" />
+                            <Button
+                                Command="{e:Action BidAbstain}"
+                                CommandParameter="{Binding}"
+                                Content="Abstain" />
+                        </StackPanel>
                     </StackPanel>
                 </DataTemplate>
             </ItemsControl.ItemTemplate>

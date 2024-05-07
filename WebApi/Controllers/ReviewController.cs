@@ -46,4 +46,29 @@ public class ReviewController : ControllerBase
         var fileStream = System.IO.File.OpenRead(encryptedPaperFilePath);
         return File(fileStream, "application/octet-stream");
     }
+
+    [HttpPost]
+    public async Task<IActionResult> CreateBid([FromBody] BidDto bidDto)
+    {
+        var submission = await _dbContext.Submissions.FirstOrDefaultAsync(submission =>
+            submission.Id == bidDto.SubmissionId
+        );
+        var review = await _dbContext.Reviews.FirstOrDefaultAsync(review =>
+            review.SubmissionId == bidDto.SubmissionId && review.ReviewerId == bidDto.ReviewerId
+        );
+
+        if (submission == null || review == null)
+        {
+            return NotFound();
+        }
+
+        if (submission.Status != SubmissionStatus.Open || review.Status != ReviewStatus.Open)
+        {
+            return BadRequest();
+        }
+
+        review.Status = bidDto.WantsToReview ? ReviewStatus.Pending : ReviewStatus.Abstain;
+        await _dbContext.SaveChangesAsync();
+        return Ok();
+    }
 }
