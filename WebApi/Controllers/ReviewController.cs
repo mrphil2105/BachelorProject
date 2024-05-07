@@ -22,18 +22,26 @@ public class ReviewController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<List<SubmissionToReviewDto>> GetSubmissionsToReview()
+    public async Task<List<OpenSubmissionDto>> GetOpenSubmissions(Guid reviewerId)
     {
-        var paperDtos = await _dbContext
-            .Submissions.Where(submission => submission.Status == SubmissionStatus.Open)
-            .Select(submission => new SubmissionToReviewDto(
+        var openReviews = await _dbContext
+            .Reviews.Include(review => review.Submission)
+            .Where(review => review.ReviewerId == reviewerId && review.Status == ReviewStatus.Open)
+            .ToListAsync();
+
+        var openSubmissionDtos = openReviews
+            .Select(review => review.Submission)
+            // This check is most likely not needed, since all reviews should be closed when a submission is closed.
+            .Where(submission => submission.Status == SubmissionStatus.Open)
+            .Select(submission => new OpenSubmissionDto(
                 submission.Id,
                 submission.Status,
                 submission.PaperSignature,
                 submission.CreatedDate
             ))
-            .ToListAsync();
-        return paperDtos;
+            .ToList();
+
+        return openSubmissionDtos;
     }
 
     [HttpGet]

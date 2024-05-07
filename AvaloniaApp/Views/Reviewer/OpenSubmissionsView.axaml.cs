@@ -2,9 +2,9 @@ using Avalonia.Controls;
 
 namespace Apachi.AvaloniaApp.Views.Reviewer;
 
-public partial class SubmissionListView : UserControl
+public partial class OpenSubmissionsView : UserControl
 {
-    public SubmissionListView()
+    public OpenSubmissionsView()
     {
         InitializeComponent();
     }

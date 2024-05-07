@@ -1,6 +1,6 @@
 namespace Apachi.Shared.Dtos;
 
-public record SubmissionToReviewDto(
+public record OpenSubmissionDto(
     Guid SubmissionId,
     SubmissionStatus SubmissionStatus,
     byte[] PaperSignature,

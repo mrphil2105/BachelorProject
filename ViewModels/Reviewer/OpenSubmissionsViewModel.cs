@@ -3,13 +3,13 @@ using Apachi.ViewModels.Services;
 
 namespace Apachi.ViewModels.Reviewer;
 
-public class SubmissionListViewModel : Conductor<SubmissionToReviewModel>.Collection.AllActive, IMenuPageViewModel
+public class OpenSubmissionsViewModel : Conductor<OpenSubmissionModel>.Collection.AllActive, IMenuPageViewModel
 {
     private readonly IViewService _viewService;
     private readonly IReviewService _reviewService;
     private bool _isLoading;
 
-    public SubmissionListViewModel(IViewService viewService, IReviewService reviewService)
+    public OpenSubmissionsViewModel(IViewService viewService, IReviewService reviewService)
     {
         _viewService = viewService;
         _reviewService = reviewService;
@@ -25,7 +25,7 @@ public class SubmissionListViewModel : Conductor<SubmissionToReviewModel>.Collec
         set => Set(ref _isLoading, value);
     }
 
-    public async Task DownloadPaper(SubmissionToReviewModel submissionToReviewModel)
+    public async Task DownloadPaper(OpenSubmissionModel openSubmissionModel)
     {
         var paperFilePath = await _viewService.ShowSaveFileDialogAsync(this);
 
@@ -34,24 +34,24 @@ public class SubmissionListViewModel : Conductor<SubmissionToReviewModel>.Collec
             return;
         }
 
-        await _reviewService.DownloadPaperAsync(submissionToReviewModel.Id, paperFilePath);
+        await _reviewService.DownloadPaperAsync(openSubmissionModel.Id, paperFilePath);
     }
 
-    public Task BidReview(SubmissionToReviewModel submissionToReviewModel)
+    public Task BidReview(OpenSubmissionModel openSubmissionModel)
     {
-        return SendBidAsync(submissionToReviewModel, true);
+        return SendBidAsync(openSubmissionModel, true);
     }
 
-    public Task BidAbstain(SubmissionToReviewModel submissionToReviewModel)
+    public Task BidAbstain(OpenSubmissionModel openSubmissionModel)
     {
-        return SendBidAsync(submissionToReviewModel, false);
+        return SendBidAsync(openSubmissionModel, false);
     }
 
-    private async Task SendBidAsync(SubmissionToReviewModel submissionToReviewModel, bool wantsToReview)
+    private async Task SendBidAsync(OpenSubmissionModel openSubmissionModel, bool wantsToReview)
     {
         try
         {
-            await _reviewService.SendBidAsync(submissionToReviewModel.Id, wantsToReview);
+            await _reviewService.SendBidAsync(openSubmissionModel.Id, wantsToReview);
         }
         catch (HttpRequestException exception)
         {
@@ -66,12 +66,12 @@ public class SubmissionListViewModel : Conductor<SubmissionToReviewModel>.Collec
 
     protected override async Task OnInitializeAsync(CancellationToken cancellationToken)
     {
-        List<SubmissionToReviewDto> submissionToReviewDtos;
+        List<OpenSubmissionDto> openSubmissionDtos;
 
         try
         {
             IsLoading = true;
-            submissionToReviewDtos = await _reviewService.GetSubmissionsToReviewAsync();
+            openSubmissionDtos = await _reviewService.GetOpenSubmissionsAsync();
         }
         catch (HttpRequestException exception)
         {
@@ -85,9 +85,9 @@ public class SubmissionListViewModel : Conductor<SubmissionToReviewModel>.Collec
             return;
         }
 
-        var submissionToReviewModels = submissionToReviewDtos.Select(dto => new SubmissionToReviewModel(dto));
+        var openSubmissionModels = openSubmissionDtos.Select(dto => new OpenSubmissionModel(dto));
         Items.Clear();
-        Items.AddRange(submissionToReviewModels);
+        Items.AddRange(openSubmissionModels);
         IsLoading = false;
     }
 }

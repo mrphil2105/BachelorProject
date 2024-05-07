@@ -25,14 +25,17 @@ public class ReviewService : IReviewService
         _httpClientFactory = httpClientFactory;
     }
 
-    public async Task<List<SubmissionToReviewDto>> GetSubmissionsToReviewAsync()
+    public async Task<List<OpenSubmissionDto>> GetOpenSubmissionsAsync()
     {
-        var httpClient = _httpClientFactory.CreateClient();
-        using var response = await httpClient.GetAsync("Review/GetSubmissionsToReview");
+        var reviewerId = _sessionService.UserId!.Value;
+        var queryParameters = $"?reviewerId={reviewerId}";
 
-        var submissionsToReviewJson = await response.Content.ReadAsStringAsync();
-        var submissionToReviewDtos = JsonSerializer.Deserialize<List<SubmissionToReviewDto>>(submissionsToReviewJson);
-        return submissionToReviewDtos ?? new List<SubmissionToReviewDto>();
+        var httpClient = _httpClientFactory.CreateClient();
+        using var response = await httpClient.GetAsync($"Review/GetOpenSubmissions{queryParameters}");
+
+        var openSubmissionsJson = await response.Content.ReadAsStringAsync();
+        var openSubmissionDtos = JsonSerializer.Deserialize<List<OpenSubmissionDto>>(openSubmissionsJson);
+        return openSubmissionDtos ?? new List<OpenSubmissionDto>();
     }
 
     public async Task DownloadPaperAsync(Guid submissionId, string paperFilePath)

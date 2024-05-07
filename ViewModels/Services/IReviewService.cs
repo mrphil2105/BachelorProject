@@ -4,7 +4,7 @@ namespace Apachi.ViewModels.Services;
 
 public interface IReviewService
 {
-    Task<List<SubmissionToReviewDto>> GetSubmissionsToReviewAsync();
+    Task<List<OpenSubmissionDto>> GetOpenSubmissionsAsync();
 
     Task DownloadPaperAsync(Guid submissionId, string paperFilePath);
 
