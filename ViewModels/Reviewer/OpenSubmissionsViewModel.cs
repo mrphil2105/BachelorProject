@@ -3,7 +3,7 @@ using Apachi.ViewModels.Services;
 
 namespace Apachi.ViewModels.Reviewer;
 
-public class OpenSubmissionsViewModel : Conductor<OpenSubmissionModel>.Collection.AllActive, IMenuPageViewModel
+public class OpenSubmissionsViewModel : Conductor<OpenSubmissionDto>.Collection.AllActive, IMenuPageViewModel
 {
     private readonly IViewService _viewService;
     private readonly IReviewService _reviewService;
@@ -25,7 +25,7 @@ public class OpenSubmissionsViewModel : Conductor<OpenSubmissionModel>.Collectio
         set => Set(ref _isLoading, value);
     }
 
-    public async Task DownloadPaper(OpenSubmissionModel openSubmissionModel)
+    public async Task DownloadPaper(OpenSubmissionDto openSubmissionDto)
     {
         var paperFilePath = await _viewService.ShowSaveFileDialogAsync(this);
 
@@ -35,27 +35,27 @@ public class OpenSubmissionsViewModel : Conductor<OpenSubmissionModel>.Collectio
         }
 
         await _reviewService.DownloadPaperAsync(
-            openSubmissionModel.Id,
-            openSubmissionModel.PaperSignature,
+            openSubmissionDto.SubmissionId,
+            openSubmissionDto.PaperSignature,
             paperFilePath
         );
     }
 
-    public Task BidReview(OpenSubmissionModel openSubmissionModel)
+    public Task BidReview(OpenSubmissionDto openSubmissionDto)
     {
-        return SendBidAsync(openSubmissionModel, true);
+        return SendBidAsync(openSubmissionDto, true);
     }
 
-    public Task BidAbstain(OpenSubmissionModel openSubmissionModel)
+    public Task BidAbstain(OpenSubmissionDto openSubmissionDto)
     {
-        return SendBidAsync(openSubmissionModel, false);
+        return SendBidAsync(openSubmissionDto, false);
     }
 
-    private async Task SendBidAsync(OpenSubmissionModel openSubmissionModel, bool wantsToReview)
+    private async Task SendBidAsync(OpenSubmissionDto openSubmissionDto, bool wantsToReview)
     {
         try
         {
-            await _reviewService.SendBidAsync(openSubmissionModel.Id, wantsToReview);
+            await _reviewService.SendBidAsync(openSubmissionDto.SubmissionId, wantsToReview);
         }
         catch (HttpRequestException exception)
         {
@@ -89,9 +89,8 @@ public class OpenSubmissionsViewModel : Conductor<OpenSubmissionModel>.Collectio
             return;
         }
 
-        var openSubmissionModels = openSubmissionDtos.Select(dto => new OpenSubmissionModel(dto));
         Items.Clear();
-        Items.AddRange(openSubmissionModels);
+        Items.AddRange(openSubmissionDtos);
         IsLoading = false;
     }
 }
