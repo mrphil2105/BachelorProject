@@ -9,8 +9,8 @@
     x:DataType="vm:MenuViewModel"
     mc:Ignorable="d">
     <DockPanel>
-        <ItemsControl DockPanel.Dock="Left" ItemsSource="{Binding Items}">
-            <ItemsControl.Styles>
+        <DockPanel Background="#222" DockPanel.Dock="Left">
+            <DockPanel.Styles>
                 <Style Selector="Button">
                     <Setter Property="Width" Value="120" />
                     <Setter Property="Padding" Value="15,20" />
@@ -19,16 +19,23 @@
                     <Setter Property="BorderBrush" Value="Gray" />
                     <Setter Property="HorizontalContentAlignment" Value="Center" />
                 </Style>
-            </ItemsControl.Styles>
-            <ItemsControl.ItemTemplate>
-                <DataTemplate DataType="{x:Type vm:IMenuPageViewModel}">
-                    <Button
-                        Command="{e:Action GoToMenuPage}"
-                        CommandParameter="{Binding}"
-                        Content="{Binding PageName}" />
-                </DataTemplate>
-            </ItemsControl.ItemTemplate>
-        </ItemsControl>
+            </DockPanel.Styles>
+            <Button
+                BorderThickness="0"
+                Command="{e:Action Logout}"
+                Content="Logout"
+                DockPanel.Dock="Bottom" />
+            <ItemsControl ItemsSource="{Binding Items}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate DataType="{x:Type vm:IMenuPageViewModel}">
+                        <Button
+                            Command="{e:Action GoToMenuPage}"
+                            CommandParameter="{Binding}"
+                            Content="{Binding PageName}" />
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </DockPanel>
         <ContentControl e:View.Model="{Binding ActiveItem}" />
     </DockPanel>
 </UserControl>
