@@ -56,7 +56,7 @@ public class ReviewController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<IActionResult> CreateBid([FromBody] BidDto bidDto)
+    public async Task<ResultDto> CreateBid([FromBody] BidDto bidDto)
     {
         var submission = await _dbContext.Submissions.FirstOrDefaultAsync(submission =>
             submission.Id == bidDto.SubmissionId
@@ -67,16 +67,16 @@ public class ReviewController : ControllerBase
 
         if (submission == null || review == null)
         {
-            return NotFound();
+            return new ResultDto(false, "The submission or review was not found.");
         }
 
         if (submission.Status != SubmissionStatus.Open || review.Status != ReviewStatus.Open)
         {
-            return BadRequest();
+            return new ResultDto(false, "The submission and review must be open.");
         }
 
         review.Status = bidDto.WantsToReview ? ReviewStatus.Pending : ReviewStatus.Abstain;
         await _dbContext.SaveChangesAsync();
-        return Ok();
+        return new ResultDto(true);
     }
 }

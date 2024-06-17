@@ -1,6 +1,4 @@
 using System.Security.Cryptography;
-using System.Text;
-using System.Text.Json;
 using Apachi.AvaloniaApp.Data;
 using Apachi.Shared.Crypto;
 using Apachi.Shared.Dtos;
@@ -13,40 +11,37 @@ public class ReviewService : IReviewService
 {
     private readonly ISessionService _sessionService;
     private readonly Func<AppDbContext> _dbContextFactory;
-    private readonly IHttpClientFactory _httpClientFactory;
+    private readonly IApiService _apiService;
 
-    public ReviewService(
-        ISessionService sessionService,
-        Func<AppDbContext> dbContextFactory,
-        IHttpClientFactory httpClientFactory
-    )
+    public ReviewService(ISessionService sessionService, Func<AppDbContext> dbContextFactory, IApiService apiService)
     {
         _sessionService = sessionService;
         _dbContextFactory = dbContextFactory;
-        _httpClientFactory = httpClientFactory;
+        _apiService = apiService;
     }
 
     public async Task<List<OpenSubmissionDto>> GetOpenSubmissionsAsync()
     {
         var reviewerId = _sessionService.UserId!.Value;
-        var queryParameters = $"?reviewerId={reviewerId}";
-
-        var httpClient = _httpClientFactory.CreateClient();
-        using var response = await httpClient.GetAsync($"Review/GetOpenSubmissions{queryParameters}");
-
-        var openSubmissionsJson = await response.Content.ReadAsStringAsync();
-        var openSubmissionDtos = JsonSerializer.Deserialize<List<OpenSubmissionDto>>(openSubmissionsJson);
-        return openSubmissionDtos ?? new List<OpenSubmissionDto>();
+        var queryParameters = new Dictionary<string, string>() { { "reviewerId", reviewerId.ToString() } };
+        var openSubmissionDtos = await _apiService
+            .GetAsync<List<OpenSubmissionDto>>("Review/GetOpenSubmissions", queryParameters)
+            .ConfigureAwait(false);
+        return openSubmissionDtos;
     }
 
     public async Task DownloadPaperAsync(Guid submissionId, byte[] paperSignature, string paperFilePath)
     {
         var reviewerId = _sessionService.UserId!.Value;
-        var queryParameters = $"?submissionId={submissionId}&reviewerId={reviewerId}";
+        var queryParameters = new Dictionary<string, string>()
+        {
+            { "submissionId", submissionId.ToString() },
+            { "reviewerId", reviewerId.ToString() }
+        };
 
-        var httpClient = _httpClientFactory.CreateClient();
-        using var response = await httpClient.GetAsync($"Review/GetPaper{queryParameters}");
-        await using var contentStream = await response.Content.ReadAsStreamAsync();
+        await using var contentStream = await _apiService
+            .GetFileAsync("Review/GetPaper", queryParameters)
+            .ConfigureAwait(false);
 
         await using var dbContext = _dbContextFactory();
         var reviewer = await dbContext.Reviewers.SingleOrDefaultAsync(reviewer => reviewer.Id == reviewerId);
@@ -70,11 +65,13 @@ public class ReviewService : IReviewService
     {
         var reviewerId = _sessionService.UserId!.Value;
         var bidDto = new BidDto(submissionId, reviewerId, wantsToReview);
-        var bidJson = JsonSerializer.Serialize(bidDto);
-        var jsonContent = new StringContent(bidJson, Encoding.UTF8, "application/json");
-        var httpClient = _httpClientFactory.CreateClient();
+        var resultDto = await _apiService
+            .PostAsync<BidDto, ResultDto>("Review/CreateBid", bidDto)
+            .ConfigureAwait(false);
 
-        using var response = await httpClient.PostAsync("Review/CreateBid", jsonContent);
-        response.EnsureSuccessStatusCode();
+        if (!resultDto.Success)
+        {
+            throw new OperationFailedException($"Failed to create bid: {resultDto.Message}");
+        }
     }
 }

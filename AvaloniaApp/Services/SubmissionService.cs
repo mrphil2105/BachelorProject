@@ -1,6 +1,4 @@
 using System.Security.Cryptography;
-using System.Text;
-using System.Text.Json;
 using Apachi.AvaloniaApp.Data;
 using Apachi.Shared.Crypto;
 using Apachi.Shared.Dtos;
@@ -12,29 +10,25 @@ public class SubmissionService : ISubmissionService
 {
     private readonly ISessionService _sessionService;
     private readonly Func<AppDbContext> _dbContextFactory;
-    private readonly IHttpClientFactory _httpClientFactory;
+    private readonly IApiService _apiService;
 
     public SubmissionService(
         ISessionService sessionService,
         Func<AppDbContext> dbContextFactory,
-        IHttpClientFactory httpClientFactory
+        IApiService apiService
     )
     {
         _sessionService = sessionService;
         _dbContextFactory = dbContextFactory;
-        _httpClientFactory = httpClientFactory;
+        _apiService = apiService;
     }
 
     public async Task SubmitPaperAsync(string paperFilePath)
     {
-        var (submitDto, submission) = await CreateSubmissionModelsAsync(paperFilePath);
-        var submitJson = JsonSerializer.Serialize(submitDto);
-        var jsonContent = new StringContent(submitJson, Encoding.UTF8, "application/json");
-        var httpClient = _httpClientFactory.CreateClient();
-
-        using var response = await httpClient.PostAsync("Submission/Create", jsonContent);
-        var submittedJson = await response.Content.ReadAsStringAsync();
-        var submittedDto = JsonSerializer.Deserialize<SubmittedDto>(submittedJson)!;
+        var (submitDto, submission) = await CreateSubmissionModelsAsync(paperFilePath).ConfigureAwait(false);
+        var submittedDto = await _apiService
+            .PostAsync<SubmitDto, SubmittedDto>("Submission/Create", submitDto)
+            .ConfigureAwait(false);
 
         var programCommitteePublicKey = KeyUtils.GetProgramCommitteePublicKey();
         var isSignatureValid = await Task.Run(
