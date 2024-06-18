@@ -6,7 +6,7 @@ public static class KeyUtils
 {
     public static async Task<(byte[] PublicKey, byte[] PrivateKey)> GenerateKeyPairAsync()
     {
-        using var rsa = await Task.Run(() => RSA.Create(Constants.DefaultRSAKeySize)).ConfigureAwait(false);
+        using var rsa = await Task.Run(() => RSA.Create(Constants.DefaultRSAKeySize));
         var publicKey = rsa.ExportRSAPublicKey();
         var privateKey = rsa.ExportRSAPrivateKey();
         return (publicKey, privateKey);
@@ -16,8 +16,7 @@ public static class KeyUtils
     {
         using var rsa = RSA.Create(Constants.DefaultRSAKeySize);
         rsa.ImportRSAPrivateKey(privateKey, out _);
-        var signature = await Task.Run(() => rsa.SignData(data, HashAlgorithmName.SHA256, RSASignaturePadding.Pss))
-            .ConfigureAwait(false);
+        var signature = await Task.Run(() => rsa.SignData(data, HashAlgorithmName.SHA256, RSASignaturePadding.Pss));
         return signature;
     }
 
@@ -26,9 +25,8 @@ public static class KeyUtils
         using var rsa = RSA.Create(Constants.DefaultRSAKeySize);
         rsa.ImportRSAPublicKey(publicKey, out _);
         var isValid = await Task.Run(
-                () => rsa.VerifyData(data, signature, HashAlgorithmName.SHA256, RSASignaturePadding.Pss)
-            )
-            .ConfigureAwait(false);
+            () => rsa.VerifyData(data, signature, HashAlgorithmName.SHA256, RSASignaturePadding.Pss)
+        );
         return isValid;
     }
 

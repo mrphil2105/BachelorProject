@@ -24,9 +24,10 @@ public class ReviewService : IReviewService
     {
         var reviewerId = _sessionService.UserId!.Value;
         var queryParameters = new Dictionary<string, string>() { { "reviewerId", reviewerId.ToString() } };
-        var openSubmissionDtos = await _apiService
-            .GetAsync<List<OpenSubmissionDto>>("Review/GetOpenSubmissions", queryParameters)
-            .ConfigureAwait(false);
+        var openSubmissionDtos = await _apiService.GetAsync<List<OpenSubmissionDto>>(
+            "Review/GetOpenSubmissions",
+            queryParameters
+        );
         return openSubmissionDtos;
     }
 
@@ -39,9 +40,7 @@ public class ReviewService : IReviewService
             { "reviewerId", reviewerId.ToString() }
         };
 
-        await using var contentStream = await _apiService
-            .GetFileAsync("Review/GetPaper", queryParameters)
-            .ConfigureAwait(false);
+        await using var contentStream = await _apiService.GetFileAsync("Review/GetPaper", queryParameters);
 
         await using var dbContext = _dbContextFactory();
         var reviewer = await dbContext.Reviewers.SingleOrDefaultAsync(reviewer => reviewer.Id == reviewerId);
@@ -49,9 +48,11 @@ public class ReviewService : IReviewService
 
         var paperBytes = await EncryptionUtils.SymmetricDecryptAsync(contentStream, sharedKey, null);
         var programCommitteePublicKey = KeyUtils.GetProgramCommitteePublicKey();
-        var isSignatureValid = await KeyUtils
-            .VerifySignatureAsync(paperBytes, paperSignature, programCommitteePublicKey)
-            .ConfigureAwait(false);
+        var isSignatureValid = await KeyUtils.VerifySignatureAsync(
+            paperBytes,
+            paperSignature,
+            programCommitteePublicKey
+        );
 
         if (!isSignatureValid)
         {
@@ -65,9 +66,7 @@ public class ReviewService : IReviewService
     {
         var reviewerId = _sessionService.UserId!.Value;
         var bidDto = new BidDto(submissionId, reviewerId, wantsToReview);
-        var resultDto = await _apiService
-            .PostAsync<BidDto, ResultDto>("Review/CreateBid", bidDto)
-            .ConfigureAwait(false);
+        var resultDto = await _apiService.PostAsync<BidDto, ResultDto>("Review/CreateBid", bidDto);
 
         if (!resultDto.Success)
         {

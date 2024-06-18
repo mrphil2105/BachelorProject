@@ -19,8 +19,8 @@ public class ApiService : IApiService
         using var jsonContent = new StringContent(requestJson, Encoding.UTF8, "application/json");
         var httpClient = _httpClientFactory.CreateClient();
 
-        using var responseMessage = await httpClient.PostAsync(path, jsonContent).ConfigureAwait(false);
-        var responseJson = await responseMessage.Content.ReadAsStringAsync().ConfigureAwait(false);
+        using var responseMessage = await httpClient.PostAsync(path, jsonContent);
+        var responseJson = await responseMessage.Content.ReadAsStringAsync();
         var responseContent = JsonSerializer.Deserialize<TResponse>(responseJson)!;
 
         if (responseContent == null)
@@ -36,8 +36,8 @@ public class ApiService : IApiService
         var queryString = EncodeQueryParameters(queryParameters);
         var httpClient = _httpClientFactory.CreateClient();
 
-        using var responseMessage = await httpClient.GetAsync(path + queryString).ConfigureAwait(false);
-        var responseJson = await responseMessage.Content.ReadAsStringAsync().ConfigureAwait(false);
+        using var responseMessage = await httpClient.GetAsync(path + queryString);
+        var responseJson = await responseMessage.Content.ReadAsStringAsync();
         var responseContent = JsonSerializer.Deserialize<TResponse>(responseJson);
 
         if (responseContent == null)
@@ -53,8 +53,8 @@ public class ApiService : IApiService
         var queryString = EncodeQueryParameters(queryParameters);
         var httpClient = _httpClientFactory.CreateClient();
 
-        var responseMessage = await httpClient.GetAsync(path + queryString).ConfigureAwait(false);
-        var contentStream = await responseMessage.Content.ReadAsStreamAsync().ConfigureAwait(false);
+        var responseMessage = await httpClient.GetAsync(path + queryString);
+        var contentStream = await responseMessage.Content.ReadAsStreamAsync();
         return contentStream;
     }
 

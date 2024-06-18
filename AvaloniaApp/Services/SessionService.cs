@@ -45,15 +45,11 @@ public class SessionService : ISessionService
 
         if (isReviewer)
         {
-            reviewer = await dbContext
-                .Reviewers.FirstOrDefaultAsync(reviewer => reviewer.Username == username)
-                .ConfigureAwait(false);
+            reviewer = await dbContext.Reviewers.FirstOrDefaultAsync(reviewer => reviewer.Username == username);
         }
         else
         {
-            submitter = await dbContext
-                .Submitters.FirstOrDefaultAsync(submitter => submitter.Username == username)
-                .ConfigureAwait(false);
+            submitter = await dbContext.Submitters.FirstOrDefaultAsync(submitter => submitter.Username == username);
         }
 
         if (submitter == null && reviewer == null)
@@ -64,7 +60,7 @@ public class SessionService : ISessionService
         var salt = submitter?.PasswordSalt ?? reviewer!.PasswordSalt;
         var userAuthenticationHash = submitter?.AuthenticationHash ?? reviewer!.AuthenticationHash;
 
-        var (aesKey, hmacKey, authenticationHash) = await HashPasswordAsync(password, salt).ConfigureAwait(false);
+        var (aesKey, hmacKey, authenticationHash) = await HashPasswordAsync(password, salt);
 
         if (!authenticationHash.SequenceEqual(userAuthenticationHash))
         {
@@ -82,8 +78,8 @@ public class SessionService : ISessionService
     {
         await using var dbContext = _dbContextFactory();
         var hasExistingUser = isReviewer
-            ? await dbContext.Reviewers.AnyAsync(reviewer => reviewer.Username == username).ConfigureAwait(false)
-            : await dbContext.Submitters.AnyAsync(submitter => submitter.Username == username).ConfigureAwait(false);
+            ? await dbContext.Reviewers.AnyAsync(reviewer => reviewer.Username == username)
+            : await dbContext.Submitters.AnyAsync(submitter => submitter.Username == username);
 
         if (hasExistingUser)
         {
@@ -91,7 +87,7 @@ public class SessionService : ISessionService
         }
 
         var salt = RandomNumberGenerator.GetBytes(16);
-        var (aesKey, hmacKey, authenticationHash) = await HashPasswordAsync(password, salt).ConfigureAwait(false);
+        var (aesKey, hmacKey, authenticationHash) = await HashPasswordAsync(password, salt);
 
         if (isReviewer)
         {
@@ -104,7 +100,7 @@ public class SessionService : ISessionService
             dbContext.Submitters.Add(submitter);
         }
 
-        await dbContext.SaveChangesAsync().ConfigureAwait(false);
+        await dbContext.SaveChangesAsync();
         return true;
     }
 
@@ -135,7 +131,7 @@ public class SessionService : ISessionService
         byte[] authenticationHash
     )
     {
-        var (publicKey, privateKey) = await KeyUtils.GenerateKeyPairAsync().ConfigureAwait(false);
+        var (publicKey, privateKey) = await KeyUtils.GenerateKeyPairAsync();
 
         var registerDto = new ReviewerRegisterDto(publicKey);
         var registerJson = JsonSerializer.Serialize(registerDto);
@@ -145,9 +141,7 @@ public class SessionService : ISessionService
         using var response = await httpClient.PostAsync("Reviewer/Register", jsonContent);
         var registeredJson = await response.Content.ReadAsStringAsync();
         var registeredDto = JsonSerializer.Deserialize<ReviewerRegisteredDto>(registeredJson)!;
-        var sharedKey = await EncryptionUtils
-            .AsymmetricDecryptAsync(registeredDto.EncryptedSharedKey, privateKey)
-            .ConfigureAwait(false);
+        var sharedKey = await EncryptionUtils.AsymmetricDecryptAsync(registeredDto.EncryptedSharedKey, privateKey);
 
         var encryptedPrivateKey = await EncryptionUtils.SymmetricEncryptAsync(privateKey, aesKey, hmacKey);
         var encryptedSharedKey = await EncryptionUtils.SymmetricEncryptAsync(sharedKey, aesKey, hmacKey);
@@ -169,14 +163,12 @@ public class SessionService : ISessionService
         byte[] salt
     )
     {
-        var derivedKey = await Task
-            .Factory.StartNew(
-                () => Rfc2898DeriveBytes.Pbkdf2(password, salt, HashIterations, HashAlgorithmName.SHA512, 64),
-                default,
-                TaskCreationOptions.LongRunning,
-                TaskScheduler.Default
-            )
-            .ConfigureAwait(false);
+        var derivedKey = await Task.Factory.StartNew(
+            () => Rfc2898DeriveBytes.Pbkdf2(password, salt, HashIterations, HashAlgorithmName.SHA512, 64),
+            default,
+            TaskCreationOptions.LongRunning,
+            TaskScheduler.Default
+        );
         var aesKey = new byte[32];
         var hmacKey = new byte[32];
         Buffer.BlockCopy(derivedKey, 0, aesKey, 0, 32);
