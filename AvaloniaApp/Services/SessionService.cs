@@ -61,17 +61,10 @@ public class SessionService : ISessionService
             return false;
         }
 
-        var passwordSalt = submitter?.PasswordSalt ?? reviewer!.PasswordSalt;
+        var salt = submitter?.PasswordSalt ?? reviewer!.PasswordSalt;
         var userAuthenticationHash = submitter?.AuthenticationHash ?? reviewer!.AuthenticationHash;
 
-        var (aesKey, hmacKey, authenticationHash) = await Task
-            .Factory.StartNew(
-                () => HashPassword(password, passwordSalt),
-                default,
-                TaskCreationOptions.LongRunning,
-                TaskScheduler.Default
-            )
-            .ConfigureAwait(false);
+        var (aesKey, hmacKey, authenticationHash) = await HashPasswordAsync(password, salt).ConfigureAwait(false);
 
         if (!authenticationHash.SequenceEqual(userAuthenticationHash))
         {
@@ -98,14 +91,7 @@ public class SessionService : ISessionService
         }
 
         var salt = RandomNumberGenerator.GetBytes(16);
-        var (aesKey, hmacKey, authenticationHash) = await Task
-            .Factory.StartNew(
-                () => HashPassword(password, salt),
-                default,
-                TaskCreationOptions.LongRunning,
-                TaskScheduler.Default
-            )
-            .ConfigureAwait(false);
+        var (aesKey, hmacKey, authenticationHash) = await HashPasswordAsync(password, salt).ConfigureAwait(false);
 
         if (isReviewer)
         {
@@ -149,7 +135,7 @@ public class SessionService : ISessionService
         byte[] authenticationHash
     )
     {
-        var (publicKey, privateKey) = await Task.Run(KeyUtils.GenerateKeyPair);
+        var (publicKey, privateKey) = await KeyUtils.GenerateKeyPairAsync().ConfigureAwait(false);
 
         var registerDto = new ReviewerRegisterDto(publicKey);
         var registerJson = JsonSerializer.Serialize(registerDto);
@@ -159,7 +145,9 @@ public class SessionService : ISessionService
         using var response = await httpClient.PostAsync("Reviewer/Register", jsonContent);
         var registeredJson = await response.Content.ReadAsStringAsync();
         var registeredDto = JsonSerializer.Deserialize<ReviewerRegisteredDto>(registeredJson)!;
-        var sharedKey = EncryptionUtils.AsymmetricDecrypt(registeredDto.EncryptedSharedKey, privateKey);
+        var sharedKey = await EncryptionUtils
+            .AsymmetricDecryptAsync(registeredDto.EncryptedSharedKey, privateKey)
+            .ConfigureAwait(false);
 
         var encryptedPrivateKey = await EncryptionUtils.SymmetricEncryptAsync(privateKey, aesKey, hmacKey);
         var encryptedSharedKey = await EncryptionUtils.SymmetricEncryptAsync(sharedKey, aesKey, hmacKey);
@@ -176,9 +164,19 @@ public class SessionService : ISessionService
         return reviewer;
     }
 
-    private static (byte[] AesKey, byte[] HmacKey, byte[] AuthenticationHash) HashPassword(string password, byte[] salt)
+    private static async Task<(byte[] AesKey, byte[] HmacKey, byte[] AuthenticationHash)> HashPasswordAsync(
+        string password,
+        byte[] salt
+    )
     {
-        var derivedKey = Rfc2898DeriveBytes.Pbkdf2(password, salt, HashIterations, HashAlgorithmName.SHA512, 64);
+        var derivedKey = await Task
+            .Factory.StartNew(
+                () => Rfc2898DeriveBytes.Pbkdf2(password, salt, HashIterations, HashAlgorithmName.SHA512, 64),
+                default,
+                TaskCreationOptions.LongRunning,
+                TaskScheduler.Default
+            )
+            .ConfigureAwait(false);
         var aesKey = new byte[32];
         var hmacKey = new byte[32];
         Buffer.BlockCopy(derivedKey, 0, aesKey, 0, 32);

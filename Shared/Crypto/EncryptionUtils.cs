@@ -178,26 +178,27 @@ public static class EncryptionUtils
         }
     }
 
-    public static byte[] AsymmetricEncrypt(byte[] value, byte[] publicKey)
+    public static async Task<byte[]> AsymmetricEncryptAsync(byte[] value, byte[] publicKey)
     {
         using var rsa = RSA.Create(Constants.DefaultRSAKeySize);
         rsa.ImportRSAPublicKey(publicKey, out _);
-        var encrypted = rsa.Encrypt(value, RSAEncryptionPadding.OaepSHA256);
+        var encrypted = await Task.Run(() => rsa.Encrypt(value, RSAEncryptionPadding.OaepSHA256)).ConfigureAwait(false);
         return encrypted;
     }
 
-    public static byte[] AsymmetricDecrypt(byte[] encrypted, byte[] privateKey)
+    public static async Task<byte[]> AsymmetricDecryptAsync(byte[] encrypted, byte[] privateKey)
     {
         using var rsa = RSA.Create(Constants.DefaultRSAKeySize);
         rsa.ImportRSAPrivateKey(privateKey, out _);
-        var decrypted = rsa.Decrypt(encrypted, RSAEncryptionPadding.OaepSHA256);
+        var decrypted = await Task.Run(() => rsa.Decrypt(encrypted, RSAEncryptionPadding.OaepSHA256))
+            .ConfigureAwait(false);
         return decrypted;
     }
 
     public static async Task<byte[]> AsymmetricLargeEncryptAsync(byte[] value, byte[] publicKey)
     {
         var key = RandomNumberGenerator.GetBytes(32);
-        var encryptedKey = await Task.Run(() => AsymmetricEncrypt(key, publicKey)).ConfigureAwait(false);
+        var encryptedKey = await AsymmetricEncryptAsync(key, publicKey).ConfigureAwait(false);
 
         var lengthPrefix = new byte[sizeof(ushort)];
         BinaryPrimitives.WriteUInt16BigEndian(lengthPrefix, (ushort)encryptedKey.Length);
@@ -221,7 +222,7 @@ public static class EncryptionUtils
         var encryptedKey = new byte[encryptedKeyLength];
         await inputStream.ReadAsync(encryptedKey).ConfigureAwait(false);
 
-        var key = await Task.Run(() => AsymmetricDecrypt(encryptedKey, privateKey)).ConfigureAwait(false);
+        var key = await AsymmetricDecryptAsync(encryptedKey, privateKey).ConfigureAwait(false);
         return await SymmetricDecryptAsync(inputStream, key, null).ConfigureAwait(false);
     }
 }

@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 
 if (args.Length > 0 && args[0] == "--generate-keypair")
 {
-    var (publicKey, privateKey) = KeyUtils.GenerateKeyPair();
+    var (publicKey, privateKey) = await KeyUtils.GenerateKeyPairAsync();
     var publicKeyBase64 = Convert.ToBase64String(publicKey);
     var privateKeyBase64 = Convert.ToBase64String(privateKey);
     Console.WriteLine("Public Key: {0}", publicKeyBase64);

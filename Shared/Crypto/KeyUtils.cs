@@ -4,27 +4,31 @@ namespace Apachi.Shared.Crypto;
 
 public static class KeyUtils
 {
-    public static (byte[] PublicKey, byte[] PrivateKey) GenerateKeyPair()
+    public static async Task<(byte[] PublicKey, byte[] PrivateKey)> GenerateKeyPairAsync()
     {
-        using var rsa = RSA.Create(Constants.DefaultRSAKeySize);
+        using var rsa = await Task.Run(() => RSA.Create(Constants.DefaultRSAKeySize)).ConfigureAwait(false);
         var publicKey = rsa.ExportRSAPublicKey();
         var privateKey = rsa.ExportRSAPrivateKey();
         return (publicKey, privateKey);
     }
 
-    public static byte[] CalculateSignature(byte[] data, byte[] privateKey)
+    public static async Task<byte[]> CalculateSignatureAsync(byte[] data, byte[] privateKey)
     {
         using var rsa = RSA.Create(Constants.DefaultRSAKeySize);
         rsa.ImportRSAPrivateKey(privateKey, out _);
-        var signature = rsa.SignData(data, HashAlgorithmName.SHA256, RSASignaturePadding.Pss);
+        var signature = await Task.Run(() => rsa.SignData(data, HashAlgorithmName.SHA256, RSASignaturePadding.Pss))
+            .ConfigureAwait(false);
         return signature;
     }
 
-    public static bool VerifySignature(byte[] data, byte[] signature, byte[] publicKey)
+    public static async Task<bool> VerifySignatureAsync(byte[] data, byte[] signature, byte[] publicKey)
     {
         using var rsa = RSA.Create(Constants.DefaultRSAKeySize);
         rsa.ImportRSAPublicKey(publicKey, out _);
-        var isValid = rsa.VerifyData(data, signature, HashAlgorithmName.SHA256, RSASignaturePadding.Pss);
+        var isValid = await Task.Run(
+                () => rsa.VerifyData(data, signature, HashAlgorithmName.SHA256, RSASignaturePadding.Pss)
+            )
+            .ConfigureAwait(false);
         return isValid;
     }
 

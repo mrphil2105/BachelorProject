@@ -49,9 +49,9 @@ public class ReviewService : IReviewService
 
         var paperBytes = await EncryptionUtils.SymmetricDecryptAsync(contentStream, sharedKey, null);
         var programCommitteePublicKey = KeyUtils.GetProgramCommitteePublicKey();
-        var isSignatureValid = await Task.Run(
-            () => KeyUtils.VerifySignature(paperBytes, paperSignature, programCommitteePublicKey)
-        );
+        var isSignatureValid = await KeyUtils
+            .VerifySignatureAsync(paperBytes, paperSignature, programCommitteePublicKey)
+            .ConfigureAwait(false);
 
         if (!isSignatureValid)
         {

@@ -32,17 +32,17 @@ public class SubmissionController : ControllerBase
     [HttpPost]
     public async Task<SubmittedDto> Create([FromBody] SubmitDto submitDto)
     {
-        ThrowIfInvalidSubmissionSignature(submitDto);
+        await ThrowIfInvalidSubmissionSignatureAsync(submitDto);
 
         var programCommitteePrivateKey = KeyUtils.GetProgramCommitteePrivateKey();
-        var submissionCommitmentSignature = KeyUtils.CalculateSignature(
+        var submissionCommitmentSignature = await KeyUtils.CalculateSignatureAsync(
             submitDto.SubmissionCommitment,
             programCommitteePrivateKey
         );
 
         var submissionId = Guid.NewGuid();
         var paperBytes = await SavePaperAsync(submitDto, submissionId);
-        var paperSignature = KeyUtils.CalculateSignature(paperBytes, programCommitteePrivateKey);
+        var paperSignature = await KeyUtils.CalculateSignatureAsync(paperBytes, programCommitteePrivateKey);
 
         var createdDate = DateTimeOffset.Now;
         var submission = new Submission
@@ -68,7 +68,7 @@ public class SubmissionController : ControllerBase
         return submittedDto;
     }
 
-    private void ThrowIfInvalidSubmissionSignature(SubmitDto submitDto)
+    private async Task ThrowIfInvalidSubmissionSignatureAsync(SubmitDto submitDto)
     {
         var bytesToVerified = DataUtils.CombineByteArrays(
             submitDto.EncryptedPaper,
@@ -78,7 +78,7 @@ public class SubmissionController : ControllerBase
             submitDto.SubmissionCommitment,
             submitDto.IdentityCommitment
         );
-        var isValid = KeyUtils.VerifySignature(
+        var isValid = await KeyUtils.VerifySignatureAsync(
             bytesToVerified,
             submitDto.SubmissionSignature,
             submitDto.SubmissionPublicKey
@@ -93,7 +93,7 @@ public class SubmissionController : ControllerBase
     private async Task<byte[]> SavePaperAsync(SubmitDto submitDto, Guid submissionId)
     {
         var programCommitteePrivateKey = KeyUtils.GetProgramCommitteePrivateKey();
-        var submissionKey = EncryptionUtils.AsymmetricDecrypt(
+        var submissionKey = await EncryptionUtils.AsymmetricDecryptAsync(
             submitDto.EncryptedSubmissionKey,
             programCommitteePrivateKey
         );

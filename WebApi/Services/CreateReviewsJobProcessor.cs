@@ -39,7 +39,10 @@ public class CreateReviewsJobProcessor : IJobProcessor
                 continue;
             }
 
-            var sharedKey = EncryptionUtils.AsymmetricDecrypt(reviewer.EncryptedSharedKey, programCommitteePrivateKey);
+            var sharedKey = await EncryptionUtils.AsymmetricDecryptAsync(
+                reviewer.EncryptedSharedKey,
+                programCommitteePrivateKey
+            );
             await SavePaperAsync(submissionId, reviewer.Id, paperBytes, sharedKey);
 
             var review = new Review { SubmissionId = submissionId, ReviewerId = reviewer.Id };

@@ -31,14 +31,13 @@ public class SubmissionService : ISubmissionService
             .ConfigureAwait(false);
 
         var programCommitteePublicKey = KeyUtils.GetProgramCommitteePublicKey();
-        var isSignatureValid = await Task.Run(
-            () =>
-                KeyUtils.VerifySignature(
-                    submitDto.SubmissionCommitment,
-                    submittedDto.SubmissionCommitmentSignature,
-                    programCommitteePublicKey
-                )
-        );
+        var isSignatureValid = await KeyUtils
+            .VerifySignatureAsync(
+                submitDto.SubmissionCommitment,
+                submittedDto.SubmissionCommitmentSignature,
+                programCommitteePublicKey
+            )
+            .ConfigureAwait(false);
 
         if (!isSignatureValid)
         {
@@ -57,8 +56,7 @@ public class SubmissionService : ISubmissionService
     // See Apachi Chapter 5.2.1
     private async Task<(SubmitDto SubmitDto, Submission Submission)> CreateSubmissionModelsAsync(string paperFilePath)
     {
-        var (submissionPublicKey, submissionPrivateKey) = await Task.Run(KeyUtils.GenerateKeyPair)
-            .ConfigureAwait(false);
+        var (submissionPublicKey, submissionPrivateKey) = await KeyUtils.GenerateKeyPairAsync().ConfigureAwait(false);
         var paperBytes = await File.ReadAllBytesAsync(paperFilePath);
         var (encryptedPaper, encryptedSubmissionKey) = await EncryptPaperAsync(paperBytes).ConfigureAwait(false);
 
@@ -85,7 +83,9 @@ public class SubmissionService : ISubmissionService
             submissionCommitmentBytes,
             identityCommitmentBytes
         );
-        var submissionSignature = KeyUtils.CalculateSignature(bytesToBeSigned, submissionPrivateKey);
+        var submissionSignature = await KeyUtils
+            .CalculateSignatureAsync(bytesToBeSigned, submissionPrivateKey)
+            .ConfigureAwait(false);
 
         var submitDto = new SubmitDto(
             encryptedPaper,
@@ -108,9 +108,9 @@ public class SubmissionService : ISubmissionService
         var submissionKey = RandomNumberGenerator.GetBytes(32);
 
         var encryptedPaper = await EncryptionUtils.SymmetricEncryptAsync(paperBytes, submissionKey, null);
-        var encryptedSubmissionKey = await Task.Run(
-            () => EncryptionUtils.AsymmetricEncrypt(submissionKey, programCommitteePublicKey)
-        );
+        var encryptedSubmissionKey = await EncryptionUtils
+            .AsymmetricEncryptAsync(submissionKey, programCommitteePublicKey)
+            .ConfigureAwait(false);
         return (encryptedPaper, encryptedSubmissionKey);
     }
 

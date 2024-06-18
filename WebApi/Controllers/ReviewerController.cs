@@ -37,7 +37,7 @@ public class ReviewerController : ControllerBase
         var programCommitteePublicKey = KeyUtils.GetProgramCommitteePublicKey();
         var sharedKey = RandomNumberGenerator.GetBytes(32);
 
-        var programCommitteeEncryptedSharedKey = EncryptionUtils.AsymmetricEncrypt(
+        var programCommitteeEncryptedSharedKey = await EncryptionUtils.AsymmetricEncryptAsync(
             sharedKey,
             programCommitteePublicKey
         );
@@ -59,7 +59,10 @@ public class ReviewerController : ControllerBase
             await _jobScheduler.ScheduleJobAsync(JobType.CreateReviews, openSubmission.Id.ToString());
         }
 
-        var reviewerEncryptedSharedKey = EncryptionUtils.AsymmetricEncrypt(sharedKey, registerDto.ReviewerPublicKey);
+        var reviewerEncryptedSharedKey = await EncryptionUtils.AsymmetricEncryptAsync(
+            sharedKey,
+            registerDto.ReviewerPublicKey
+        );
         var registeredDto = new ReviewerRegisteredDto(reviewer.Id, reviewerEncryptedSharedKey);
 
         _logger.LogInformation("Reviewer registered new account with id: {Id}", reviewer.Id);
