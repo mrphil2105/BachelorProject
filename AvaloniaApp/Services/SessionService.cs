@@ -1,6 +1,4 @@
 using System.Security.Cryptography;
-using System.Text;
-using System.Text.Json;
 using Apachi.AvaloniaApp.Data;
 using Apachi.Shared.Crypto;
 using Apachi.Shared.Dtos;
@@ -14,15 +12,15 @@ public class SessionService : ISessionService
     private const int HashIterations = 250_000;
 
     private readonly Func<AppDbContext> _dbContextFactory;
-    private readonly IHttpClientFactory _httpClientFactory;
+    private readonly IApiService _apiService;
 
     private Submitter? _submitter;
     private Reviewer? _reviewer;
 
-    public SessionService(Func<AppDbContext> dbContextFactory, IHttpClientFactory httpClientFactory)
+    public SessionService(Func<AppDbContext> dbContextFactory, IApiService apiService)
     {
         _dbContextFactory = dbContextFactory;
-        _httpClientFactory = httpClientFactory;
+        _apiService = apiService;
     }
 
     public bool IsLoggedIn => (_submitter != null || _reviewer != null) && AesKey != null && HmacKey != null;
@@ -134,13 +132,11 @@ public class SessionService : ISessionService
         var (publicKey, privateKey) = await KeyUtils.GenerateKeyPairAsync();
 
         var registerDto = new ReviewerRegisterDto(publicKey);
-        var registerJson = JsonSerializer.Serialize(registerDto);
-        var jsonContent = new StringContent(registerJson, Encoding.UTF8, "application/json");
+        var registeredDto = await _apiService.PostAsync<ReviewerRegisterDto, ReviewerRegisteredDto>(
+            "Reviewer/Register",
+            registerDto
+        );
 
-        var httpClient = _httpClientFactory.CreateClient();
-        using var response = await httpClient.PostAsync("Reviewer/Register", jsonContent);
-        var registeredJson = await response.Content.ReadAsStringAsync();
-        var registeredDto = JsonSerializer.Deserialize<ReviewerRegisteredDto>(registeredJson)!;
         var sharedKey = await EncryptionUtils.AsymmetricDecryptAsync(registeredDto.EncryptedSharedKey, privateKey);
 
         var encryptedPrivateKey = await EncryptionUtils.SymmetricEncryptAsync(privateKey, aesKey, hmacKey);
