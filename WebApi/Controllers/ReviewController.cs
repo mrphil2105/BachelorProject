@@ -1,4 +1,5 @@
 using Apachi.Shared;
+using Apachi.Shared.Crypto;
 using Apachi.Shared.Dtos;
 using Apachi.WebApi.Data;
 using Microsoft.AspNetCore.Mvc;
@@ -56,13 +57,29 @@ public class ReviewController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<ResultDto> CreateBid([FromBody] BidDto bidDto)
+    public async Task<ResultDto> CreateBid([FromBody] EncryptedSignedDto encryptedSignedDto)
     {
+        var programCommitteePrivateKey = KeyUtils.GetProgramCommitteePrivateKey();
+        var reviewer = await _dbContext.Reviewers.FirstOrDefaultAsync(reviewer =>
+            reviewer.Id == encryptedSignedDto.Identifier
+        );
+
+        if (reviewer == null)
+        {
+            return new ResultDto(false, "The reviewer was not found.");
+        }
+
+        var sharedKey = await EncryptionUtils.AsymmetricDecryptAsync(
+            reviewer.EncryptedSharedKey,
+            programCommitteePrivateKey
+        );
+        var bidDto = await encryptedSignedDto.ToDtoAsync<BidDto>(sharedKey, reviewer.ReviewerPublicKey);
+
         var submission = await _dbContext.Submissions.FirstOrDefaultAsync(submission =>
             submission.Id == bidDto.SubmissionId
         );
         var review = await _dbContext.Reviews.FirstOrDefaultAsync(review =>
-            review.SubmissionId == bidDto.SubmissionId && review.ReviewerId == bidDto.ReviewerId
+            review.SubmissionId == bidDto.SubmissionId && review.ReviewerId == encryptedSignedDto.Identifier
         );
 
         if (submission == null || review == null)
@@ -77,6 +94,24 @@ public class ReviewController : ControllerBase
 
         review.Status = bidDto.WantsToReview ? ReviewStatus.Pending : ReviewStatus.Abstain;
         await _dbContext.SaveChangesAsync();
+
+        if (bidDto.WantsToReview)
+        {
+            _logger.LogInformation(
+                "Reviewer ({ReviewerId}) has chosen to review submission ({SubmissionId})",
+                reviewer.Id,
+                bidDto.SubmissionId
+            );
+        }
+        else
+        {
+            _logger.LogInformation(
+                "Reviewer ({ReviewerId}) has chosen to abstain from reviewing submission ({SubmissionId})",
+                reviewer.Id,
+                bidDto.SubmissionId
+            );
+        }
+
         return new ResultDto(true);
     }
 }

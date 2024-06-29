@@ -43,7 +43,7 @@ public class ReviewService : IReviewService
         await using var contentStream = await _apiService.GetFileAsync("Review/GetPaper", queryParameters);
 
         await using var dbContext = _dbContextFactory();
-        var reviewer = await dbContext.Reviewers.SingleOrDefaultAsync(reviewer => reviewer.Id == reviewerId);
+        var reviewer = await dbContext.Reviewers.FirstOrDefaultAsync(reviewer => reviewer.Id == reviewerId);
         var sharedKey = await _sessionService.SymmetricDecryptAsync(reviewer!.EncryptedSharedKey);
 
         var paperBytes = await EncryptionUtils.SymmetricDecryptAsync(contentStream, sharedKey, null);
@@ -65,8 +65,20 @@ public class ReviewService : IReviewService
     public async Task SendBidAsync(Guid submissionId, bool wantsToReview)
     {
         var reviewerId = _sessionService.UserId!.Value;
-        var bidDto = new BidDto(submissionId, reviewerId, wantsToReview);
-        var resultDto = await _apiService.PostAsync<BidDto, ResultDto>("Review/CreateBid", bidDto);
+        await using var dbContext = _dbContextFactory();
+        var reviewer = await dbContext.Reviewers.FirstOrDefaultAsync(reviewer => reviewer.Id == reviewerId);
+
+        var privateKey = await _sessionService.SymmetricDecryptAsync(reviewer!.EncryptedPrivateKey);
+        var sharedKey = await _sessionService.SymmetricDecryptAsync(reviewer.EncryptedSharedKey);
+
+        var bidDto = new BidDto(submissionId, wantsToReview);
+        var resultDto = await _apiService.PostEncryptedSignedAsync<BidDto, ResultDto>(
+            "Review/CreateBid",
+            bidDto,
+            reviewerId,
+            sharedKey,
+            privateKey
+        );
 
         if (!resultDto.Success)
         {
