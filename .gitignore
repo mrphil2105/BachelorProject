@@ -398,6 +398,9 @@ FodyWeavers.xsd
 *.sln.iml
 .idea/
 
+# Neovim
+run.toml
+
 # SQLite
 App.db
 App.db-shm
@@ -405,3 +408,5 @@ App.db-wal
 
 # Storage
 papers/
+submissions/
+reviews/

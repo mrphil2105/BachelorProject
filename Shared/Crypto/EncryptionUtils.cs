@@ -8,20 +8,20 @@ public static class EncryptionUtils
     public static async Task<byte[]> SymmetricEncryptAsync(byte[] value, byte[] aesKey, byte[]? hmacKey)
     {
         await using var inputStream = new MemoryStream(value);
-        return await SymmetricEncryptAsync(inputStream, aesKey, hmacKey).ConfigureAwait(false);
+        return await SymmetricEncryptAsync(inputStream, aesKey, hmacKey);
     }
 
     public static async Task<byte[]> SymmetricEncryptAsync(Stream inputStream, byte[] aesKey, byte[]? hmacKey)
     {
         await using var outputStream = new MemoryStream();
-        await SymmetricEncryptAsync(inputStream, outputStream, aesKey, hmacKey).ConfigureAwait(false);
+        await SymmetricEncryptAsync(inputStream, outputStream, aesKey, hmacKey);
         return outputStream.ToArray();
     }
 
     public static async Task SymmetricEncryptAsync(byte[] value, Stream outputStream, byte[] aesKey, byte[]? hmacKey)
     {
         await using var inputStream = new MemoryStream(value);
-        await SymmetricEncryptAsync(inputStream, outputStream, aesKey, hmacKey).ConfigureAwait(false);
+        await SymmetricEncryptAsync(inputStream, outputStream, aesKey, hmacKey);
     }
 
     public static async Task SymmetricEncryptAsync(
@@ -62,20 +62,20 @@ public static class EncryptionUtils
 
         try
         {
-            await outputStream.WriteAsync(aes.IV).ConfigureAwait(false);
-            await inputStream.CopyToAsync(cryptoStream).ConfigureAwait(false);
-            await cryptoStream.FlushFinalBlockAsync().ConfigureAwait(false);
+            await outputStream.WriteAsync(aes.IV);
+            await inputStream.CopyToAsync(cryptoStream);
+            await cryptoStream.FlushFinalBlockAsync();
 
             // Check if we need to write the HMAC to initial position.
             if (hmac != null)
             {
                 outputStream.Position = initialPosition;
-                await outputStream.WriteAsync(hmac.Hash).ConfigureAwait(false);
+                await outputStream.WriteAsync(hmac.Hash);
             }
         }
         finally
         {
-            await cryptoStream.DisposeAsync().ConfigureAwait(false);
+            await cryptoStream.DisposeAsync();
             hmac?.Dispose();
         }
     }
@@ -83,13 +83,13 @@ public static class EncryptionUtils
     public static async Task<byte[]> SymmetricDecryptAsync(byte[] encrypted, byte[] aesKey, byte[]? hmacKey)
     {
         await using var inputStream = new MemoryStream(encrypted);
-        return await SymmetricDecryptAsync(inputStream, aesKey, hmacKey).ConfigureAwait(false);
+        return await SymmetricDecryptAsync(inputStream, aesKey, hmacKey);
     }
 
     public static async Task<byte[]> SymmetricDecryptAsync(Stream inputStream, byte[] aesKey, byte[]? hmacKey)
     {
         await using var outputStream = new MemoryStream();
-        await SymmetricDecryptAsync(inputStream, outputStream, aesKey, hmacKey).ConfigureAwait(false);
+        await SymmetricDecryptAsync(inputStream, outputStream, aesKey, hmacKey);
         return outputStream.ToArray();
     }
 
@@ -101,7 +101,7 @@ public static class EncryptionUtils
     )
     {
         await using var inputStream = new MemoryStream(encrypted);
-        await SymmetricDecryptAsync(inputStream, outputStream, aesKey, hmacKey).ConfigureAwait(false);
+        await SymmetricDecryptAsync(inputStream, outputStream, aesKey, hmacKey);
     }
 
     public static async Task SymmetricDecryptAsync(
@@ -132,15 +132,15 @@ public static class EncryptionUtils
             if (hmacKey != null)
             {
                 hash = new byte[32];
-                await inputStream.ReadAsync(hash).ConfigureAwait(false);
-                await inputStream.ReadAsync(iv).ConfigureAwait(false);
+                await inputStream.ReadAsync(hash);
+                await inputStream.ReadAsync(iv);
 
                 hmac = new HMACSHA256(hmacKey);
                 hmacStream = new CryptoStream(inputStream, hmac, CryptoStreamMode.Read, true);
             }
             else
             {
-                await inputStream.ReadAsync(iv).ConfigureAwait(false);
+                await inputStream.ReadAsync(iv);
             }
 
             using var aes = Aes.Create();
@@ -155,7 +155,7 @@ public static class EncryptionUtils
                 true
             );
 
-            await aesStream.CopyToAsync(outputStream).ConfigureAwait(false);
+            await aesStream.CopyToAsync(outputStream);
 
             if (hmac != null)
             {
@@ -171,41 +171,41 @@ public static class EncryptionUtils
         {
             if (hmacStream != null)
             {
-                await hmacStream.DisposeAsync().ConfigureAwait(false);
+                await hmacStream.DisposeAsync();
             }
 
             hmac?.Dispose();
         }
     }
 
-    public static byte[] AsymmetricEncrypt(byte[] value, byte[] publicKey)
+    public static async Task<byte[]> AsymmetricEncryptAsync(byte[] value, byte[] publicKey)
     {
         using var rsa = RSA.Create(Constants.DefaultRSAKeySize);
         rsa.ImportRSAPublicKey(publicKey, out _);
-        var encrypted = rsa.Encrypt(value, RSAEncryptionPadding.OaepSHA256);
+        var encrypted = await Task.Run(() => rsa.Encrypt(value, RSAEncryptionPadding.OaepSHA256));
         return encrypted;
     }
 
-    public static byte[] AsymmetricDecrypt(byte[] encrypted, byte[] privateKey)
+    public static async Task<byte[]> AsymmetricDecryptAsync(byte[] encrypted, byte[] privateKey)
     {
         using var rsa = RSA.Create(Constants.DefaultRSAKeySize);
         rsa.ImportRSAPrivateKey(privateKey, out _);
-        var decrypted = rsa.Decrypt(encrypted, RSAEncryptionPadding.OaepSHA256);
+        var decrypted = await Task.Run(() => rsa.Decrypt(encrypted, RSAEncryptionPadding.OaepSHA256));
         return decrypted;
     }
 
     public static async Task<byte[]> AsymmetricLargeEncryptAsync(byte[] value, byte[] publicKey)
     {
         var key = RandomNumberGenerator.GetBytes(32);
-        var encryptedKey = await Task.Run(() => AsymmetricEncrypt(key, publicKey)).ConfigureAwait(false);
+        var encryptedKey = await AsymmetricEncryptAsync(key, publicKey);
 
         var lengthPrefix = new byte[sizeof(ushort)];
         BinaryPrimitives.WriteUInt16BigEndian(lengthPrefix, (ushort)encryptedKey.Length);
 
         await using var outputStream = new MemoryStream();
-        await outputStream.WriteAsync(lengthPrefix).ConfigureAwait(false);
-        await outputStream.WriteAsync(encryptedKey).ConfigureAwait(false);
-        await SymmetricEncryptAsync(value, outputStream, key, null).ConfigureAwait(false);
+        await outputStream.WriteAsync(lengthPrefix);
+        await outputStream.WriteAsync(encryptedKey);
+        await SymmetricEncryptAsync(value, outputStream, key, null);
 
         return outputStream.ToArray();
     }
@@ -215,13 +215,13 @@ public static class EncryptionUtils
         await using var inputStream = new MemoryStream(value);
 
         var lengthPrefix = new byte[sizeof(ushort)];
-        await inputStream.ReadAsync(lengthPrefix).ConfigureAwait(false);
+        await inputStream.ReadAsync(lengthPrefix);
         var encryptedKeyLength = BinaryPrimitives.ReadUInt16BigEndian(lengthPrefix);
 
         var encryptedKey = new byte[encryptedKeyLength];
-        await inputStream.ReadAsync(encryptedKey).ConfigureAwait(false);
+        await inputStream.ReadAsync(encryptedKey);
 
-        var key = await Task.Run(() => AsymmetricDecrypt(encryptedKey, privateKey)).ConfigureAwait(false);
-        return await SymmetricDecryptAsync(inputStream, key, null).ConfigureAwait(false);
+        var key = await AsymmetricDecryptAsync(encryptedKey, privateKey);
+        return await SymmetricDecryptAsync(inputStream, key, null);
     }
 }

@@ -3,6 +3,7 @@ using System;
 using Apachi.WebApi.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Apachi.WebApi.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240501150210_AddPaperSignature")]
+    partial class AddPaperSignature
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "8.0.4");
@@ -119,10 +122,6 @@ namespace Apachi.WebApi.Migrations
                         .IsRequired()
                         .HasColumnType("BLOB");
 
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
                     b.Property<byte[]>("SubmissionCommitment")
                         .IsRequired()
                         .HasColumnType("BLOB");
@@ -138,9 +137,6 @@ namespace Apachi.WebApi.Migrations
                     b.Property<byte[]>("SubmissionSignature")
                         .IsRequired()
                         .HasColumnType("BLOB");
-
-                    b.Property<DateTimeOffset>("UpdatedDate")
-                        .HasColumnType("TEXT");
 
                     b.HasKey("Id");
 

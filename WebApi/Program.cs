@@ -1,10 +1,11 @@
 using Apachi.Shared.Crypto;
 using Apachi.WebApi.Data;
+using Apachi.WebApi.Services;
 using Microsoft.EntityFrameworkCore;
 
 if (args.Length > 0 && args[0] == "--generate-keypair")
 {
-    var (publicKey, privateKey) = KeyUtils.GenerateKeyPair();
+    var (publicKey, privateKey) = await KeyUtils.GenerateKeyPairAsync();
     var publicKeyBase64 = Convert.ToBase64String(publicKey);
     var privateKeyBase64 = Convert.ToBase64String(privateKey);
     Console.WriteLine("Public Key: {0}", publicKeyBase64);
@@ -18,6 +19,10 @@ builder.Services.AddDbContext<AppDbContext>(options => options.UseSqlite("Data S
 builder.Services.AddControllers().AddJsonOptions(options => options.JsonSerializerOptions.PropertyNamingPolicy = null);
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+builder.Services.AddHostedService<JobOrchestrator>();
+builder.Services.AddTransient<JobScheduler>();
+builder.Services.AddKeyedTransient<IJobProcessor, CreateReviewsJobProcessor>(JobType.CreateReviews);
 
 builder.Configuration.AddEnvironmentVariables("APACHI_");
 

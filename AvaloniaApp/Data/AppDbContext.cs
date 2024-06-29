@@ -15,7 +15,7 @@ public class AppDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
-        builder.Entity<Submitter>().HasIndex(user => user.Username).IsUnique();
-        builder.Entity<Reviewer>().HasIndex(user => user.Username).IsUnique();
+        builder.Entity<Submitter>().HasIndex(submitter => submitter.Username).IsUnique();
+        builder.Entity<Reviewer>().HasIndex(reviewer => reviewer.Username).IsUnique();
     }
 }

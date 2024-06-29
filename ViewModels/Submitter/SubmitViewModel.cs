@@ -65,6 +65,4 @@ public class SubmitViewModel : Screen, IMenuPageViewModel
             );
         }
     }
-
-    public void Reset() { }
 }

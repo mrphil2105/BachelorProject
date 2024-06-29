@@ -3,6 +3,7 @@ using System;
 using Apachi.WebApi.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Apachi.WebApi.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240430234444_CreateReview")]
+    partial class CreateReview
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "8.0.4");
@@ -101,27 +104,13 @@ namespace Apachi.WebApi.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
-                    b.Property<DateTimeOffset?>("ClosedDate")
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTimeOffset>("CreatedDate")
-                        .HasColumnType("TEXT");
-
                     b.Property<byte[]>("IdentityCommitment")
-                        .IsRequired()
-                        .HasColumnType("BLOB");
-
-                    b.Property<byte[]>("PaperSignature")
                         .IsRequired()
                         .HasColumnType("BLOB");
 
                     b.Property<byte[]>("ReviewRandomness")
                         .IsRequired()
                         .HasColumnType("BLOB");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
 
                     b.Property<byte[]>("SubmissionCommitment")
                         .IsRequired()
@@ -138,9 +127,6 @@ namespace Apachi.WebApi.Migrations
                     b.Property<byte[]>("SubmissionSignature")
                         .IsRequired()
                         .HasColumnType("BLOB");
-
-                    b.Property<DateTimeOffset>("UpdatedDate")
-                        .HasColumnType("TEXT");
 
                     b.HasKey("Id");
 

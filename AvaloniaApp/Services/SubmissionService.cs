@@ -1,6 +1,4 @@
 using System.Security.Cryptography;
-using System.Text;
-using System.Text.Json;
 using Apachi.AvaloniaApp.Data;
 using Apachi.Shared.Crypto;
 using Apachi.Shared.Dtos;
@@ -12,44 +10,51 @@ public class SubmissionService : ISubmissionService
 {
     private readonly ISessionService _sessionService;
     private readonly Func<AppDbContext> _dbContextFactory;
-    private readonly IHttpClientFactory _httpClientFactory;
+    private readonly IApiService _apiService;
 
     public SubmissionService(
         ISessionService sessionService,
         Func<AppDbContext> dbContextFactory,
-        IHttpClientFactory httpClientFactory
+        IApiService apiService
     )
     {
         _sessionService = sessionService;
         _dbContextFactory = dbContextFactory;
-        _httpClientFactory = httpClientFactory;
+        _apiService = apiService;
     }
 
     public async Task SubmitPaperAsync(string paperFilePath)
     {
         var (submitDto, submission) = await CreateSubmissionModelsAsync(paperFilePath);
-        var submitJson = JsonSerializer.Serialize(submitDto);
-        var jsonContent = new StringContent(submitJson, Encoding.UTF8, "application/json");
-        var httpClient = _httpClientFactory.CreateClient();
+        var submittedDto = await _apiService.PostAsync<SubmitDto, SubmittedDto>("Submission/Create", submitDto);
 
-        using var response = await httpClient.PostAsync("Submission/Create", jsonContent);
-        var submittedJson = await response.Content.ReadAsStringAsync();
-        var submittedDto = JsonSerializer.Deserialize<SubmittedDto>(submittedJson)!;
+        var programCommitteePublicKey = KeyUtils.GetProgramCommitteePublicKey();
+        var isSignatureValid = await KeyUtils.VerifySignatureAsync(
+            submitDto.SubmissionCommitment,
+            submittedDto.SubmissionCommitmentSignature,
+            programCommitteePublicKey
+        );
+
+        if (!isSignatureValid)
+        {
+            throw new CryptographicException("The received submission commitment signature is invalid.");
+        }
+
         submission.Id = submittedDto.SubmissionId;
         submission.SubmissionCommitmentSignature = submittedDto.SubmissionCommitmentSignature;
 
         await using var dbContext = _dbContextFactory();
         submission.SubmitterId = _sessionService.UserId!.Value;
         dbContext.Submissions.Add(submission);
-        await dbContext.SaveChangesAsync().ConfigureAwait(false);
+        await dbContext.SaveChangesAsync();
     }
 
     // See Apachi Chapter 5.2.1
     private async Task<(SubmitDto SubmitDto, Submission Submission)> CreateSubmissionModelsAsync(string paperFilePath)
     {
-        var (submissionPublicKey, submissionPrivateKey) = await Task.Run(KeyUtils.GenerateKeyPair)
-            .ConfigureAwait(false);
-        var (encryptedPaper, encryptedSubmissionKey) = await EncryptPaperAsync(paperFilePath).ConfigureAwait(false);
+        var (submissionPublicKey, submissionPrivateKey) = await KeyUtils.GenerateKeyPairAsync();
+        var paperBytes = await File.ReadAllBytesAsync(paperFilePath);
+        var (encryptedPaper, encryptedSubmissionKey) = await EncryptPaperAsync(paperBytes);
 
         var submissionRandomness = DataUtils.GenerateBigInteger();
         var reviewRandomness = DataUtils.GenerateBigInteger();
@@ -59,8 +64,8 @@ public class SubmissionService : ISubmissionService
         var reviewRandomnessBytes = reviewRandomness.ToByteArray();
         var identityRandomnessBytes = identityRandomness.ToByteArray();
 
-        var submissionCommitment = Commitment.Create(encryptedPaper, submissionRandomness);
-        var identityCommitment = Commitment.Create(encryptedPaper, identityRandomness);
+        var submissionCommitment = Commitment.Create(paperBytes, submissionRandomness);
+        var identityCommitment = Commitment.Create(paperBytes, identityRandomness);
 
         var submissionCommitmentBytes = submissionCommitment.ToBytes();
         var identityCommitmentBytes = identityCommitment.ToBytes();
@@ -74,7 +79,7 @@ public class SubmissionService : ISubmissionService
             submissionCommitmentBytes,
             identityCommitmentBytes
         );
-        var submissionSignature = KeyUtils.CalculateSignature(bytesToBeSigned, submissionPrivateKey);
+        var submissionSignature = await KeyUtils.CalculateSignatureAsync(bytesToBeSigned, submissionPrivateKey);
 
         var submitDto = new SubmitDto(
             encryptedPaper,
@@ -91,16 +96,15 @@ public class SubmissionService : ISubmissionService
         return (submitDto, submission);
     }
 
-    private async Task<(byte[] EncryptedPaper, byte[] EncryptedSubmissionKey)> EncryptPaperAsync(string paperFilePath)
+    private async Task<(byte[] EncryptedPaper, byte[] EncryptedSubmissionKey)> EncryptPaperAsync(byte[] paperBytes)
     {
         var programCommitteePublicKey = KeyUtils.GetProgramCommitteePublicKey();
         var submissionKey = RandomNumberGenerator.GetBytes(32);
 
-        var fileStream = File.OpenRead(paperFilePath);
-        var encryptedPaper = await EncryptionUtils.SymmetricEncryptAsync(fileStream, submissionKey, null);
-
-        var encryptedSubmissionKey = await Task.Run(
-            () => EncryptionUtils.AsymmetricEncrypt(submissionKey, programCommitteePublicKey)
+        var encryptedPaper = await EncryptionUtils.SymmetricEncryptAsync(paperBytes, submissionKey, null);
+        var encryptedSubmissionKey = await EncryptionUtils.AsymmetricEncryptAsync(
+            submissionKey,
+            programCommitteePublicKey
         );
         return (encryptedPaper, encryptedSubmissionKey);
     }

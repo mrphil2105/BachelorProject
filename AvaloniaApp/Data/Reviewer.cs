@@ -10,7 +10,7 @@ public class Reviewer
 
     public byte[] AuthenticationHash { get; set; } = null!;
 
-    public byte[] EncryptedPrivateKey { get; set; } = null!;
+    public byte[] EncryptedPrivateKey { get; set; } = null!; // K_R^-1
 
-    public byte[] EncryptedSharedKey { get; set; } = null!;
+    public byte[] EncryptedSharedKey { get; set; } = null!; // Shared key between PC and R.
 }

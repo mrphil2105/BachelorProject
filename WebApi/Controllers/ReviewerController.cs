@@ -1,8 +1,11 @@
 using System.Security.Cryptography;
+using Apachi.Shared;
 using Apachi.Shared.Crypto;
 using Apachi.Shared.Dtos;
 using Apachi.WebApi.Data;
+using Apachi.WebApi.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace Apachi.WebApi.Controllers;
 
@@ -12,16 +15,19 @@ public class ReviewerController : ControllerBase
 {
     private readonly IConfiguration _configuration;
     private readonly AppDbContext _dbContext;
-    private readonly ILogger<SubmissionController> _logger;
+    private readonly JobScheduler _jobScheduler;
+    private readonly ILogger<ReviewerController> _logger;
 
     public ReviewerController(
         IConfiguration configuration,
         AppDbContext dbContext,
-        ILogger<SubmissionController> logger
+        JobScheduler jobScheduler,
+        ILogger<ReviewerController> logger
     )
     {
         _configuration = configuration;
         _dbContext = dbContext;
+        _jobScheduler = jobScheduler;
         _logger = logger;
     }
 
@@ -31,7 +37,7 @@ public class ReviewerController : ControllerBase
         var programCommitteePublicKey = KeyUtils.GetProgramCommitteePublicKey();
         var sharedKey = RandomNumberGenerator.GetBytes(32);
 
-        var programCommitteeEncryptedSharedKey = EncryptionUtils.AsymmetricEncrypt(
+        var programCommitteeEncryptedSharedKey = await EncryptionUtils.AsymmetricEncryptAsync(
             sharedKey,
             programCommitteePublicKey
         );
@@ -44,10 +50,22 @@ public class ReviewerController : ControllerBase
         _dbContext.Reviewers.Add(reviewer);
         await _dbContext.SaveChangesAsync();
 
-        var reviewerEncryptedSharedKey = EncryptionUtils.AsymmetricEncrypt(sharedKey, registerDto.ReviewerPublicKey);
+        var openSubmissions = _dbContext
+            .Submissions.Where(submission => submission.Status == SubmissionStatus.Open)
+            .AsAsyncEnumerable();
+
+        await foreach (var openSubmission in openSubmissions)
+        {
+            await _jobScheduler.ScheduleJobAsync(JobType.CreateReviews, openSubmission.Id.ToString());
+        }
+
+        var reviewerEncryptedSharedKey = await EncryptionUtils.AsymmetricEncryptAsync(
+            sharedKey,
+            registerDto.ReviewerPublicKey
+        );
         var registeredDto = new ReviewerRegisteredDto(reviewer.Id, reviewerEncryptedSharedKey);
 
-        _logger.LogInformation($"Reviewer registered new account with id: {reviewer.Id}");
+        _logger.LogInformation("Reviewer registered new account with id: {Id}", reviewer.Id);
         return registeredDto;
     }
 }
