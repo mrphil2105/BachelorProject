@@ -8,11 +8,12 @@ public static class ApiServiceExtensions
         this IApiService apiService,
         string path,
         TRequest requestContent,
+        Guid identifier,
         byte[] aesKey,
         byte[] privateKey
     )
     {
-        var encryptedSignedDto = await EncryptedSignedDto.FromDtoAsync(requestContent, aesKey, privateKey);
+        var encryptedSignedDto = await EncryptedSignedDto.FromDtoAsync(requestContent, identifier, aesKey, privateKey);
         return await apiService.PostAsync<EncryptedSignedDto, TResponse>(path, encryptedSignedDto);
     }
 }
