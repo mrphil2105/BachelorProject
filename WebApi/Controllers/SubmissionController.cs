@@ -4,6 +4,7 @@ using Apachi.Shared.Dtos;
 using Apachi.WebApi.Data;
 using Apachi.WebApi.Services;
 using Microsoft.AspNetCore.Mvc;
+using Org.BouncyCastle.Math;
 
 namespace Apachi.WebApi.Controllers;
 
@@ -44,7 +45,10 @@ public class SubmissionController : ControllerBase
         var paperBytes = await SavePaperAsync(submitDto, submissionId);
         var paperSignature = await KeyUtils.CalculateSignatureAsync(paperBytes, programCommitteePrivateKey);
 
-        var createdDate = DateTimeOffset.Now;
+        var reviewRandomness = new BigInteger(submitDto.ReviewRandomness);
+        var reviewCommitment = Commitment.Create(paperBytes, reviewRandomness);
+        var reviewNonce = RandomNumberGenerator.GetBytes(16);
+        var currentDate = DateTimeOffset.Now;
         var submission = new Submission
         {
             Id = submissionId,
@@ -55,8 +59,10 @@ public class SubmissionController : ControllerBase
             SubmissionPublicKey = submitDto.SubmissionPublicKey,
             SubmissionSignature = submitDto.SubmissionSignature,
             PaperSignature = paperSignature,
-            CreatedDate = createdDate,
-            UpdatedDate = createdDate
+            ReviewCommitment = reviewCommitment.ToBytes(),
+            ReviewNonce = reviewNonce,
+            CreatedDate = currentDate,
+            UpdatedDate = currentDate
         };
         _dbContext.Submissions.Add(submission);
         await _dbContext.SaveChangesAsync();
