@@ -15,7 +15,12 @@
             <ItemsControl.ItemTemplate>
                 <DataTemplate DataType="{x:Type dto:OpenSubmissionDto}">
                     <StackPanel>
-                        <TextBlock FontWeight="Medium" Text="{Binding SubmissionId}" />
+                        <TextBlock
+                            FontSize="16"
+                            FontWeight="Medium"
+                            Text="{Binding Title}"
+                            TextWrapping="Wrap" />
+                        <TextBlock Text="{Binding Description}" TextWrapping="Wrap" />
                         <TextBlock Text="{Binding CreatedDate, Converter={x:Static c:CustomConverters.DateTimeOffset}}" />
                         <StackPanel Orientation="Horizontal">
                             <Button

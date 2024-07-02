@@ -52,6 +52,8 @@ public class SubmissionController : ControllerBase
         var submission = new Submission
         {
             Id = submissionId,
+            Title = submitDto.Title,
+            Description = submitDto.Description,
             SubmissionRandomness = submitDto.SubmissionRandomness,
             ReviewRandomness = submitDto.ReviewRandomness,
             SubmissionCommitment = submitDto.SubmissionCommitment,

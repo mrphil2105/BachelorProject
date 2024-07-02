@@ -7,6 +7,9 @@ public class SubmitViewModel : Screen, IMenuPageViewModel
 {
     private readonly IViewService _viewService;
     private readonly ISubmissionService _submissionService;
+
+    private string _title = string.Empty;
+    private string _description = string.Empty;
     private string _paperFilePath = string.Empty;
 
     public SubmitViewModel(IViewService viewService, ISubmissionService submissionService)
@@ -19,6 +22,18 @@ public class SubmitViewModel : Screen, IMenuPageViewModel
     public string PageName => "Submit";
 
     public bool IsReviewer => false;
+
+    public string Title
+    {
+        get => _title;
+        set => Set(ref _title, value);
+    }
+
+    public string Description
+    {
+        get => _description;
+        set => Set(ref _description, value);
+    }
 
     public string PaperFilePath
     {
@@ -47,7 +62,7 @@ public class SubmitViewModel : Screen, IMenuPageViewModel
 
         try
         {
-            await _submissionService.SubmitPaperAsync(PaperFilePath);
+            await _submissionService.SubmitPaperAsync(Title, Description, PaperFilePath);
             await _viewService.ShowMessageBoxAsync(
                 this,
                 "The paper has been successfully submitted!",

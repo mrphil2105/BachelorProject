@@ -10,6 +10,10 @@ public class Submission
 
     // Created by submitter.
 
+    public string Title { get; set; } = null!;
+
+    public string Description { get; set; } = null!;
+
     public byte[] SubmissionRandomness { get; set; } = null!; // r_s
 
     public byte[] ReviewRandomness { get; set; } = null!; // r_r
@@ -29,6 +33,8 @@ public class Submission
     public byte[] ReviewCommitment { get; set; } = null!; // C(P, r_r)
 
     public byte[] ReviewNonce { get; set; } = null!;
+
+    // Timestamps.
 
     public DateTimeOffset CreatedDate { get; set; }
 

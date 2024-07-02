@@ -23,9 +23,9 @@ public class SubmissionService : ISubmissionService
         _apiService = apiService;
     }
 
-    public async Task SubmitPaperAsync(string paperFilePath)
+    public async Task SubmitPaperAsync(string title, string description, string paperFilePath)
     {
-        var (submitDto, submission) = await CreateSubmissionModelsAsync(paperFilePath);
+        var (submitDto, submission) = await CreateSubmissionModelsAsync(title, description, paperFilePath);
         var submittedDto = await _apiService.PostAsync<SubmitDto, SubmittedDto>("Submission/Create", submitDto);
 
         var programCommitteePublicKey = KeyUtils.GetProgramCommitteePublicKey();
@@ -50,7 +50,11 @@ public class SubmissionService : ISubmissionService
     }
 
     // See Apachi Chapter 5.2.1
-    private async Task<(SubmitDto SubmitDto, Submission Submission)> CreateSubmissionModelsAsync(string paperFilePath)
+    private async Task<(SubmitDto SubmitDto, Submission Submission)> CreateSubmissionModelsAsync(
+        string title,
+        string description,
+        string paperFilePath
+    )
     {
         var (submissionPublicKey, submissionPrivateKey) = await KeyUtils.GenerateKeyPairAsync();
         var paperBytes = await File.ReadAllBytesAsync(paperFilePath);
@@ -82,6 +86,8 @@ public class SubmissionService : ISubmissionService
         var submissionSignature = await KeyUtils.CalculateSignatureAsync(bytesToBeSigned, submissionPrivateKey);
 
         var submitDto = new SubmitDto(
+            title,
+            description,
             encryptedPaper,
             encryptedSubmissionKey,
             submissionRandomnessBytes,

@@ -37,6 +37,8 @@ public class ReviewController : ControllerBase
             .Select(submission => new OpenSubmissionDto(
                 submission.Id,
                 submission.Status,
+                submission.Title,
+                submission.Description,
                 submission.PaperSignature,
                 submission.CreatedDate
             ))
