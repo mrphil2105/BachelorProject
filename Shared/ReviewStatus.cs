@@ -2,7 +2,7 @@ namespace Apachi.Shared;
 
 public enum ReviewStatus
 {
-    Open, // Reviewer has yet to respond.
+    Matching, // Reviewer has yet to respond.
     Abstain, // Reviewer has chosen to not review.
     Closed, // Reviewer did not respond in time.
 

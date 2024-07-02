@@ -1,11 +1,8 @@
 using System.Security.Cryptography;
-using Apachi.Shared;
 using Apachi.Shared.Crypto;
 using Apachi.Shared.Dtos;
 using Apachi.WebApi.Data;
-using Apachi.WebApi.Services;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace Apachi.WebApi.Controllers;
 
@@ -15,19 +12,12 @@ public class ReviewerController : ControllerBase
 {
     private readonly IConfiguration _configuration;
     private readonly AppDbContext _dbContext;
-    private readonly JobScheduler _jobScheduler;
     private readonly ILogger<ReviewerController> _logger;
 
-    public ReviewerController(
-        IConfiguration configuration,
-        AppDbContext dbContext,
-        JobScheduler jobScheduler,
-        ILogger<ReviewerController> logger
-    )
+    public ReviewerController(IConfiguration configuration, AppDbContext dbContext, ILogger<ReviewerController> logger)
     {
         _configuration = configuration;
         _dbContext = dbContext;
-        _jobScheduler = jobScheduler;
         _logger = logger;
     }
 
@@ -49,15 +39,6 @@ public class ReviewerController : ControllerBase
 
         _dbContext.Reviewers.Add(reviewer);
         await _dbContext.SaveChangesAsync();
-
-        var openSubmissions = _dbContext
-            .Submissions.Where(submission => submission.Status == SubmissionStatus.Open)
-            .AsAsyncEnumerable();
-
-        await foreach (var openSubmission in openSubmissions)
-        {
-            await _jobScheduler.ScheduleJobAsync(JobType.CreateReviews, openSubmission.Id.ToString());
-        }
 
         var reviewerEncryptedSharedKey = await EncryptionUtils.AsymmetricEncryptAsync(
             sharedKey,

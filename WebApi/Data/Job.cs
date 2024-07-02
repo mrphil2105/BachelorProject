@@ -12,9 +12,7 @@ public class Job
 
     public string? Result { get; set; }
 
-    public DateTimeOffset ScheduleDate { get; set; }
+    public DateTimeOffset CreatedDate { get; set; } = DateTimeOffset.Now;
 
-    public DateTimeOffset? StartDate { get; set; }
-
-    public DateTimeOffset? EndDate { get; set; }
+    public DateTimeOffset? CompletedDate { get; set; }
 }

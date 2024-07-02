@@ -20,8 +20,8 @@ builder.Services.AddControllers().AddJsonOptions(options => options.JsonSerializ
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-builder.Services.AddHostedService<JobOrchestrator>();
-builder.Services.AddTransient<JobScheduler>();
+builder.Services.AddHostedService<JobScheduler>();
+builder.Services.AddHostedService<JobRunner>();
 builder.Services.AddKeyedTransient<IJobProcessor, CreateReviewsJobProcessor>(JobType.CreateReviews);
 
 builder.Configuration.AddEnvironmentVariables("APACHI_");
@@ -32,6 +32,11 @@ using (var serviceScope = app.Services.CreateScope())
 using (var dbContext = serviceScope.ServiceProvider.GetRequiredService<AppDbContext>())
 {
     dbContext.Database.Migrate();
+
+    foreach (var jobType in Enum.GetValues<JobType>())
+    {
+        EnsureJobSchedule(jobType, dbContext);
+    }
 }
 
 if (app.Environment.IsDevelopment())
@@ -44,3 +49,15 @@ app.UseHttpsRedirection();
 app.UseAuthorization();
 app.MapControllers();
 app.Run();
+
+void EnsureJobSchedule(JobType jobType, AppDbContext dbContext)
+{
+    var scheduleExists = dbContext.JobSchedules.Any(schedule => schedule.JobType == jobType);
+
+    if (!scheduleExists)
+    {
+        var jobSchedule = new JobSchedule { JobType = jobType, Interval = TimeSpan.FromMinutes(5) };
+        dbContext.JobSchedules.Add(jobSchedule);
+        dbContext.SaveChanges();
+    }
+}

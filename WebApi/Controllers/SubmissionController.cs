@@ -2,7 +2,6 @@ using System.Security.Cryptography;
 using Apachi.Shared.Crypto;
 using Apachi.Shared.Dtos;
 using Apachi.WebApi.Data;
-using Apachi.WebApi.Services;
 using Microsoft.AspNetCore.Mvc;
 using Org.BouncyCastle.Math;
 
@@ -14,19 +13,16 @@ public class SubmissionController : ControllerBase
 {
     private readonly IConfiguration _configuration;
     private readonly AppDbContext _dbContext;
-    private readonly JobScheduler _jobScheduler;
     private readonly ILogger<SubmissionController> _logger;
 
     public SubmissionController(
         IConfiguration configuration,
         AppDbContext dbContext,
-        JobScheduler jobScheduler,
         ILogger<SubmissionController> logger
     )
     {
         _configuration = configuration;
         _dbContext = dbContext;
-        _jobScheduler = jobScheduler;
         _logger = logger;
     }
 
@@ -68,8 +64,6 @@ public class SubmissionController : ControllerBase
         };
         _dbContext.Submissions.Add(submission);
         await _dbContext.SaveChangesAsync();
-
-        await _jobScheduler.ScheduleJobAsync(JobType.CreateReviews, submissionId.ToString());
 
         var submittedDto = new SubmittedDto(submissionId, submissionCommitmentSignature);
         _logger.LogInformation("User created new submission with id: {Id}", submissionId);
