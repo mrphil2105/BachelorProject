@@ -1,5 +1,5 @@
 <UserControl
-    x:Class="Apachi.AvaloniaApp.Views.Reviewer.OpenSubmissionsView"
+    x:Class="Apachi.AvaloniaApp.Views.Reviewer.MatchableSubmissionsView"
     xmlns="https://github.com/avaloniaui"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:c="using:Apachi.AvaloniaApp.Converters"
@@ -8,12 +8,12 @@
     xmlns:e="https://github.com/mrphil2105/MvvmElegance"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:vm="using:Apachi.ViewModels.Reviewer"
-    x:DataType="vm:OpenSubmissionsViewModel"
+    x:DataType="vm:MatchableSubmissionsViewModel"
     mc:Ignorable="d">
     <ScrollViewer>
         <ItemsControl ItemsSource="{Binding Items}">
             <ItemsControl.ItemTemplate>
-                <DataTemplate DataType="{x:Type dto:OpenSubmissionDto}">
+                <DataTemplate DataType="{x:Type dto:MatchableSubmissionDto}">
                     <StackPanel>
                         <TextBlock
                             FontSize="16"

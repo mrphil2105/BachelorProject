@@ -20,15 +20,15 @@ public class ReviewService : IReviewService
         _apiService = apiService;
     }
 
-    public async Task<List<OpenSubmissionDto>> GetOpenSubmissionsAsync()
+    public async Task<List<MatchableSubmissionDto>> GetMatchableSubmissionsAsync()
     {
         var reviewerId = _sessionService.UserId!.Value;
         var queryParameters = new Dictionary<string, string>() { { "reviewerId", reviewerId.ToString() } };
-        var openSubmissionDtos = await _apiService.GetAsync<List<OpenSubmissionDto>>(
-            "Review/GetOpenSubmissions",
+        var matchableSubmissionDtos = await _apiService.GetAsync<List<MatchableSubmissionDto>>(
+            "Review/GetMatchableSubmissions",
             queryParameters
         );
-        return openSubmissionDtos;
+        return matchableSubmissionDtos;
     }
 
     public async Task DownloadPaperAsync(Guid submissionId, byte[] paperSignature, string paperFilePath)

@@ -3,13 +3,13 @@ using Apachi.ViewModels.Services;
 
 namespace Apachi.ViewModels.Reviewer;
 
-public class OpenSubmissionsViewModel : Conductor<OpenSubmissionDto>.Collection.AllActive, IMenuPageViewModel
+public class MatchableSubmissionsViewModel : Conductor<MatchableSubmissionDto>.Collection.AllActive, IMenuPageViewModel
 {
     private readonly IViewService _viewService;
     private readonly IReviewService _reviewService;
     private bool _isLoading;
 
-    public OpenSubmissionsViewModel(IViewService viewService, IReviewService reviewService)
+    public MatchableSubmissionsViewModel(IViewService viewService, IReviewService reviewService)
     {
         _viewService = viewService;
         _reviewService = reviewService;
@@ -25,7 +25,7 @@ public class OpenSubmissionsViewModel : Conductor<OpenSubmissionDto>.Collection.
         set => Set(ref _isLoading, value);
     }
 
-    public async Task DownloadPaper(OpenSubmissionDto openSubmissionDto)
+    public async Task DownloadPaper(MatchableSubmissionDto matchableSubmissionDto)
     {
         var paperFilePath = await _viewService.ShowSaveFileDialogAsync(this);
 
@@ -35,27 +35,27 @@ public class OpenSubmissionsViewModel : Conductor<OpenSubmissionDto>.Collection.
         }
 
         await _reviewService.DownloadPaperAsync(
-            openSubmissionDto.SubmissionId,
-            openSubmissionDto.PaperSignature,
+            matchableSubmissionDto.SubmissionId,
+            matchableSubmissionDto.PaperSignature,
             paperFilePath
         );
     }
 
-    public Task BidReview(OpenSubmissionDto openSubmissionDto)
+    public Task BidReview(MatchableSubmissionDto matchableSubmissionDto)
     {
-        return SendBidAsync(openSubmissionDto, true);
+        return SendBidAsync(matchableSubmissionDto, true);
     }
 
-    public Task BidAbstain(OpenSubmissionDto openSubmissionDto)
+    public Task BidAbstain(MatchableSubmissionDto matchableSubmissionDto)
     {
-        return SendBidAsync(openSubmissionDto, false);
+        return SendBidAsync(matchableSubmissionDto, false);
     }
 
-    private async Task SendBidAsync(OpenSubmissionDto openSubmissionDto, bool wantsToReview)
+    private async Task SendBidAsync(MatchableSubmissionDto matchableSubmissionDto, bool wantsToReview)
     {
         try
         {
-            await _reviewService.SendBidAsync(openSubmissionDto.SubmissionId, wantsToReview);
+            await _reviewService.SendBidAsync(matchableSubmissionDto.SubmissionId, wantsToReview);
         }
         catch (HttpRequestException exception)
         {
@@ -70,12 +70,12 @@ public class OpenSubmissionsViewModel : Conductor<OpenSubmissionDto>.Collection.
 
     protected override async Task OnInitializeAsync(CancellationToken cancellationToken)
     {
-        List<OpenSubmissionDto> openSubmissionDtos;
+        List<MatchableSubmissionDto> matchableSubmissionDtos;
 
         try
         {
             IsLoading = true;
-            openSubmissionDtos = await _reviewService.GetOpenSubmissionsAsync();
+            matchableSubmissionDtos = await _reviewService.GetMatchableSubmissionsAsync();
         }
         catch (HttpRequestException exception)
         {
@@ -90,7 +90,7 @@ public class OpenSubmissionsViewModel : Conductor<OpenSubmissionDto>.Collection.
         }
 
         Items.Clear();
-        Items.AddRange(openSubmissionDtos);
+        Items.AddRange(matchableSubmissionDtos);
         IsLoading = false;
     }
 }
