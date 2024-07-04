@@ -69,12 +69,34 @@ public class JobScheduler : BackgroundService
     {
         var jobs = new List<Job>();
         var submissions = dbContext
-            .Submissions.Where(submission => submission.Status == SubmissionStatus.Created)
+            .Submissions.Where(submission =>
+                submission.Status == SubmissionStatus.Created || submission.Status == SubmissionStatus.Matching
+            )
             .AsAsyncEnumerable();
 
         await foreach (var submission in submissions)
         {
-            var job = new Job { Type = JobType.CreateReviews, Payload = submission.Id.ToString() };
+            var submissionIdString = submission.Id.ToString();
+
+            if (submission.Status == SubmissionStatus.Matching)
+            {
+                var hasOnlyFailedJobs = await dbContext
+                    .Jobs.Where(job => job.Type == JobType.CreateReviews && job.Payload == submissionIdString)
+                    .AllAsync(job => job.Status == JobStatus.Failed);
+
+                if (!hasOnlyFailedJobs)
+                {
+                    continue;
+                }
+
+                _logger.LogInformation(
+                    "Scheduling job for failed job of type {JobType} for submission ({Id}).",
+                    JobType.CreateReviews,
+                    submission.Id
+                );
+            }
+
+            var job = new Job { Type = JobType.CreateReviews, Payload = submissionIdString };
             jobs.Add(job);
             submission.Status = SubmissionStatus.Matching;
         }
