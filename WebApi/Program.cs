@@ -22,7 +22,9 @@ builder.Services.AddSwaggerGen();
 
 builder.Services.AddHostedService<JobScheduler>();
 builder.Services.AddHostedService<JobRunner>();
+
 builder.Services.AddKeyedTransient<IJobProcessor, CreateReviewsJobProcessor>(JobType.CreateReviews);
+builder.Services.AddKeyedTransient<IJobProcessor, MatchingJobProcessor>(JobType.Matching);
 
 builder.Configuration.AddEnvironmentVariables("APACHI_");
 

@@ -63,6 +63,9 @@ public class JobScheduler : BackgroundService
             case JobType.CreateReviews:
                 await JobsForCreateReviewsAsync(dbContext, jobs);
                 break;
+            case JobType.Matching:
+                await JobsForMatchingAsync(dbContext, jobs);
+                break;
             default:
                 throw new ArgumentException("Invalid job type specified.", nameof(jobType));
         }
@@ -86,6 +89,39 @@ public class JobScheduler : BackgroundService
             }
 
             var job = new Job { Type = JobType.CreateReviews, Payload = submission.Id.ToString() };
+            jobs.Add(job);
+        }
+
+        await dbContext.SaveChangesAsync();
+    }
+
+    private async Task JobsForMatchingAsync(AppDbContext dbContext, List<Job> jobs)
+    {
+        var submissions = dbContext
+            .Submissions.Where(submission => submission.Status == SubmissionStatus.Matching)
+            .AsAsyncEnumerable();
+
+        await foreach (var submission in submissions)
+        {
+            var reviewCount = await dbContext.Reviews.CountAsync(review => review.SubmissionId == submission.Id);
+            var bidCount = await dbContext.Reviews.CountAsync(review =>
+                review.Status == ReviewStatus.Pending || review.Status == ReviewStatus.Abstain
+            );
+
+            if (bidCount != reviewCount)
+            {
+                // Some reviewers have still not responded with a bid.
+                continue;
+            }
+
+            var shouldSchedule = await NeedJobScheduleAsync(JobType.Matching, submission, dbContext);
+
+            if (!shouldSchedule)
+            {
+                continue;
+            }
+
+            var job = new Job { Type = JobType.Matching, Payload = submission.Id.ToString() };
             jobs.Add(job);
         }
 
