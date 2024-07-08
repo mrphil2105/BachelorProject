@@ -34,6 +34,8 @@ public class Submission
 
     public byte[] ReviewNonce { get; set; } = null!;
 
+    public byte[]? MatchingSignature { get; set; }
+
     // Timestamps.
 
     public DateTimeOffset CreatedDate { get; set; }
