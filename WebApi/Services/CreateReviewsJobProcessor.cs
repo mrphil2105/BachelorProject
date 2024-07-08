@@ -40,7 +40,7 @@ public class CreateReviewsJobProcessor : IJobProcessor
                 reviewer.EncryptedSharedKey,
                 programCommitteePrivateKey
             );
-            await SavePaperAsync(submissionId, reviewer.Id, paperBytes, sharedKey);
+            await SaveEncryptedPaperAsync(submissionId, reviewer.Id, paperBytes, sharedKey);
 
             var review = new Review { SubmissionId = submissionId, ReviewerId = reviewer.Id };
             _dbContext.Reviews.Add(review);
@@ -61,7 +61,7 @@ public class CreateReviewsJobProcessor : IJobProcessor
         return paperBytes;
     }
 
-    private async Task SavePaperAsync(Guid submissionId, Guid reviewerId, byte[] paperBytes, byte[] sharedKey)
+    private async Task SaveEncryptedPaperAsync(Guid submissionId, Guid reviewerId, byte[] paperBytes, byte[] sharedKey)
     {
         var reviewsDirectoryPath = _configuration.GetReviewsStorage();
         var submissionDirectoryPath = Path.Combine(reviewsDirectoryPath, submissionId.ToString());
