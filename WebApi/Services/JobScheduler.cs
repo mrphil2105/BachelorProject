@@ -54,54 +54,57 @@ public class JobScheduler : BackgroundService
         await dbContext.SaveChangesAsync();
     }
 
-    private Task<List<Job>> JobsForJobTypeAsync(JobType jobType, AppDbContext dbContext)
+    private async Task<List<Job>> JobsForJobTypeAsync(JobType jobType, AppDbContext dbContext)
     {
+        var jobs = new List<Job>();
+
         switch (jobType)
         {
             case JobType.CreateReviews:
-                return JobsForCreateReviewsAsync(dbContext);
+                await JobsForCreateReviewsAsync(dbContext, jobs);
+                break;
             default:
                 throw new ArgumentException("Invalid job type specified.", nameof(jobType));
         }
+
+        return jobs;
     }
 
-    private async Task<List<Job>> JobsForCreateReviewsAsync(AppDbContext dbContext)
+    private async Task JobsForCreateReviewsAsync(AppDbContext dbContext, List<Job> jobs)
     {
-        var jobs = new List<Job>();
         var submissions = dbContext
-            .Submissions.Where(submission =>
-                submission.Status == SubmissionStatus.Created || submission.Status == SubmissionStatus.Matching
-            )
+            .Submissions.Where(submission => submission.Status == SubmissionStatus.Created)
             .AsAsyncEnumerable();
 
         await foreach (var submission in submissions)
         {
-            var submissionIdString = submission.Id.ToString();
+            var shouldSchedule = await NeedJobScheduleAsync(JobType.CreateReviews, submission, dbContext);
 
-            if (submission.Status == SubmissionStatus.Matching)
+            if (!shouldSchedule)
             {
-                var hasOnlyFailedJobs = await dbContext
-                    .Jobs.Where(job => job.Type == JobType.CreateReviews && job.Payload == submissionIdString)
-                    .AllAsync(job => job.Status == JobStatus.Failed);
-
-                if (!hasOnlyFailedJobs)
-                {
-                    continue;
-                }
-
-                _logger.LogInformation(
-                    "Scheduling job for failed job of type {JobType} for submission ({Id}).",
-                    JobType.CreateReviews,
-                    submission.Id
-                );
+                continue;
             }
 
-            var job = new Job { Type = JobType.CreateReviews, Payload = submissionIdString };
+            var job = new Job { Type = JobType.CreateReviews, Payload = submission.Id.ToString() };
             jobs.Add(job);
-            submission.Status = SubmissionStatus.Matching;
         }
 
         await dbContext.SaveChangesAsync();
-        return jobs;
+    }
+
+    private async Task<bool> NeedJobScheduleAsync(JobType jobType, Submission submission, AppDbContext dbContext)
+    {
+        var submissionIdString = submission.Id.ToString();
+        var count = await dbContext.Submissions.CountAsync();
+
+        if (count == 0)
+        {
+            return true;
+        }
+
+        var hasOnlyFailedJobs = await dbContext
+            .Jobs.Where(job => job.Type == jobType && job.Payload == submissionIdString)
+            .AllAsync(job => job.Status == JobStatus.Failed);
+        return hasOnlyFailedJobs;
     }
 }

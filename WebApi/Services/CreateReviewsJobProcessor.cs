@@ -47,6 +47,9 @@ public class CreateReviewsJobProcessor : IJobProcessor
             await _dbContext.SaveChangesAsync();
         }
 
+        var submission = await _dbContext.Submissions.FirstOrDefaultAsync(submission => submission.Id == submissionId);
+        submission!.Status = Shared.SubmissionStatus.Matching;
+        await _dbContext.SaveChangesAsync();
         return null;
     }
 
