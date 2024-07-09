@@ -15,7 +15,7 @@ public class MatchableSubmissionsViewModel : Conductor<MatchableSubmissionDto>.C
         _reviewService = reviewService;
     }
 
-    public string PageName => "Submissions";
+    public string PageName => "Match";
 
     public bool IsReviewer => true;
 
