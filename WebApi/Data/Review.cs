@@ -8,6 +8,8 @@ public class Review
 
     public ReviewStatus Status { get; set; }
 
+    public byte[]? EncryptedReviewRandomness { get; set; } // Encrypted with K_PCR
+
     public Guid ReviewerId { get; set; }
 
     public Reviewer Reviewer { get; set; } = null!;

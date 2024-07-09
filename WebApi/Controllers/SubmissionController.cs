@@ -40,6 +40,10 @@ public class SubmissionController : ControllerBase
         var submissionId = Guid.NewGuid();
         var paperBytes = await SavePaperAsync(submitDto, submissionId);
         var paperSignature = await KeyUtils.CalculateSignatureAsync(paperBytes, programCommitteePrivateKey);
+        var reviewRandomnessSignature = await KeyUtils.CalculateSignatureAsync(
+            submitDto.ReviewRandomness,
+            programCommitteePrivateKey
+        );
 
         var reviewRandomness = new BigInteger(submitDto.ReviewRandomness);
         var reviewCommitment = Commitment.Create(paperBytes, reviewRandomness);
@@ -57,6 +61,7 @@ public class SubmissionController : ControllerBase
             SubmissionPublicKey = submitDto.SubmissionPublicKey,
             SubmissionSignature = submitDto.SubmissionSignature,
             PaperSignature = paperSignature,
+            ReviewRandomnessSignature = reviewRandomnessSignature,
             ReviewCommitment = reviewCommitment.ToBytes(),
             ReviewNonce = reviewNonce,
             CreatedDate = currentDate,

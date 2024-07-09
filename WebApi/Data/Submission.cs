@@ -26,15 +26,17 @@ public class Submission
 
     public byte[] SubmissionSignature { get; set; } = null!; // Signed by K_S^-1
 
-    public byte[] PaperSignature { get; set; } = null!; // Signed by K_PC^1
-
     // Created by program committee.
+
+    public byte[] PaperSignature { get; set; } = null!; // Signed by K_PC^-1
+
+    public byte[] ReviewRandomnessSignature { get; set; } = null!; // Signed by K_PC^-1
 
     public byte[] ReviewCommitment { get; set; } = null!; // C(P, r_r)
 
     public byte[] ReviewNonce { get; set; } = null!;
 
-    public byte[]? MatchingSignature { get; set; }
+    public byte[]? MatchingSignature { get; set; } // Signed by K_PC^-1
 
     // Timestamps.
 

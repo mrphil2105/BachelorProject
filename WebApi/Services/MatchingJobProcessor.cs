@@ -32,6 +32,16 @@ public class MatchingJobProcessor : IJobProcessor
 
         await foreach (var review in reviews)
         {
+            var sharedKey = await EncryptionUtils.AsymmetricDecryptAsync(
+                review.Reviewer.EncryptedSharedKey,
+                programCommitteePrivateKey
+            );
+            var encryptedReviewRandomness = await EncryptionUtils.SymmetricEncryptAsync(
+                submission!.ReviewRandomness,
+                sharedKey,
+                null
+            );
+            review.EncryptedReviewRandomness = encryptedReviewRandomness;
             await memoryStream.WriteAsync(review.Reviewer.ReviewerPublicKey);
         }
 
