@@ -56,10 +56,17 @@ public class SubmissionService : ISubmissionService
         string paperFilePath
     )
     {
-        // TODO: Encrypt submission randomness and review randomness as outlined in step (1).
+        var programCommitteePublicKey = KeyUtils.GetProgramCommitteePublicKey();
         var (submissionPublicKey, submissionPrivateKey) = await KeyUtils.GenerateKeyPairAsync();
+        var submissionKey = RandomNumberGenerator.GetBytes(32);
+
+        var encryptedSubmissionKey = await EncryptionUtils.AsymmetricEncryptAsync(
+            submissionKey,
+            programCommitteePublicKey
+        );
+
         var paperBytes = await File.ReadAllBytesAsync(paperFilePath);
-        var (encryptedPaper, encryptedSubmissionKey) = await EncryptPaperAsync(paperBytes);
+        var encryptedPaper = await EncryptionUtils.SymmetricEncryptAsync(paperBytes, submissionKey, null);
 
         var submissionRandomness = DataUtils.GenerateBigInteger();
         var reviewRandomness = DataUtils.GenerateBigInteger();
@@ -68,6 +75,17 @@ public class SubmissionService : ISubmissionService
         var submissionRandomnessBytes = submissionRandomness.ToByteArray();
         var reviewRandomnessBytes = reviewRandomness.ToByteArray();
         var identityRandomnessBytes = identityRandomness.ToByteArray();
+
+        var encryptedSubmissionRandomness = await EncryptionUtils.SymmetricEncryptAsync(
+            submissionRandomnessBytes,
+            submissionKey,
+            null
+        );
+        var encryptedReviewRandomness = await EncryptionUtils.SymmetricEncryptAsync(
+            reviewRandomnessBytes,
+            submissionKey,
+            null
+        );
 
         var submissionCommitment = Commitment.Create(paperBytes, submissionRandomness);
         var identityCommitment = Commitment.Create(paperBytes, identityRandomness);
@@ -79,8 +97,8 @@ public class SubmissionService : ISubmissionService
         var bytesToBeSigned = DataUtils.CombineByteArrays(
             encryptedPaper,
             encryptedSubmissionKey,
-            submissionRandomnessBytes,
-            reviewRandomnessBytes,
+            encryptedSubmissionRandomness,
+            encryptedReviewRandomness,
             submissionCommitmentBytes,
             identityCommitmentBytes
         );
@@ -91,8 +109,8 @@ public class SubmissionService : ISubmissionService
             description,
             encryptedPaper,
             encryptedSubmissionKey,
-            submissionRandomnessBytes,
-            reviewRandomnessBytes,
+            encryptedSubmissionRandomness,
+            encryptedReviewRandomness,
             submissionCommitmentBytes,
             identityCommitmentBytes,
             submissionPublicKey,
@@ -101,19 +119,6 @@ public class SubmissionService : ISubmissionService
 
         var submission = await CreateSubmissionEntityAsync(submissionPrivateKey, identityCommitmentBytes);
         return (submitDto, submission);
-    }
-
-    private async Task<(byte[] EncryptedPaper, byte[] EncryptedSubmissionKey)> EncryptPaperAsync(byte[] paperBytes)
-    {
-        var programCommitteePublicKey = KeyUtils.GetProgramCommitteePublicKey();
-        var submissionKey = RandomNumberGenerator.GetBytes(32);
-
-        var encryptedPaper = await EncryptionUtils.SymmetricEncryptAsync(paperBytes, submissionKey, null);
-        var encryptedSubmissionKey = await EncryptionUtils.AsymmetricEncryptAsync(
-            submissionKey,
-            programCommitteePublicKey
-        );
-        return (encryptedPaper, encryptedSubmissionKey);
     }
 
     private async Task<Submission> CreateSubmissionEntityAsync(byte[] submissionPrivateKey, byte[] identityRandomness)
