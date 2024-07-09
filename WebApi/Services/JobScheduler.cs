@@ -105,7 +105,8 @@ public class JobScheduler : BackgroundService
         {
             var reviewCount = await dbContext.Reviews.CountAsync(review => review.SubmissionId == submission.Id);
             var bidCount = await dbContext.Reviews.CountAsync(review =>
-                review.Status == ReviewStatus.Pending || review.Status == ReviewStatus.Abstain
+                review.SubmissionId == submission.Id
+                && (review.Status == ReviewStatus.Pending || review.Status == ReviewStatus.Abstain)
             );
 
             if (bidCount != reviewCount)
