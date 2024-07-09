@@ -25,25 +25,21 @@ public class ReviewController : ControllerBase
     [HttpGet]
     public async Task<List<MatchableSubmissionDto>> GetMatchableSubmissions(Guid reviewerId)
     {
-        var openReviews = await _dbContext
+        var matchableSubmissionDtos = await _dbContext
             .Reviews.Include(review => review.Submission)
-            .Where(review => review.ReviewerId == reviewerId && review.Status == ReviewStatus.Matching)
-            .ToListAsync();
-
-        var matchableSubmissionDtos = openReviews
-            .Select(review => review.Submission)
-            // This check is most likely not needed, since all reviews should be closed when a submission is closed.
-            .Where(submission => submission.Status == SubmissionStatus.Matching)
-            .Select(submission => new MatchableSubmissionDto(
-                submission.Id,
-                submission.Status,
-                submission.Title,
-                submission.Description,
-                submission.PaperSignature,
-                submission.CreatedDate
+            .Where(review =>
+                review.ReviewerId == reviewerId
+                && review.Status == ReviewStatus.Matching
+                && review.Submission.Status == SubmissionStatus.Matching
+            )
+            .Select(review => new MatchableSubmissionDto(
+                review.Submission.Id,
+                review.Submission.Title,
+                review.Submission.Description,
+                review.Submission.PaperSignature,
+                review.Submission.CreatedDate
             ))
-            .ToList();
-
+            .ToListAsync();
         return matchableSubmissionDtos;
     }
 

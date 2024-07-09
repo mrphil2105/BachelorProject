@@ -56,6 +56,7 @@ public class SubmissionService : ISubmissionService
         string paperFilePath
     )
     {
+        // TODO: Encrypt submission randomness and review randomness as outlined in step (1).
         var (submissionPublicKey, submissionPrivateKey) = await KeyUtils.GenerateKeyPairAsync();
         var paperBytes = await File.ReadAllBytesAsync(paperFilePath);
         var (encryptedPaper, encryptedSubmissionKey) = await EncryptPaperAsync(paperBytes);

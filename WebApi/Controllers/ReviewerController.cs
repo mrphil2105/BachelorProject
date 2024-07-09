@@ -1,8 +1,10 @@
 using System.Security.Cryptography;
+using Apachi.Shared;
 using Apachi.Shared.Crypto;
 using Apachi.Shared.Dtos;
 using Apachi.WebApi.Data;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace Apachi.WebApi.Controllers;
 
@@ -48,5 +50,28 @@ public class ReviewerController : ControllerBase
 
         _logger.LogInformation("Reviewer registered new account with id: {Id}", reviewer.Id);
         return registeredDto;
+    }
+
+    [HttpGet]
+    public async Task<List<ReviewableSubmissionDto>> GetReviewableSubmissions(Guid reviewerId)
+    {
+        var reviewableSubmissionDtos = await _dbContext
+            .Reviews.Include(review => review.Submission)
+            .Where(review =>
+                review.ReviewerId == reviewerId
+                && review.Status == ReviewStatus.Pending
+                && review.Submission.Status == SubmissionStatus.Reviewing
+            )
+            .Select(review => new ReviewableSubmissionDto(
+                review.Submission.Id,
+                review.Submission.Title,
+                review.Submission.Description,
+                review.Submission.PaperSignature,
+                review.EncryptedReviewRandomness!,
+                review.Submission.ReviewRandomnessSignature,
+                review.Submission.CreatedDate
+            ))
+            .ToListAsync();
+        return reviewableSubmissionDtos;
     }
 }
