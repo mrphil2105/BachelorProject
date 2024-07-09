@@ -56,6 +56,13 @@ public class MatchableSubmissionsViewModel : Conductor<MatchableSubmissionDto>.C
         try
         {
             await _reviewService.SendBidAsync(matchableSubmissionDto.SubmissionId, wantsToReview);
+            Items.Remove(matchableSubmissionDto);
+            await _viewService.ShowMessageBoxAsync(
+                this,
+                "The bid has been successfully sent!",
+                "Bid Successful",
+                kind: MessageBoxKind.Information
+            );
         }
         catch (HttpRequestException exception)
         {
