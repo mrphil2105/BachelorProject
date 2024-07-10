@@ -15,20 +15,17 @@ public class CreateReviewsJobProcessor : IJobProcessor
         _dbContext = dbContext;
     }
 
-    public async Task<string?> ProcessJobAsync(Job job, CancellationToken cancellationToken)
+    public async Task<string?> ProcessJobAsync(Job job, CancellationToken stoppingToken)
     {
         var programCommitteePrivateKey = KeyUtils.GetProgramCommitteePrivateKey();
         var submissionId = Guid.Parse(job.Payload!);
-
-        var submissionsDirectoryPath = _configuration.GetSubmissionsStorage();
-        var paperFilePath = Path.Combine(submissionsDirectoryPath, submissionId.ToString());
-        var paperBytes = await File.ReadAllBytesAsync(paperFilePath);
+        var paperBytes = await GetPaperAsync(submissionId);
 
         var reviewers = _dbContext.Reviewers.AsAsyncEnumerable();
 
         await foreach (var reviewer in reviewers)
         {
-            cancellationToken.ThrowIfCancellationRequested();
+            stoppingToken.ThrowIfCancellationRequested();
 
             var alreadyExists = await _dbContext.Reviews.AnyAsync(review =>
                 review.SubmissionId == submissionId && review.ReviewerId == reviewer.Id
@@ -43,17 +40,28 @@ public class CreateReviewsJobProcessor : IJobProcessor
                 reviewer.EncryptedSharedKey,
                 programCommitteePrivateKey
             );
-            await SavePaperAsync(submissionId, reviewer.Id, paperBytes, sharedKey);
+            await SaveEncryptedPaperAsync(submissionId, reviewer.Id, paperBytes, sharedKey);
 
             var review = new Review { SubmissionId = submissionId, ReviewerId = reviewer.Id };
             _dbContext.Reviews.Add(review);
             await _dbContext.SaveChangesAsync();
         }
 
+        var submission = await _dbContext.Submissions.FirstOrDefaultAsync(submission => submission.Id == submissionId);
+        submission!.Status = Shared.SubmissionStatus.Matching;
+        await _dbContext.SaveChangesAsync();
         return null;
     }
 
-    private async Task SavePaperAsync(Guid submissionId, Guid reviewerId, byte[] paperBytes, byte[] sharedKey)
+    private async Task<byte[]> GetPaperAsync(Guid submissionId)
+    {
+        var submissionsDirectoryPath = _configuration.GetSubmissionsStorage();
+        var paperFilePath = Path.Combine(submissionsDirectoryPath, submissionId.ToString());
+        var paperBytes = await File.ReadAllBytesAsync(paperFilePath);
+        return paperBytes;
+    }
+
+    private async Task SaveEncryptedPaperAsync(Guid submissionId, Guid reviewerId, byte[] paperBytes, byte[] sharedKey)
     {
         var reviewsDirectoryPath = _configuration.GetReviewsStorage();
         var submissionDirectoryPath = Path.Combine(reviewsDirectoryPath, submissionId.ToString());

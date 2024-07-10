@@ -14,8 +14,7 @@ public class SessionService : ISessionService
     private readonly Func<AppDbContext> _dbContextFactory;
     private readonly IApiService _apiService;
 
-    private Submitter? _submitter;
-    private Reviewer? _reviewer;
+    private User? _user;
 
     public SessionService(Func<AppDbContext> dbContextFactory, IApiService apiService)
     {
@@ -23,13 +22,13 @@ public class SessionService : ISessionService
         _apiService = apiService;
     }
 
-    public bool IsLoggedIn => (_submitter != null || _reviewer != null) && AesKey != null && HmacKey != null;
+    public bool IsLoggedIn => _user != null && AesKey != null && HmacKey != null;
 
-    public bool IsReviewer => _reviewer != null;
+    public bool IsReviewer => _user is Reviewer;
 
-    public string? Username => _submitter?.Username ?? _reviewer?.Username;
+    public string? Username => _user?.Username;
 
-    public Guid? UserId => _submitter?.Id ?? _reviewer?.Id;
+    public Guid? UserId => _user?.Id;
 
     public byte[]? AesKey { get; private set; }
 
@@ -38,35 +37,23 @@ public class SessionService : ISessionService
     public async Task<bool> LoginAsync(string username, string password, bool isReviewer)
     {
         await using var dbContext = _dbContextFactory();
-        Submitter? submitter = null;
-        Reviewer? reviewer = null;
+        User? user = isReviewer
+            ? await dbContext.Reviewers.FirstOrDefaultAsync(reviewer => reviewer.Username == username)
+            : await dbContext.Submitters.FirstOrDefaultAsync(submitter => submitter.Username == username);
 
-        if (isReviewer)
-        {
-            reviewer = await dbContext.Reviewers.FirstOrDefaultAsync(reviewer => reviewer.Username == username);
-        }
-        else
-        {
-            submitter = await dbContext.Submitters.FirstOrDefaultAsync(submitter => submitter.Username == username);
-        }
-
-        if (submitter == null && reviewer == null)
+        if (user == null)
         {
             return false;
         }
 
-        var salt = submitter?.PasswordSalt ?? reviewer!.PasswordSalt;
-        var userAuthenticationHash = submitter?.AuthenticationHash ?? reviewer!.AuthenticationHash;
+        var (aesKey, hmacKey, authenticationHash) = await HashPasswordAsync(password, user.PasswordSalt);
 
-        var (aesKey, hmacKey, authenticationHash) = await HashPasswordAsync(password, salt);
-
-        if (!authenticationHash.SequenceEqual(userAuthenticationHash))
+        if (!authenticationHash.SequenceEqual(user.AuthenticationHash))
         {
             return false;
         }
 
-        _submitter = submitter;
-        _reviewer = reviewer;
+        _user = user;
         AesKey = aesKey;
         HmacKey = hmacKey;
         return true;
@@ -94,7 +81,12 @@ public class SessionService : ISessionService
         }
         else
         {
-            var submitter = CreateSubmitter(username, salt, authenticationHash);
+            var submitter = new Submitter
+            {
+                Username = username,
+                PasswordSalt = salt,
+                AuthenticationHash = authenticationHash
+            };
             dbContext.Submitters.Add(submitter);
         }
 
@@ -104,21 +96,9 @@ public class SessionService : ISessionService
 
     public void Logout()
     {
-        _submitter = null;
-        _reviewer = null;
+        _user = null;
         AesKey = null;
         HmacKey = null;
-    }
-
-    private static Submitter CreateSubmitter(string username, byte[] salt, byte[] authenticationHash)
-    {
-        var submitter = new Submitter
-        {
-            Username = username,
-            PasswordSalt = salt,
-            AuthenticationHash = authenticationHash
-        };
-        return submitter;
     }
 
     private async Task<Reviewer> CreateReviewerAsync(

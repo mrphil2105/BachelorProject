@@ -3,7 +3,6 @@ using Apachi.Shared;
 using Apachi.Shared.Crypto;
 using Apachi.Shared.Dtos;
 using Apachi.WebApi.Data;
-using Apachi.WebApi.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -15,19 +14,12 @@ public class ReviewerController : ControllerBase
 {
     private readonly IConfiguration _configuration;
     private readonly AppDbContext _dbContext;
-    private readonly JobScheduler _jobScheduler;
     private readonly ILogger<ReviewerController> _logger;
 
-    public ReviewerController(
-        IConfiguration configuration,
-        AppDbContext dbContext,
-        JobScheduler jobScheduler,
-        ILogger<ReviewerController> logger
-    )
+    public ReviewerController(IConfiguration configuration, AppDbContext dbContext, ILogger<ReviewerController> logger)
     {
         _configuration = configuration;
         _dbContext = dbContext;
-        _jobScheduler = jobScheduler;
         _logger = logger;
     }
 
@@ -50,15 +42,6 @@ public class ReviewerController : ControllerBase
         _dbContext.Reviewers.Add(reviewer);
         await _dbContext.SaveChangesAsync();
 
-        var openSubmissions = _dbContext
-            .Submissions.Where(submission => submission.Status == SubmissionStatus.Open)
-            .AsAsyncEnumerable();
-
-        await foreach (var openSubmission in openSubmissions)
-        {
-            await _jobScheduler.ScheduleJobAsync(JobType.CreateReviews, openSubmission.Id.ToString());
-        }
-
         var reviewerEncryptedSharedKey = await EncryptionUtils.AsymmetricEncryptAsync(
             sharedKey,
             registerDto.ReviewerPublicKey
@@ -67,5 +50,28 @@ public class ReviewerController : ControllerBase
 
         _logger.LogInformation("Reviewer registered new account with id: {Id}", reviewer.Id);
         return registeredDto;
+    }
+
+    [HttpGet]
+    public async Task<List<ReviewableSubmissionDto>> GetReviewableSubmissions(Guid reviewerId)
+    {
+        var reviewableSubmissionDtos = await _dbContext
+            .Reviews.Include(review => review.Submission)
+            .Where(review =>
+                review.ReviewerId == reviewerId
+                && review.Status == ReviewStatus.Pending
+                && review.Submission.Status == SubmissionStatus.Reviewing
+            )
+            .Select(review => new ReviewableSubmissionDto(
+                review.Submission.Id,
+                review.Submission.Title,
+                review.Submission.Description,
+                review.Submission.PaperSignature,
+                review.EncryptedReviewRandomness!,
+                review.Submission.ReviewRandomnessSignature,
+                review.Submission.CreatedDate
+            ))
+            .ToListAsync();
+        return reviewableSubmissionDtos;
     }
 }

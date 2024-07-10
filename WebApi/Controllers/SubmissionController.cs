@@ -2,8 +2,8 @@ using System.Security.Cryptography;
 using Apachi.Shared.Crypto;
 using Apachi.Shared.Dtos;
 using Apachi.WebApi.Data;
-using Apachi.WebApi.Services;
 using Microsoft.AspNetCore.Mvc;
+using Org.BouncyCastle.Math;
 
 namespace Apachi.WebApi.Controllers;
 
@@ -13,19 +13,16 @@ public class SubmissionController : ControllerBase
 {
     private readonly IConfiguration _configuration;
     private readonly AppDbContext _dbContext;
-    private readonly JobScheduler _jobScheduler;
     private readonly ILogger<SubmissionController> _logger;
 
     public SubmissionController(
         IConfiguration configuration,
         AppDbContext dbContext,
-        JobScheduler jobScheduler,
         ILogger<SubmissionController> logger
     )
     {
         _configuration = configuration;
         _dbContext = dbContext;
-        _jobScheduler = jobScheduler;
         _logger = logger;
     }
 
@@ -35,33 +32,60 @@ public class SubmissionController : ControllerBase
         await ThrowIfInvalidSubmissionSignatureAsync(submitDto);
 
         var programCommitteePrivateKey = KeyUtils.GetProgramCommitteePrivateKey();
-        var submissionCommitmentSignature = await KeyUtils.CalculateSignatureAsync(
-            submitDto.SubmissionCommitment,
+        var submissionKey = await EncryptionUtils.AsymmetricDecryptAsync(
+            submitDto.EncryptedSubmissionKey,
             programCommitteePrivateKey
         );
 
         var submissionId = Guid.NewGuid();
-        var paperBytes = await SavePaperAsync(submitDto, submissionId);
-        var paperSignature = await KeyUtils.CalculateSignatureAsync(paperBytes, programCommitteePrivateKey);
+        var paperBytes = await SavePaperAsync(submitDto.EncryptedPaper, submissionKey, submissionId);
+        var submissionRandomnessBytes = await EncryptionUtils.SymmetricDecryptAsync(
+            submitDto.EncryptedSubmissionRandomness,
+            submissionKey,
+            null
+        );
+        var reviewRandomnessBytes = await EncryptionUtils.SymmetricDecryptAsync(
+            submitDto.EncryptedReviewRandomness,
+            submissionKey,
+            null
+        );
 
-        var createdDate = DateTimeOffset.Now;
+        var paperSignature = await KeyUtils.CalculateSignatureAsync(paperBytes, programCommitteePrivateKey);
+        var reviewRandomnessSignature = await KeyUtils.CalculateSignatureAsync(
+            reviewRandomnessBytes,
+            programCommitteePrivateKey
+        );
+
+        var reviewRandomness = new BigInteger(reviewRandomnessBytes);
+        var reviewCommitment = Commitment.Create(paperBytes, reviewRandomness);
+        var reviewNonce = RandomNumberGenerator.GetBytes(16);
+        var currentDate = DateTimeOffset.Now;
+
         var submission = new Submission
         {
             Id = submissionId,
-            SubmissionRandomness = submitDto.SubmissionRandomness,
-            ReviewRandomness = submitDto.ReviewRandomness,
+            Title = submitDto.Title,
+            Description = submitDto.Description,
+            SubmissionRandomness = submissionRandomnessBytes,
+            ReviewRandomness = reviewRandomnessBytes,
             SubmissionCommitment = submitDto.SubmissionCommitment,
             IdentityCommitment = submitDto.IdentityCommitment,
             SubmissionPublicKey = submitDto.SubmissionPublicKey,
             SubmissionSignature = submitDto.SubmissionSignature,
             PaperSignature = paperSignature,
-            CreatedDate = createdDate,
-            UpdatedDate = createdDate
+            ReviewRandomnessSignature = reviewRandomnessSignature,
+            ReviewCommitment = reviewCommitment.ToBytes(),
+            ReviewNonce = reviewNonce,
+            CreatedDate = currentDate,
+            UpdatedDate = currentDate
         };
         _dbContext.Submissions.Add(submission);
         await _dbContext.SaveChangesAsync();
 
-        await _jobScheduler.ScheduleJobAsync(JobType.CreateReviews, submissionId.ToString());
+        var submissionCommitmentSignature = await KeyUtils.CalculateSignatureAsync(
+            submitDto.SubmissionCommitment,
+            programCommitteePrivateKey
+        );
 
         var submittedDto = new SubmittedDto(submissionId, submissionCommitmentSignature);
         _logger.LogInformation("User created new submission with id: {Id}", submissionId);
@@ -73,8 +97,8 @@ public class SubmissionController : ControllerBase
         var bytesToVerified = DataUtils.CombineByteArrays(
             submitDto.EncryptedPaper,
             submitDto.EncryptedSubmissionKey,
-            submitDto.SubmissionRandomness,
-            submitDto.ReviewRandomness,
+            submitDto.EncryptedSubmissionRandomness,
+            submitDto.EncryptedReviewRandomness,
             submitDto.SubmissionCommitment,
             submitDto.IdentityCommitment
         );
@@ -90,19 +114,13 @@ public class SubmissionController : ControllerBase
         }
     }
 
-    private async Task<byte[]> SavePaperAsync(SubmitDto submitDto, Guid submissionId)
+    private async Task<byte[]> SavePaperAsync(byte[] encryptedPaper, byte[] submissionKey, Guid submissionId)
     {
-        var programCommitteePrivateKey = KeyUtils.GetProgramCommitteePrivateKey();
-        var submissionKey = await EncryptionUtils.AsymmetricDecryptAsync(
-            submitDto.EncryptedSubmissionKey,
-            programCommitteePrivateKey
-        );
-
         var submissionsDirectoryPath = _configuration.GetSubmissionsStorage();
         var paperFilePath = Path.Combine(submissionsDirectoryPath, submissionId.ToString());
         Directory.CreateDirectory(submissionsDirectoryPath);
 
-        var paperBytes = await EncryptionUtils.SymmetricDecryptAsync(submitDto.EncryptedPaper, submissionKey, null);
+        var paperBytes = await EncryptionUtils.SymmetricDecryptAsync(encryptedPaper, submissionKey, null);
         await System.IO.File.WriteAllBytesAsync(paperFilePath, paperBytes);
         return paperBytes;
     }

@@ -23,26 +23,24 @@ public class ReviewController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<List<OpenSubmissionDto>> GetOpenSubmissions(Guid reviewerId)
+    public async Task<List<MatchableSubmissionDto>> GetMatchableSubmissions(Guid reviewerId)
     {
-        var openReviews = await _dbContext
+        var matchableSubmissionDtos = await _dbContext
             .Reviews.Include(review => review.Submission)
-            .Where(review => review.ReviewerId == reviewerId && review.Status == ReviewStatus.Open)
-            .ToListAsync();
-
-        var openSubmissionDtos = openReviews
-            .Select(review => review.Submission)
-            // This check is most likely not needed, since all reviews should be closed when a submission is closed.
-            .Where(submission => submission.Status == SubmissionStatus.Open)
-            .Select(submission => new OpenSubmissionDto(
-                submission.Id,
-                submission.Status,
-                submission.PaperSignature,
-                submission.CreatedDate
+            .Where(review =>
+                review.ReviewerId == reviewerId
+                && review.Status == ReviewStatus.Matching
+                && review.Submission.Status == SubmissionStatus.Matching
+            )
+            .Select(review => new MatchableSubmissionDto(
+                review.Submission.Id,
+                review.Submission.Title,
+                review.Submission.Description,
+                review.Submission.PaperSignature,
+                review.Submission.CreatedDate
             ))
-            .ToList();
-
-        return openSubmissionDtos;
+            .ToListAsync();
+        return matchableSubmissionDtos;
     }
 
     [HttpGet]
@@ -87,9 +85,9 @@ public class ReviewController : ControllerBase
             return new ResultDto(false, "The submission or review was not found.");
         }
 
-        if (submission.Status != SubmissionStatus.Open || review.Status != ReviewStatus.Open)
+        if (submission.Status != SubmissionStatus.Matching || review.Status != ReviewStatus.Matching)
         {
-            return new ResultDto(false, "The submission and review must be open.");
+            return new ResultDto(false, "The submission and review must be in the matching state.");
         }
 
         review.Status = bidDto.WantsToReview ? ReviewStatus.Pending : ReviewStatus.Abstain;

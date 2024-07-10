@@ -2,5 +2,6 @@ namespace Apachi.WebApi.Data;
 
 public enum JobType
 {
-    CreateReviews
+    CreateReviews,
+    Matching
 }

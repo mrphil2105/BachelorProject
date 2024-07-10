@@ -3,6 +3,7 @@ using System;
 using Apachi.WebApi.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Apachi.WebApi.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240702001415_AddTitleAndDescription")]
+    partial class AddTitleAndDescription
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "8.0.4");
@@ -23,16 +26,19 @@ namespace Apachi.WebApi.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
-                    b.Property<DateTimeOffset?>("CompletedDate")
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTimeOffset>("CreatedDate")
+                    b.Property<DateTimeOffset?>("EndDate")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Payload")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Result")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTimeOffset>("ScheduleDate")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTimeOffset?>("StartDate")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Status")
@@ -48,42 +54,11 @@ namespace Apachi.WebApi.Migrations
                     b.ToTable("Jobs");
                 });
 
-            modelBuilder.Entity("Apachi.WebApi.Data.JobSchedule", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT");
-
-                    b.Property<TimeSpan>("Interval")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("JobType")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTimeOffset>("LastRun")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("JobType")
-                        .IsUnique();
-
-                    b.ToTable("JobSchedules");
-                });
-
             modelBuilder.Entity("Apachi.WebApi.Data.Review", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
-
-                    b.Property<byte[]>("EncryptedReviewRandomness")
-                        .HasColumnType("BLOB");
 
                     b.Property<Guid>("ReviewerId")
                         .HasColumnType("TEXT");
@@ -143,9 +118,6 @@ namespace Apachi.WebApi.Migrations
                         .IsRequired()
                         .HasColumnType("BLOB");
 
-                    b.Property<byte[]>("MatchingSignature")
-                        .HasColumnType("BLOB");
-
                     b.Property<byte[]>("PaperSignature")
                         .IsRequired()
                         .HasColumnType("BLOB");
@@ -159,10 +131,6 @@ namespace Apachi.WebApi.Migrations
                         .HasColumnType("BLOB");
 
                     b.Property<byte[]>("ReviewRandomness")
-                        .IsRequired()
-                        .HasColumnType("BLOB");
-
-                    b.Property<byte[]>("ReviewRandomnessSignature")
                         .IsRequired()
                         .HasColumnType("BLOB");
 
