@@ -3,20 +3,14 @@ using Apachi.ViewModels.Services;
 
 namespace Apachi.ViewModels.Reviewer;
 
-public class ReviewableSubmissionsViewModel
-    : Conductor<ReviewableSubmissionDto>.Collection.AllActive,
-        IMenuPageViewModel
+public class ReviewViewModel : Conductor<ReviewableSubmissionDto>.Collection.AllActive, IMenuPageViewModel
 {
     private readonly IViewService _viewService;
     private readonly IReviewService _reviewService;
     private readonly IReviewerService _reviewerService;
     private bool _isLoading;
 
-    public ReviewableSubmissionsViewModel(
-        IViewService viewService,
-        IReviewService reviewService,
-        IReviewerService reviewerService
-    )
+    public ReviewViewModel(IViewService viewService, IReviewService reviewService, IReviewerService reviewerService)
     {
         _viewService = viewService;
         _reviewService = reviewService;
