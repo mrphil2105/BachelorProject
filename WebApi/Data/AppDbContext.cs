@@ -32,6 +32,7 @@ public class AppDbContext : DbContext
         builder.Entity<Job>().Property(job => job.Type).HasConversion<string>();
         builder.Entity<Job>().Property(job => job.Status).HasConversion<string>();
 
-        builder.Entity<LogEntry>().Property(log => log.Type).HasConversion<string>();
+        builder.Entity<LogEntry>().HasIndex(log => log.CurrentHash).IsUnique();
+        builder.Entity<LogEntry>().Property(log => log.Message).IsRequired();
     }
 }
