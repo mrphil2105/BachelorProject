@@ -15,6 +15,8 @@ public class AppDbContext : DbContext
 
     public DbSet<JobSchedule> JobSchedules => Set<JobSchedule>();
 
+    public DbSet<LogEntry> LogEntries => Set<LogEntry>();
+
     public DbSet<Job> Jobs => Set<Job>();
 
     protected override void OnModelCreating(ModelBuilder builder)
@@ -29,5 +31,7 @@ public class AppDbContext : DbContext
 
         builder.Entity<Job>().Property(job => job.Type).HasConversion<string>();
         builder.Entity<Job>().Property(job => job.Status).HasConversion<string>();
+
+        builder.Entity<LogEntry>().Property(log => log.Type).HasConversion<string>();
     }
 }
