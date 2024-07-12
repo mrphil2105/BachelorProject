@@ -1,71 +1,32 @@
-using Apachi.Shared.Dtos;
-using Apachi.ViewModels.Services;
-
 namespace Apachi.ViewModels.Reviewer;
 
-public class ReviewViewModel : Conductor<ReviewableSubmissionDto>.Collection.AllActive, IMenuPageViewModel
+public class ReviewViewModel : Conductor<Screen>, IMenuPageViewModel
 {
-    private readonly IViewService _viewService;
-    private readonly IReviewService _reviewService;
-    private readonly IReviewerService _reviewerService;
-    private bool _isLoading;
+    private readonly ReviewListViewModel _listViewModel;
+    private readonly ReviewAssessmentViewModel _assessmentViewModel;
 
-    public ReviewViewModel(IViewService viewService, IReviewService reviewService, IReviewerService reviewerService)
+    public ReviewViewModel(ReviewListViewModel listViewModel, ReviewAssessmentViewModel assessmentViewModel)
     {
-        _viewService = viewService;
-        _reviewService = reviewService;
-        _reviewerService = reviewerService;
+        _listViewModel = listViewModel;
+        _assessmentViewModel = assessmentViewModel;
     }
 
     public string PageName => "Review";
 
     public bool IsReviewer => true;
 
-    public bool IsLoading
+    public Task GoToList()
     {
-        get => _isLoading;
-        set => Set(ref _isLoading, value);
+        return ActivateItemAsync(_listViewModel);
     }
 
-    public async Task DownloadPaper(ReviewableSubmissionDto reviewableSubmissionDto)
+    public Task GoToAssessment()
     {
-        var paperFilePath = await _viewService.ShowSaveFileDialogAsync(this);
-
-        if (paperFilePath == null)
-        {
-            return;
-        }
-
-        await _reviewService.DownloadPaperAsync(
-            reviewableSubmissionDto.SubmissionId,
-            reviewableSubmissionDto.PaperSignature,
-            paperFilePath
-        );
+        return ActivateItemAsync(_assessmentViewModel);
     }
 
-    protected override async Task OnInitializeAsync(CancellationToken cancellationToken)
+    protected override Task OnInitializeAsync(CancellationToken cancellationToken)
     {
-        List<ReviewableSubmissionDto> reviewableSubmissionDtos;
-
-        try
-        {
-            IsLoading = true;
-            reviewableSubmissionDtos = await _reviewerService.GetReviewableSubmissionsAsync();
-        }
-        catch (HttpRequestException exception)
-        {
-            await _viewService.ShowMessageBoxAsync(
-                this,
-                $"Unable to retrieve submissions: {exception.Message}",
-                "Retrieval Failure",
-                kind: MessageBoxKind.Error
-            );
-            IsLoading = false;
-            return;
-        }
-
-        Items.Clear();
-        Items.AddRange(reviewableSubmissionDtos);
-        IsLoading = false;
+        return ActivateItemAsync(_listViewModel);
     }
 }
