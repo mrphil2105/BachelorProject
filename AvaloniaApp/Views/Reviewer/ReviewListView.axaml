@@ -29,6 +29,10 @@
                                     Command="{e:Action DownloadPaper}"
                                     CommandParameter="{Binding}"
                                     Content="Download" />
+                                <Button
+                                    Command="{e:Action Assess}"
+                                    CommandParameter="{Binding}"
+                                    Content="Assess" />
                             </StackPanel>
                         </StackPanel>
                     </DataTemplate>

@@ -1,0 +1,46 @@
+<UserControl
+    x:Class="Apachi.AvaloniaApp.Views.Reviewer.ReviewAssessmentView"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:c="using:Apachi.AvaloniaApp.Converters"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:dto="using:Apachi.Shared.Dtos"
+    xmlns:e="https://github.com/mrphil2105/MvvmElegance"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:vm="using:Apachi.ViewModels.Reviewer"
+    x:DataType="vm:ReviewAssessmentViewModel"
+    mc:Ignorable="d">
+    <StackPanel>
+        <StackPanel Orientation="Horizontal">
+            <Button Command="{e:Action Back}" Content="Back" />
+            <TextBlock FontSize="24" Text="Assess Submission" />
+        </StackPanel>
+        <ContentControl Content="{Binding ReviewableSubmissionDto}">
+            <ContentControl.ContentTemplate>
+                <DataTemplate DataType="{x:Type dto:ReviewableSubmissionDto}">
+                    <TextBlock FontSize="16" TextWrapping="Wrap">
+                        <Run Text="Write your assessment for" />
+                        <Run FontWeight="Medium" Text="{Binding Title}" />
+                        <Run Text="below:" />
+                    </TextBlock>
+                </DataTemplate>
+            </ContentControl.ContentTemplate>
+        </ContentControl>
+        <TextBox
+            Height="150"
+            AcceptsReturn="True"
+            Text="{Binding Assessment}"
+            TextWrapping="Wrap"
+            Watermark="Assessment" />
+        <StackPanel HorizontalAlignment="Right" Orientation="Horizontal">
+            <Button
+                Command="{e:Action SaveAssessment}"
+                Content="Save"
+                IsEnabled="{Binding IsDirty}" />
+            <Button
+                Command="{e:Action SubmitAssessment}"
+                Content="Submit"
+                IsEnabled="{Binding !HasErrors}" />
+        </StackPanel>
+    </StackPanel>
+</UserControl>

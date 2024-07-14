@@ -39,6 +39,11 @@ public class ReviewListViewModel : Conductor<ReviewableSubmissionDto>.Collection
         );
     }
 
+    public Task Assess(ReviewableSubmissionDto reviewableSubmissionDto)
+    {
+        return ((ReviewViewModel)Parent!).GoToAssessment(reviewableSubmissionDto);
+    }
+
     protected override async Task OnInitializeAsync(CancellationToken cancellationToken)
     {
         List<ReviewableSubmissionDto> reviewableSubmissionDtos;

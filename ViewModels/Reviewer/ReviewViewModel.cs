@@ -1,3 +1,5 @@
+using Apachi.Shared.Dtos;
+
 namespace Apachi.ViewModels.Reviewer;
 
 public class ReviewViewModel : Conductor<Screen>, IMenuPageViewModel
@@ -20,8 +22,9 @@ public class ReviewViewModel : Conductor<Screen>, IMenuPageViewModel
         return ActivateItemAsync(_listViewModel);
     }
 
-    public Task GoToAssessment()
+    public Task GoToAssessment(ReviewableSubmissionDto reviewableSubmissionDto)
     {
+        _assessmentViewModel.ReviewableSubmissionDto = reviewableSubmissionDto;
         return ActivateItemAsync(_assessmentViewModel);
     }
 
