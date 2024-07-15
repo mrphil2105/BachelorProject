@@ -1,3 +1,4 @@
+using Apachi.Shared;
 using Apachi.Shared.Dtos;
 using Apachi.ViewModels.Services;
 using Apachi.ViewModels.Validation;
@@ -23,8 +24,14 @@ public class ReviewAssessmentViewModel : Screen
     public ReviewableSubmissionDto? ReviewableSubmissionDto
     {
         get => _reviewableSubmissionDto;
-        set => Set(ref _reviewableSubmissionDto, value);
+        set
+        {
+            Set(ref _reviewableSubmissionDto, value);
+            RaisePropertyChanged(nameof(CanEdit));
+        }
     }
+
+    public bool CanEdit => ReviewableSubmissionDto?.ReviewStatus == ReviewStatus.Pending;
 
     public string Assessment
     {
@@ -66,6 +73,7 @@ public class ReviewAssessmentViewModel : Screen
         {
             await SaveAssessment();
             await _reviewService.SendAssessmentAsync(ReviewableSubmissionDto!, Assessment);
+            ReviewableSubmissionDto = ReviewableSubmissionDto! with { ReviewStatus = ReviewStatus.Discussing };
             await _viewService.ShowMessageBoxAsync(
                 this,
                 "The assessment has been successfully sent!",

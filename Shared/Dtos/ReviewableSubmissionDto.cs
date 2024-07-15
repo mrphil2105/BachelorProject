@@ -2,6 +2,7 @@ namespace Apachi.Shared.Dtos;
 
 public record ReviewableSubmissionDto(
     Guid SubmissionId,
+    ReviewStatus ReviewStatus,
     string Title,
     string Description,
     byte[] PaperSignature,
