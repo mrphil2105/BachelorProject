@@ -5,6 +5,7 @@ public enum ReviewStatus
     Matching, // Reviewer has yet to respond.
     Abstain, // Reviewer has chosen to not review.
     Pending, // Reviewer has yet to review.
+    Discussing, // Reviewer is ready to discuss.
 
     Accepted, // Reviewer has accepted paper.
     Rejected // Reviewer has rejected paper.

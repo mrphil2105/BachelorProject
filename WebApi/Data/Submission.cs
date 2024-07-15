@@ -34,7 +34,7 @@ public class Submission
 
     public byte[] ReviewCommitment { get; set; } = null!; // C(P, r_r)
 
-    public byte[] ReviewNonce { get; set; } = null!;
+    public byte[] ReviewNonce { get; set; } = null!; // n_r
 
     public byte[]? MatchingSignature { get; set; } // Signed by K_PC^-1
 

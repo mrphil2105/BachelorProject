@@ -1,16 +1,22 @@
 using Apachi.Shared.Dtos;
+using Apachi.ViewModels.Services;
 using Apachi.ViewModels.Validation;
 
 namespace Apachi.ViewModels.Reviewer;
 
 public class ReviewAssessmentViewModel : Screen
 {
+    private readonly IViewService _viewService;
+    private readonly IReviewService _reviewService;
+
     private ReviewableSubmissionDto? _reviewableSubmissionDto;
     private string _assessment = string.Empty;
     private bool _isDirty;
 
-    public ReviewAssessmentViewModel()
+    public ReviewAssessmentViewModel(IViewService viewService, IReviewService reviewService)
     {
+        _viewService = viewService;
+        _reviewService = reviewService;
         Validator = new ValidationAdapter<ReviewAssessmentViewModel>(new ReviewAssessmentViewModelValidator());
     }
 
@@ -51,7 +57,25 @@ public class ReviewAssessmentViewModel : Screen
             return;
         }
 
-        throw new NotImplementedException();
+        try
+        {
+            await _reviewService.SendAssessmentAsync(ReviewableSubmissionDto!, Assessment);
+            await _viewService.ShowMessageBoxAsync(
+                this,
+                "The assessment has been successfully sent!",
+                "Assessment Successful",
+                kind: MessageBoxKind.Information
+            );
+        }
+        catch (HttpRequestException exception)
+        {
+            await _viewService.ShowMessageBoxAsync(
+                this,
+                $"Unable to send assessment: {exception.Message}",
+                "Assessment Failure",
+                kind: MessageBoxKind.Error
+            );
+        }
     }
 
     public Task Back()

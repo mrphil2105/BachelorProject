@@ -1,3 +1,5 @@
+using System.Security.Cryptography;
+using System.Text;
 using Apachi.Shared;
 using Apachi.Shared.Crypto;
 using Apachi.Shared.Dtos;
@@ -109,6 +111,80 @@ public class ReviewController : ControllerBase
                 bidDto.SubmissionId
             );
         }
+
+        return new ResultDto(true);
+    }
+
+    [HttpPost]
+    public async Task<ResultDto> CreateAssessment([FromBody] AssessmentDto assessmentDto)
+    {
+        var programCommitteePrivateKey = KeyUtils.GetProgramCommitteePrivateKey();
+        var review = await _dbContext
+            .Reviews.Include(review => review.Reviewer)
+            .Include(review => review.Submission)
+            .FirstOrDefaultAsync(review =>
+                review.ReviewerId == assessmentDto.ReviewerId && review.SubmissionId == assessmentDto.SubmissionId
+            );
+
+        if (review == null)
+        {
+            return new ResultDto(false, "The review was not found.");
+        }
+
+        if (review.Status != ReviewStatus.Pending)
+        {
+            return new ResultDto(false, "The review must be in the pending state.");
+        }
+
+        var sharedKey = await EncryptionUtils.AsymmetricDecryptAsync(
+            review.Reviewer.EncryptedSharedKey,
+            programCommitteePrivateKey
+        );
+
+        var assessmentBytes = await EncryptionUtils.SymmetricDecryptAsync(
+            assessmentDto.EncryptedAssessment,
+            sharedKey,
+            null
+        );
+        var isSignatureValid = await KeyUtils.VerifySignatureAsync(
+            assessmentBytes,
+            assessmentDto.AssessmentSignature,
+            review.Reviewer.ReviewerPublicKey
+        );
+
+        if (!isSignatureValid)
+        {
+            throw new CryptographicException("The received assessment signature is invalid.");
+        }
+
+        isSignatureValid = await KeyUtils.VerifySignatureAsync(
+            review.Submission.ReviewCommitment,
+            assessmentDto.ReviewCommitmentSignature,
+            review.Reviewer.ReviewerPublicKey
+        );
+
+        if (!isSignatureValid)
+        {
+            throw new CryptographicException("The received review commitment signature is invalid.");
+        }
+
+        isSignatureValid = await KeyUtils.VerifySignatureAsync(
+            review.Submission.ReviewNonce,
+            assessmentDto.ReviewNonceSignature,
+            review.Reviewer.ReviewerPublicKey
+        );
+
+        if (!isSignatureValid)
+        {
+            throw new CryptographicException("The received review nonce signature is invalid.");
+        }
+
+        review.Status = ReviewStatus.Discussing;
+        review.Assessment = Encoding.UTF8.GetString(assessmentBytes);
+        review.AssessmentSignature = assessmentDto.AssessmentSignature;
+        review.ReviewCommitmentSignature = assessmentDto.ReviewCommitmentSignature;
+        review.ReviewNonceSignature = assessmentDto.ReviewNonceSignature;
+        await _dbContext.SaveChangesAsync();
 
         return new ResultDto(true);
     }

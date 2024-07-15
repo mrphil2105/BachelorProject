@@ -1,4 +1,5 @@
 using System.Security.Cryptography;
+using System.Text;
 using Apachi.AvaloniaApp.Data;
 using Apachi.Shared.Crypto;
 using Apachi.Shared.Dtos;
@@ -33,6 +34,8 @@ public class ReviewService : IReviewService
 
     public async Task DownloadPaperAsync(Guid submissionId, byte[] paperSignature, string paperFilePath)
     {
+        var programCommitteePublicKey = KeyUtils.GetProgramCommitteePublicKey();
+
         var reviewerId = _sessionService.UserId!.Value;
         var queryParameters = new Dictionary<string, string>()
         {
@@ -47,7 +50,6 @@ public class ReviewService : IReviewService
         var sharedKey = await _sessionService.SymmetricDecryptAsync(reviewer!.EncryptedSharedKey);
 
         var paperBytes = await EncryptionUtils.SymmetricDecryptAsync(contentStream, sharedKey, null);
-        var programCommitteePublicKey = KeyUtils.GetProgramCommitteePublicKey();
         var isSignatureValid = await KeyUtils.VerifySignatureAsync(
             paperBytes,
             paperSignature,
@@ -83,6 +85,62 @@ public class ReviewService : IReviewService
         if (!resultDto.Success)
         {
             throw new OperationFailedException($"Failed to create bid: {resultDto.Message}");
+        }
+    }
+
+    public async Task SendAssessmentAsync(ReviewableSubmissionDto reviewableSubmissionDto, string assessment)
+    {
+        var programCommitteePublicKey = KeyUtils.GetProgramCommitteePublicKey();
+
+        var reviewerId = _sessionService.UserId!.Value;
+        await using var dbContext = _dbContextFactory();
+        var reviewer = await dbContext.Reviewers.FirstOrDefaultAsync(reviewer => reviewer.Id == reviewerId);
+
+        var privateKey = await _sessionService.SymmetricDecryptAsync(reviewer!.EncryptedPrivateKey);
+        var sharedKey = await _sessionService.SymmetricDecryptAsync(reviewer.EncryptedSharedKey);
+
+        var reviewRandomness = await EncryptionUtils.SymmetricDecryptAsync(
+            reviewableSubmissionDto.EncryptedReviewRandomness,
+            sharedKey,
+            null
+        );
+        var isSignatureValid = await KeyUtils.VerifySignatureAsync(
+            reviewRandomness,
+            reviewableSubmissionDto.ReviewRandomnessSignature,
+            programCommitteePublicKey
+        );
+
+        if (!isSignatureValid)
+        {
+            throw new CryptographicException("The received review randomness signature is invalid.");
+        }
+
+        var assessmentBytes = Encoding.UTF8.GetBytes(assessment);
+        var encryptedAssessment = await EncryptionUtils.SymmetricEncryptAsync(assessmentBytes, sharedKey, null);
+        var assessmentSignature = await KeyUtils.CalculateSignatureAsync(assessmentBytes, privateKey);
+
+        var reviewCommitmentSignature = await KeyUtils.CalculateSignatureAsync(
+            reviewableSubmissionDto.ReviewCommitment,
+            privateKey
+        );
+        var reviewNonceSignature = await KeyUtils.CalculateSignatureAsync(
+            reviewableSubmissionDto.ReviewNonce,
+            privateKey
+        );
+
+        var assessmentDto = new AssessmentDto(
+            reviewerId,
+            reviewableSubmissionDto.SubmissionId,
+            encryptedAssessment,
+            assessmentSignature,
+            reviewCommitmentSignature,
+            reviewNonceSignature
+        );
+        var resultDto = await _apiService.PostAsync<AssessmentDto, ResultDto>("Review/CreateAssessment", assessmentDto);
+
+        if (!resultDto.Success)
+        {
+            throw new OperationFailedException($"Failed to create assessment: {resultDto.Message}");
         }
     }
 }

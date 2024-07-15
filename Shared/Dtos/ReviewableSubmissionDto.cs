@@ -7,5 +7,7 @@ public record ReviewableSubmissionDto(
     byte[] PaperSignature,
     byte[] EncryptedReviewRandomness,
     byte[] ReviewRandomnessSignature,
+    byte[] ReviewCommitment,
+    byte[] ReviewNonce,
     DateTimeOffset CreatedDate
 );

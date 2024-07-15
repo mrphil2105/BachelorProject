@@ -69,6 +69,8 @@ public class ReviewerController : ControllerBase
                 review.Submission.PaperSignature,
                 review.EncryptedReviewRandomness!,
                 review.Submission.ReviewRandomnessSignature,
+                review.Submission.ReviewCommitment,
+                review.Submission.ReviewNonce,
                 review.Submission.CreatedDate
             ))
             .ToListAsync();
