@@ -28,8 +28,9 @@ public class ReviewViewModel : Conductor<Screen>, IMenuPageViewModel
         return ActivateItemAsync(_assessmentViewModel);
     }
 
-    protected override Task OnInitializeAsync(CancellationToken cancellationToken)
+    protected override async Task OnActivateAsync(CancellationToken cancellationToken = default)
     {
-        return ActivateItemAsync(_listViewModel);
+        await ActivateItemAsync(_listViewModel);
+        await base.OnActivateAsync(cancellationToken);
     }
 }
