@@ -95,4 +95,21 @@ public class ReviewAssessmentViewModel : Screen
         Assessment = assessment ?? string.Empty;
         IsDirty = false;
     }
+
+    public override async Task<bool> CanCloseAsync(CancellationToken cancellationToken = default)
+    {
+        if (!IsActive || !IsDirty)
+        {
+            return true;
+        }
+
+        var result = await _viewService.ShowMessageBoxAsync(
+            this,
+            "You have unsaved changes in your assessment. Are you sure you want to close?",
+            "Unsaved Changes",
+            MessageBoxButton.YesNo,
+            MessageBoxKind.Question
+        );
+        return result == MessageBoxResult.Yes;
+    }
 }
