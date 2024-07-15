@@ -11,4 +11,8 @@ public interface IReviewService
     Task SendBidAsync(Guid submissionId, bool wantsToReview);
 
     Task SendAssessmentAsync(ReviewableSubmissionDto reviewableSubmissionDto, string assessment);
+
+    Task SaveAssessmentAsync(Guid submissionId, string assessment);
+
+    Task<string?> LoadAssessmentAsync(Guid submissionId);
 }

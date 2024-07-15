@@ -42,10 +42,15 @@ public class ReviewAssessmentViewModel : Screen
         set => Set(ref _isDirty, value);
     }
 
-    public Task SaveAssessment()
+    public async Task SaveAssessment()
     {
+        if (!IsDirty)
+        {
+            return;
+        }
+
+        await _reviewService.SaveAssessmentAsync(ReviewableSubmissionDto!.SubmissionId, Assessment);
         IsDirty = false;
-        throw new NotImplementedException();
     }
 
     public async Task SubmitAssessment()
@@ -59,6 +64,7 @@ public class ReviewAssessmentViewModel : Screen
 
         try
         {
+            await SaveAssessment();
             await _reviewService.SendAssessmentAsync(ReviewableSubmissionDto!, Assessment);
             await _viewService.ShowMessageBoxAsync(
                 this,
@@ -81,5 +87,12 @@ public class ReviewAssessmentViewModel : Screen
     public Task Back()
     {
         return ((ReviewViewModel)Parent!).GoToList();
+    }
+
+    protected override async Task OnInitializeAsync(CancellationToken cancellationToken)
+    {
+        var assessment = await _reviewService.LoadAssessmentAsync(ReviewableSubmissionDto!.SubmissionId);
+        Assessment = assessment ?? string.Empty;
+        IsDirty = false;
     }
 }

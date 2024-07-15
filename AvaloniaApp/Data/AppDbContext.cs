@@ -13,6 +13,8 @@ public class AppDbContext : DbContext
 
     public DbSet<Submission> Submissions => Set<Submission>();
 
+    public DbSet<Review> Reviews => Set<Review>();
+
     protected override void OnModelCreating(ModelBuilder builder)
     {
         builder.Entity<Submitter>().HasIndex(submitter => submitter.Username).IsUnique();

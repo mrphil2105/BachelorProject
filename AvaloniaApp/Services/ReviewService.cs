@@ -86,6 +86,13 @@ public class ReviewService : IReviewService
         {
             throw new OperationFailedException($"Failed to create bid: {resultDto.Message}");
         }
+
+        if (wantsToReview)
+        {
+            var review = new Review { ReviewerId = reviewerId, SubmissionId = submissionId };
+            dbContext.Reviews.Add(review);
+            await dbContext.SaveChangesAsync();
+        }
     }
 
     public async Task SendAssessmentAsync(ReviewableSubmissionDto reviewableSubmissionDto, string assessment)
@@ -142,5 +149,48 @@ public class ReviewService : IReviewService
         {
             throw new OperationFailedException($"Failed to create assessment: {resultDto.Message}");
         }
+    }
+
+    public async Task SaveAssessmentAsync(Guid submissionId, string assessment)
+    {
+        var reviewerId = _sessionService.UserId!.Value;
+        await using var dbContext = _dbContextFactory();
+        var review = await dbContext.Reviews.FirstOrDefaultAsync(review =>
+            review.ReviewerId == reviewerId && review.SubmissionId == submissionId
+        );
+
+        if (review == null)
+        {
+            throw new OperationFailedException("The review was not found.");
+        }
+
+        var assessmentBytes = Encoding.UTF8.GetBytes(assessment);
+        var encryptedAssessment = await _sessionService.SymmetricEncryptAsync(assessmentBytes);
+
+        review.EncryptedSavedAssessment = encryptedAssessment;
+        await dbContext.SaveChangesAsync();
+    }
+
+    public async Task<string?> LoadAssessmentAsync(Guid submissionId)
+    {
+        var reviewerId = _sessionService.UserId!.Value;
+        await using var dbContext = _dbContextFactory();
+        var review = await dbContext.Reviews.FirstOrDefaultAsync(review =>
+            review.ReviewerId == reviewerId && review.SubmissionId == submissionId
+        );
+
+        if (review == null)
+        {
+            throw new OperationFailedException("The review was not found.");
+        }
+
+        if (review.EncryptedSavedAssessment == null)
+        {
+            return null;
+        }
+
+        var assessmentBytes = await _sessionService.SymmetricDecryptAsync(review.EncryptedSavedAssessment);
+        var assessment = Encoding.UTF8.GetString(assessmentBytes);
+        return assessment;
     }
 }
