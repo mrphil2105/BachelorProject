@@ -1,4 +1,5 @@
 using Apachi.ProgramCommittee.Data;
+using Apachi.Shared;
 using Apachi.Shared.Data;
 using Autofac;
 using Microsoft.EntityFrameworkCore;
@@ -9,13 +10,8 @@ public class DataModule : Module
 {
     protected override void Load(ContainerBuilder builder)
     {
-        var sqliteFileName = Environment.GetEnvironmentVariable("APP_DATABASE_FILE");
-        var databaseConnection = Environment.GetEnvironmentVariable("LOG_DATABASE_CONNECTION");
-
-        if (sqliteFileName == null || databaseConnection == null)
-        {
-            throw new Exception($"Environment variables APP_DATABASE_FILE and LOG_DATABASE_CONNECTION must be set.");
-        }
+        var sqliteFileName = EnvironmentVariable.GetValue(EnvironmentVariable.AppDatabaseFile);
+        var databaseConnection = EnvironmentVariable.GetValue(EnvironmentVariable.LogDatabaseConnection);
 
         builder
             .Register(context =>
