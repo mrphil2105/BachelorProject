@@ -3,13 +3,13 @@ using Apachi.ViewModels.Services;
 
 namespace Apachi.ViewModels.Reviewer;
 
-public class MatchableSubmissionsViewModel : Conductor<MatchableSubmissionDto>.Collection.AllActive, IMenuPageViewModel
+public class MatchViewModel : Conductor<MatchableSubmissionDto>.Collection.AllActive, IMenuPageViewModel
 {
     private readonly IViewService _viewService;
     private readonly IReviewService _reviewService;
     private bool _isLoading;
 
-    public MatchableSubmissionsViewModel(IViewService viewService, IReviewService reviewService)
+    public MatchViewModel(IViewService viewService, IReviewService reviewService)
     {
         _viewService = viewService;
         _reviewService = reviewService;

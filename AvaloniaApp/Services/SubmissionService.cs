@@ -94,14 +94,15 @@ public class SubmissionService : ISubmissionService
         var identityCommitmentBytes = identityCommitment.ToBytes();
 
         // We assume the following byte arrays are part of the "message" described in step (1).
-        var bytesToBeSigned = DataUtils.CombineByteArrays(
-            encryptedPaper,
-            encryptedSubmissionKey,
-            encryptedSubmissionRandomness,
-            encryptedReviewRandomness,
-            submissionCommitmentBytes,
-            identityCommitmentBytes
-        );
+        await using var memoryStream = new MemoryStream();
+        await memoryStream.WriteAsync(encryptedPaper);
+        await memoryStream.WriteAsync(encryptedSubmissionKey);
+        await memoryStream.WriteAsync(encryptedSubmissionRandomness);
+        await memoryStream.WriteAsync(encryptedReviewRandomness);
+        await memoryStream.WriteAsync(submissionCommitmentBytes);
+        await memoryStream.WriteAsync(identityCommitmentBytes);
+        var bytesToBeSigned = memoryStream.ToArray();
+
         var submissionSignature = await KeyUtils.CalculateSignatureAsync(bytesToBeSigned, submissionPrivateKey);
 
         var submitDto = new SubmitDto(

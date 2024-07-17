@@ -1,5 +1,5 @@
 <UserControl
-    x:Class="Apachi.AvaloniaApp.Views.Reviewer.ReviewableSubmissionsView"
+    x:Class="Apachi.AvaloniaApp.Views.Reviewer.ReviewListView"
     xmlns="https://github.com/avaloniaui"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:c="using:Apachi.AvaloniaApp.Converters"
@@ -8,7 +8,7 @@
     xmlns:e="https://github.com/mrphil2105/MvvmElegance"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:vm="using:Apachi.ViewModels.Reviewer"
-    x:DataType="vm:ReviewableSubmissionsViewModel"
+    x:DataType="vm:ReviewListViewModel"
     mc:Ignorable="d">
     <StackPanel>
         <TextBlock FontSize="24" Text="Reviewable Submissions" />
@@ -29,6 +29,10 @@
                                     Command="{e:Action DownloadPaper}"
                                     CommandParameter="{Binding}"
                                     Content="Download" />
+                                <Button
+                                    Command="{e:Action Assess}"
+                                    CommandParameter="{Binding}"
+                                    Content="Assess" />
                             </StackPanel>
                         </StackPanel>
                     </DataTemplate>

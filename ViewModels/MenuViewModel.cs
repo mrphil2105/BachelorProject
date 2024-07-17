@@ -13,15 +13,25 @@ public class MenuViewModel : Conductor<IMenuPageViewModel>.Collection.OneActive
         _pageViewModelsFactory = pageViewModelsFactory;
     }
 
-    public Task GoToMenuPage(IMenuPageViewModel menuPage)
+    public async Task GoToMenuPage(IMenuPageViewModel menuPage)
     {
-        return ActivateItemAsync(menuPage);
+        if (!await CanCloseActivePage())
+        {
+            return;
+        }
+
+        await ActivateItemAsync(menuPage);
     }
 
-    public Task Logout()
+    public async Task Logout()
     {
+        if (!await CanCloseActivePage())
+        {
+            return;
+        }
+
         _sessionService.Logout();
-        return ((MainViewModel)Parent!).UpdateLoginState();
+        await ((MainViewModel)Parent!).UpdateLoginState();
     }
 
     public void DisplayUserPages(bool isReviewer)
@@ -43,5 +53,18 @@ public class MenuViewModel : Conductor<IMenuPageViewModel>.Collection.OneActive
         }
 
         Items.Clear();
+    }
+
+    private async Task<bool> CanCloseActivePage()
+    {
+        if (ActiveItem is IGuardClose guardClose)
+        {
+            if (!await guardClose.CanCloseAsync())
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 }

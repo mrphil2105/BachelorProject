@@ -59,16 +59,19 @@ public class ReviewerController : ControllerBase
             .Reviews.Include(review => review.Submission)
             .Where(review =>
                 review.ReviewerId == reviewerId
-                && review.Status == ReviewStatus.Pending
+                && (review.Status == ReviewStatus.Pending || review.Status == ReviewStatus.Discussing)
                 && review.Submission.Status == SubmissionStatus.Reviewing
             )
             .Select(review => new ReviewableSubmissionDto(
                 review.Submission.Id,
+                review.Status,
                 review.Submission.Title,
                 review.Submission.Description,
                 review.Submission.PaperSignature,
                 review.EncryptedReviewRandomness!,
                 review.Submission.ReviewRandomnessSignature,
+                review.Submission.ReviewCommitment,
+                review.Submission.ReviewNonce,
                 review.Submission.CreatedDate
             ))
             .ToListAsync();

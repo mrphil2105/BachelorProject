@@ -34,9 +34,17 @@ public class Submission
 
     public byte[] ReviewCommitment { get; set; } = null!; // C(P, r_r)
 
-    public byte[] ReviewNonce { get; set; } = null!;
+    public byte[] ReviewNonce { get; set; } = null!; // n_r
 
     public byte[]? MatchingSignature { get; set; } // Signed by K_PC^-1
+
+    public byte[]? GroupKey { get; set; }
+
+    public byte[]? GradeRandomness { get; set; }
+
+    public byte[]? EncryptedAssessmentsSet { get; set; } // Encrypted with K_P
+
+    public byte[]? AssessmentsSetSignature { get; set; } // Signed by K_PC^-1
 
     // Timestamps.
 

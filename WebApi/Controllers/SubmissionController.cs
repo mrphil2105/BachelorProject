@@ -94,14 +94,15 @@ public class SubmissionController : ControllerBase
 
     private async Task ThrowIfInvalidSubmissionSignatureAsync(SubmitDto submitDto)
     {
-        var bytesToVerified = DataUtils.CombineByteArrays(
-            submitDto.EncryptedPaper,
-            submitDto.EncryptedSubmissionKey,
-            submitDto.EncryptedSubmissionRandomness,
-            submitDto.EncryptedReviewRandomness,
-            submitDto.SubmissionCommitment,
-            submitDto.IdentityCommitment
-        );
+        await using var memoryStream = new MemoryStream();
+        await memoryStream.WriteAsync(submitDto.EncryptedPaper);
+        await memoryStream.WriteAsync(submitDto.EncryptedSubmissionKey);
+        await memoryStream.WriteAsync(submitDto.EncryptedSubmissionRandomness);
+        await memoryStream.WriteAsync(submitDto.EncryptedReviewRandomness);
+        await memoryStream.WriteAsync(submitDto.SubmissionCommitment);
+        await memoryStream.WriteAsync(submitDto.IdentityCommitment);
+        var bytesToVerified = memoryStream.ToArray();
+
         var isValid = await KeyUtils.VerifySignatureAsync(
             bytesToVerified,
             submitDto.SubmissionSignature,

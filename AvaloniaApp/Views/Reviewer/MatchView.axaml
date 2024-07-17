@@ -1,5 +1,5 @@
 <UserControl
-    x:Class="Apachi.AvaloniaApp.Views.Reviewer.MatchableSubmissionsView"
+    x:Class="Apachi.AvaloniaApp.Views.Reviewer.MatchView"
     xmlns="https://github.com/avaloniaui"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:c="using:Apachi.AvaloniaApp.Converters"
@@ -8,7 +8,7 @@
     xmlns:e="https://github.com/mrphil2105/MvvmElegance"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:vm="using:Apachi.ViewModels.Reviewer"
-    x:DataType="vm:MatchableSubmissionsViewModel"
+    x:DataType="vm:MatchViewModel"
     mc:Ignorable="d">
     <StackPanel>
         <TextBlock FontSize="24" Text="Matchable Submissions" />

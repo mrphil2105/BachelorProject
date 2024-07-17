@@ -3,6 +3,7 @@ using System;
 using Apachi.WebApi.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Apachi.WebApi.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240715011457_AddAssessmentAndSignatures")]
+    partial class AddAssessmentAndSignatures
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "8.0.4");
@@ -88,19 +91,7 @@ namespace Apachi.WebApi.Migrations
                     b.Property<byte[]>("AssessmentSignature")
                         .HasColumnType("BLOB");
 
-                    b.Property<byte[]>("EncryptedGradeRandomness")
-                        .HasColumnType("BLOB");
-
-                    b.Property<byte[]>("EncryptedGroupKey")
-                        .HasColumnType("BLOB");
-
                     b.Property<byte[]>("EncryptedReviewRandomness")
-                        .HasColumnType("BLOB");
-
-                    b.Property<byte[]>("GradeRandomnessSignature")
-                        .HasColumnType("BLOB");
-
-                    b.Property<byte[]>("GroupKeySignature")
                         .HasColumnType("BLOB");
 
                     b.Property<byte[]>("ReviewCommitmentSignature")
@@ -153,9 +144,6 @@ namespace Apachi.WebApi.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
-                    b.Property<byte[]>("AssessmentsSetSignature")
-                        .HasColumnType("BLOB");
-
                     b.Property<DateTimeOffset?>("ClosedDate")
                         .HasColumnType("TEXT");
 
@@ -165,15 +153,6 @@ namespace Apachi.WebApi.Migrations
                     b.Property<string>("Description")
                         .IsRequired()
                         .HasColumnType("TEXT");
-
-                    b.Property<byte[]>("EncryptedAssessmentsSet")
-                        .HasColumnType("BLOB");
-
-                    b.Property<byte[]>("GradeRandomness")
-                        .HasColumnType("BLOB");
-
-                    b.Property<byte[]>("GroupKey")
-                        .HasColumnType("BLOB");
 
                     b.Property<byte[]>("IdentityCommitment")
                         .IsRequired()

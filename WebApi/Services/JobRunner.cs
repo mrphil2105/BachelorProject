@@ -23,11 +23,11 @@ public class JobRunner : BackgroundService
         {
             await using var scope = _scopeFactory.CreateAsyncScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            var jobs = dbContext
+            var jobs = await dbContext
                 .Jobs.Where(job => job.Status == JobStatus.Ready || job.Status == JobStatus.Processing)
-                .AsAsyncEnumerable();
+                .ToListAsync();
 
-            await foreach (var job in jobs)
+            foreach (var job in jobs)
             {
                 stoppingToken.ThrowIfCancellationRequested();
                 await ProcessJobAsync(job, scope.ServiceProvider, dbContext, stoppingToken);

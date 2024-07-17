@@ -1,3 +1,4 @@
+using System.Buffers.Binary;
 using Org.BouncyCastle.Asn1.Nist;
 using Org.BouncyCastle.Math;
 using Org.BouncyCastle.Security;
@@ -6,6 +7,8 @@ namespace Apachi.Shared.Crypto;
 
 public static class DataUtils
 {
+    private const int MaxByteArrayLength = 1024 * 1024; // 1 MiB
+
     public static BigInteger GenerateBigInteger(string curveName = Constants.DefaultCurveName)
     {
         var curve = NistNamedCurves.GetByName(curveName);
@@ -69,16 +72,92 @@ public static class DataUtils
         return integers;
     }
 
-    public static byte[] CombineByteArrays(params byte[][] byteArrays)
+    public static byte[] SerializeByteArrays(params byte[][] byteArrays)
     {
-        var totalLength = byteArrays.Sum(bytes => bytes.Length);
-        using var memoryStream = new MemoryStream(totalLength);
+        return SerializeByteArrays((IEnumerable<byte[]>)byteArrays);
+    }
 
-        foreach (var bytes in byteArrays)
+    public static byte[] SerializeByteArrays(IEnumerable<byte[]> byteArrays)
+    {
+        if (byteArrays is not ICollection<byte[]> collection)
         {
-            memoryStream.Write(bytes);
+            collection = byteArrays.ToList();
+        }
+
+        var count = collection.Count;
+
+        if (count > ushort.MaxValue)
+        {
+            throw new ArgumentException(
+                $"The amount of byte arrays must not exceed {ushort.MaxValue}.",
+                nameof(byteArrays)
+            );
+        }
+
+        var totalLength = collection.Sum(array => array.Length);
+        var capacity = totalLength + count * sizeof(int) + sizeof(ushort);
+        using var memoryStream = new MemoryStream(capacity);
+
+        Span<byte> countPrefix = stackalloc byte[sizeof(ushort)];
+        BinaryPrimitives.WriteUInt16BigEndian(countPrefix, (ushort)count);
+        memoryStream.Write(countPrefix);
+
+        foreach (var array in collection)
+        {
+            if (array.Length > MaxByteArrayLength)
+            {
+                throw new ArgumentException(
+                    $"All byte arrays must not be longer than {MaxByteArrayLength}.",
+                    nameof(byteArrays)
+                );
+            }
+
+            Span<byte> lengthPrefix = stackalloc byte[sizeof(int)];
+            BinaryPrimitives.WriteInt32BigEndian(lengthPrefix, array.Length);
+            memoryStream.Write(lengthPrefix);
+            memoryStream.Write(array);
         }
 
         return memoryStream.GetBuffer();
+    }
+
+    public static List<byte[]> DeserializeByteArrays(byte[] serialized)
+    {
+        using var memoryStream = new MemoryStream(serialized);
+
+        Span<byte> countPrefix = stackalloc byte[sizeof(ushort)];
+        memoryStream.Read(countPrefix);
+        var count = BinaryPrimitives.ReadUInt16BigEndian(countPrefix);
+        var byteArrays = new List<byte[]>();
+
+        for (var i = 0; i < count; i++)
+        {
+            Span<byte> lengthPrefix = stackalloc byte[sizeof(int)];
+            memoryStream.Read(lengthPrefix);
+            var length = BinaryPrimitives.ReadInt32BigEndian(lengthPrefix);
+
+            if (length > MaxByteArrayLength)
+            {
+                throw new ArgumentException(
+                    $"Serialized data contains byte array longer than {MaxByteArrayLength}.",
+                    nameof(serialized)
+                );
+            }
+
+            var array = new byte[length];
+            var bytesRead = memoryStream.Read(array);
+
+            if (bytesRead != length)
+            {
+                throw new ArgumentException(
+                    "Serialized data contains incomplete byte array or incorrect length prefix.",
+                    nameof(serialized)
+                );
+            }
+
+            byteArrays.Add(array);
+        }
+
+        return byteArrays;
     }
 }

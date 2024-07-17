@@ -3,29 +3,19 @@ using Apachi.ViewModels.Services;
 
 namespace Apachi.ViewModels.Reviewer;
 
-public class ReviewableSubmissionsViewModel
-    : Conductor<ReviewableSubmissionDto>.Collection.AllActive,
-        IMenuPageViewModel
+public class ReviewListViewModel : Conductor<ReviewableSubmissionDto>.Collection.AllActive
 {
     private readonly IViewService _viewService;
     private readonly IReviewService _reviewService;
     private readonly IReviewerService _reviewerService;
     private bool _isLoading;
 
-    public ReviewableSubmissionsViewModel(
-        IViewService viewService,
-        IReviewService reviewService,
-        IReviewerService reviewerService
-    )
+    public ReviewListViewModel(IViewService viewService, IReviewService reviewService, IReviewerService reviewerService)
     {
         _viewService = viewService;
         _reviewService = reviewService;
         _reviewerService = reviewerService;
     }
-
-    public string PageName => "Review";
-
-    public bool IsReviewer => true;
 
     public bool IsLoading
     {
@@ -47,6 +37,11 @@ public class ReviewableSubmissionsViewModel
             reviewableSubmissionDto.PaperSignature,
             paperFilePath
         );
+    }
+
+    public Task Assess(ReviewableSubmissionDto reviewableSubmissionDto)
+    {
+        return ((ReviewViewModel)Parent!).GoToAssessment(reviewableSubmissionDto);
     }
 
     protected override async Task OnInitializeAsync(CancellationToken cancellationToken)

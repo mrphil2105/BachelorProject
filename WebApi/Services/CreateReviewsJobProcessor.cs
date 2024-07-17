@@ -42,7 +42,7 @@ public class CreateReviewsJobProcessor : IJobProcessor
             );
             await SaveEncryptedPaperAsync(submissionId, reviewer.Id, paperBytes, sharedKey);
 
-            var review = new Review { SubmissionId = submissionId, ReviewerId = reviewer.Id };
+            var review = new Review { ReviewerId = reviewer.Id, SubmissionId = submissionId };
             _dbContext.Reviews.Add(review);
             await _dbContext.SaveChangesAsync();
         }
