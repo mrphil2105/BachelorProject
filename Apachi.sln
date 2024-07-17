@@ -5,7 +5,7 @@ VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebApi", "WebApi\WebApi.csproj", "{C86491AF-3D6D-47B6-9560-0ECF3DE05399}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AvaloniaApp", "AvaloniaApp\AvaloniaApp.csproj", "{14874620-1D6C-40A2-AE15-E4ABE3C9A83A}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UserApp", "UserApp\UserApp.csproj", "{14874620-1D6C-40A2-AE15-E4ABE3C9A83A}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ViewModels", "ViewModels\ViewModels.csproj", "{7E2013A8-632D-4261-B509-212FB3127ADF}"
 EndProject
