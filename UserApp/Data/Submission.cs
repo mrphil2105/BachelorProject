@@ -1,4 +1,4 @@
-namespace Apachi.AvaloniaApp.Data;
+namespace Apachi.UserApp.Data;
 
 public class Submission
 {

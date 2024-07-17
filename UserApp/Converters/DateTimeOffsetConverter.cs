@@ -1,7 +1,7 @@
 using System.Globalization;
 using Avalonia.Data.Converters;
 
-namespace Apachi.AvaloniaApp.Converters;
+namespace Apachi.UserApp.Converters;
 
 public class DateTimeOffsetConverter : IValueConverter
 {

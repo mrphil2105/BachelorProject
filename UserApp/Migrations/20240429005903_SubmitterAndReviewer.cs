@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace Apachi.AvaloniaApp.Migrations
+namespace Apachi.UserApp.Migrations
 {
     /// <inheritdoc />
     public partial class SubmitterAndReviewer : Migration

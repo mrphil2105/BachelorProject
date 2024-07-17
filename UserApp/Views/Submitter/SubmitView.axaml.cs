@@ -1,6 +1,6 @@
 using Avalonia.Controls;
 
-namespace Apachi.AvaloniaApp.Views.Submitter;
+namespace Apachi.UserApp.Views.Submitter;
 
 public partial class SubmitView : UserControl
 {

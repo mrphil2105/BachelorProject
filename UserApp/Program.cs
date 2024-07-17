@@ -1,6 +1,6 @@
 using Avalonia;
 
-namespace Apachi.AvaloniaApp;
+namespace Apachi.UserApp;
 
 public class Program
 {

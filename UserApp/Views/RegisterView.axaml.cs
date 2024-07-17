@@ -1,6 +1,6 @@
 using Avalonia.Controls;
 
-namespace Apachi.AvaloniaApp.Views;
+namespace Apachi.UserApp.Views;
 
 public partial class RegisterView : UserControl
 {

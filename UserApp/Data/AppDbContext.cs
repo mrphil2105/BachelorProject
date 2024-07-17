@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 
-namespace Apachi.AvaloniaApp.Data;
+namespace Apachi.UserApp.Data;
 
 public class AppDbContext : DbContext
 {

@@ -2,7 +2,7 @@ using Autofac;
 using Autofac.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Apachi.AvaloniaApp.Modules;
+namespace Apachi.UserApp.Modules;
 
 public class HttpModule : Module
 {

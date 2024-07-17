@@ -1,8 +1,8 @@
 <UserControl
-    x:Class="Apachi.AvaloniaApp.Views.Reviewer.MatchView"
+    x:Class="Apachi.UserApp.Views.Reviewer.MatchView"
     xmlns="https://github.com/avaloniaui"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:c="using:Apachi.AvaloniaApp.Converters"
+    xmlns:c="using:Apachi.UserApp.Converters"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:dto="using:Apachi.Shared.Dtos"
     xmlns:e="https://github.com/mrphil2105/MvvmElegance"

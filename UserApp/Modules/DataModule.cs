@@ -1,8 +1,8 @@
-using Apachi.AvaloniaApp.Data;
+using Apachi.UserApp.Data;
 using Autofac;
 using Microsoft.EntityFrameworkCore;
 
-namespace Apachi.AvaloniaApp.Modules;
+namespace Apachi.UserApp.Modules;
 
 public class DataModule : Module
 {

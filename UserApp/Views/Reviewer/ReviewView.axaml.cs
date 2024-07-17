@@ -1,6 +1,6 @@
 using Avalonia.Controls;
 
-namespace Apachi.AvaloniaApp.Views.Reviewer;
+namespace Apachi.UserApp.Views.Reviewer;
 
 public partial class ReviewView : UserControl
 {

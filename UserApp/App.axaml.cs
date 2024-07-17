@@ -1,7 +1,7 @@
 using Avalonia;
 using Avalonia.Markup.Xaml;
 
-namespace Apachi.AvaloniaApp;
+namespace Apachi.UserApp;
 
 public partial class App : Application
 {

@@ -1,12 +1,12 @@
 using System.Security.Cryptography;
 using System.Text;
-using Apachi.AvaloniaApp.Data;
 using Apachi.Shared.Crypto;
 using Apachi.Shared.Dtos;
+using Apachi.UserApp.Data;
 using Apachi.ViewModels.Services;
 using Microsoft.EntityFrameworkCore;
 
-namespace Apachi.AvaloniaApp.Services;
+namespace Apachi.UserApp.Services;
 
 public class ReviewService : IReviewService
 {

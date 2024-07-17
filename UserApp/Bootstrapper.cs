@@ -1,11 +1,11 @@
 using System.Reflection;
-using Apachi.AvaloniaApp.Data;
+using Apachi.UserApp.Data;
 using Apachi.ViewModels;
 using Autofac;
 using Microsoft.EntityFrameworkCore;
 using MvvmElegance;
 
-namespace Apachi.AvaloniaApp;
+namespace Apachi.UserApp;
 
 public class Bootstrapper : AutofacBootstrapper<MainViewModel>
 {

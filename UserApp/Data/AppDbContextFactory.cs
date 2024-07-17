@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 
-namespace Apachi.AvaloniaApp.Data;
+namespace Apachi.UserApp.Data;
 
 public class AppDbContextFactory : IDesignTimeDbContextFactory<AppDbContext>
 {

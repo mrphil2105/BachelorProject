@@ -1,10 +1,10 @@
 using System.Reflection;
-using Apachi.AvaloniaApp.Services;
+using Apachi.UserApp.Services;
 using Apachi.ViewModels.Services;
 using Autofac;
 using Module = Autofac.Module;
 
-namespace Apachi.AvaloniaApp.Modules;
+namespace Apachi.UserApp.Modules;
 
 public class ServicesModule : Module
 {

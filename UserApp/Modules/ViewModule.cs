@@ -3,7 +3,7 @@ using Apachi.ViewModels;
 using Autofac;
 using Module = Autofac.Module;
 
-namespace Apachi.AvaloniaApp.Modules;
+namespace Apachi.UserApp.Modules;
 
 public class ViewModule : Module
 {

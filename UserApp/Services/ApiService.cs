@@ -2,7 +2,7 @@ using System.Text;
 using System.Text.Json;
 using Apachi.ViewModels.Services;
 
-namespace Apachi.AvaloniaApp.Services;
+namespace Apachi.UserApp.Services;
 
 public class ApiService : IApiService
 {

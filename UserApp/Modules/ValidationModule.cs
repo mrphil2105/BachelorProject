@@ -1,7 +1,7 @@
 using Apachi.ViewModels;
 using Autofac;
 
-namespace Apachi.AvaloniaApp.Modules;
+namespace Apachi.UserApp.Modules;
 
 public class ValidationModule : Module
 {
