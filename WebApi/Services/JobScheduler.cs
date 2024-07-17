@@ -66,6 +66,9 @@ public class JobScheduler : BackgroundService
             case JobType.Matching:
                 await JobsForMatchingAsync(dbContext, jobs);
                 break;
+            case JobType.ShareAssessments:
+                await JobsForShareAssessmentsAsync(dbContext, jobs);
+                break;
             default:
                 throw new ArgumentException("Invalid job type specified.", nameof(jobType));
         }
@@ -123,6 +126,40 @@ public class JobScheduler : BackgroundService
             }
 
             var job = new Job { Type = JobType.Matching, Payload = submission.Id.ToString() };
+            jobs.Add(job);
+        }
+
+        await dbContext.SaveChangesAsync();
+    }
+
+    private async Task JobsForShareAssessmentsAsync(AppDbContext dbContext, List<Job> jobs)
+    {
+        var submissions = dbContext
+            .Submissions.Where(submission => submission.Status == SubmissionStatus.Reviewing)
+            .AsAsyncEnumerable();
+
+        await foreach (var submission in submissions)
+        {
+            var reviewCount = await dbContext.Reviews.CountAsync(review => review.SubmissionId == submission.Id);
+            var discussingOrAbstainCount = await dbContext.Reviews.CountAsync(review =>
+                review.SubmissionId == submission.Id
+                && (review.Status == ReviewStatus.Discussing || review.Status == ReviewStatus.Abstain)
+            );
+
+            if (discussingOrAbstainCount != reviewCount)
+            {
+                // Some reviewers have still not responded with an assessment.
+                continue;
+            }
+
+            var shouldSchedule = await NeedJobScheduleAsync(JobType.ShareAssessments, submission, dbContext);
+
+            if (!shouldSchedule)
+            {
+                continue;
+            }
+
+            var job = new Job { Type = JobType.ShareAssessments, Payload = submission.Id.ToString() };
             jobs.Add(job);
         }
 

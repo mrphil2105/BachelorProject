@@ -25,6 +25,7 @@ builder.Services.AddHostedService<JobRunner>();
 
 builder.Services.AddKeyedTransient<IJobProcessor, CreateReviewsJobProcessor>(JobType.CreateReviews);
 builder.Services.AddKeyedTransient<IJobProcessor, MatchingJobProcessor>(JobType.Matching);
+builder.Services.AddKeyedTransient<IJobProcessor, ShareAssessmentsJobProcessor>(JobType.ShareAssessments);
 
 builder.Configuration.AddEnvironmentVariables("APACHI_");
 
