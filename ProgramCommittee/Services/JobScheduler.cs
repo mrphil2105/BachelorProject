@@ -37,7 +37,7 @@ public class JobScheduler
 
     private async Task CreateJobsForScheduleAsync(JobSchedule jobSchedule, AppDbContext dbContext)
     {
-        if (DateTimeOffset.Now - jobSchedule.Interval < jobSchedule.LastRun)
+        if (DateTime.UtcNow - jobSchedule.Interval < jobSchedule.LastRun)
         {
             return;
         }
@@ -49,7 +49,7 @@ public class JobScheduler
         var jobs = await JobsForJobTypeAsync(jobSchedule.JobType, dbContext);
         dbContext.Jobs.AddRange(jobs);
 
-        jobSchedule.LastRun = DateTimeOffset.Now;
+        jobSchedule.LastRun = DateTime.UtcNow;
         jobSchedule.Status = JobScheduleStatus.Ready;
 
         await dbContext.SaveChangesAsync();

@@ -4,7 +4,7 @@ public class LogEntry
 {
     public Guid Id { get; set; }
 
-    public DateTimeOffset CreatedDate { get; set; }
+    public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
 
     public int Step { get; set; }
 

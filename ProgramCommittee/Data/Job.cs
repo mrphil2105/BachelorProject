@@ -12,7 +12,7 @@ public class Job
 
     public string? Result { get; set; }
 
-    public DateTimeOffset CreatedDate { get; set; } = DateTimeOffset.Now;
+    public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
 
-    public DateTimeOffset? CompletedDate { get; set; }
+    public DateTime? CompletedDate { get; set; }
 }

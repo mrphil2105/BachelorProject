@@ -11,10 +11,9 @@ public class LogDbContext : DbContext
 
     public DbSet<LogEntry> Entries => Set<LogEntry>();
 
-    public async Task<(
-        List<LogEntryResult<TMessage>> Results,
-        DateTimeOffset LastCreatedDate
-    )> GetEntriesAsync<TMessage>(DateTimeOffset afterDate)
+    public async Task<(List<LogEntryResult<TMessage>> Results, DateTime LastCreatedDate)> GetEntriesAsync<TMessage>(
+        DateTime afterDate
+    )
         where TMessage : IMessage
     {
         var step = GetStep<TMessage>();

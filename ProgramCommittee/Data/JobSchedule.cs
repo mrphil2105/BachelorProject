@@ -8,7 +8,7 @@ public class JobSchedule
 
     public JobScheduleStatus Status { get; set; }
 
-    public DateTimeOffset LastRun { get; set; }
+    public DateTime LastRun { get; set; }
 
     public TimeSpan Interval { get; set; }
 }

@@ -47,7 +47,7 @@ public class JobRunner
         if (job.Status == JobStatus.Processing)
         {
             job.Status = JobStatus.Failed;
-            job.CompletedDate = DateTimeOffset.Now;
+            job.CompletedDate = DateTime.UtcNow;
             await dbContext.SaveChangesAsync();
             return;
         }
@@ -79,7 +79,7 @@ public class JobRunner
             _logger.Error("Job ({Type}:{Id}) has failed: {Result}", job.Type, job.Id, job.Result);
         }
 
-        job.CompletedDate = DateTimeOffset.Now;
+        job.CompletedDate = DateTime.UtcNow;
         await dbContext.SaveChangesAsync();
     }
 }
