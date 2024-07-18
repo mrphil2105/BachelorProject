@@ -410,3 +410,9 @@ App.db-wal
 papers/
 submissions/
 reviews/
+
+# Scripts
+run.sh
+
+# Logs
+Log.txt
