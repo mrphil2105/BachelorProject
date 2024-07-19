@@ -11,6 +11,20 @@ public class LogDbContext : DbContext
 
     public DbSet<LogEntry> Entries => Set<LogEntry>();
 
+    public void AddEntry<TMessage>(Guid submissionId, TMessage message)
+        where TMessage : IMessage
+    {
+        var step = GetStep<TMessage>();
+        var messageJson = JsonSerializer.Serialize(message);
+        var entry = new LogEntry
+        {
+            SubmissionId = submissionId,
+            Step = step,
+            MessageJson = messageJson
+        };
+        Entries.Add(entry);
+    }
+
     public async Task<(List<LogEntryResult<TMessage>> Results, DateTime LastCreatedDate)> GetEntriesAsync<TMessage>(
         DateTime afterDate
     )
@@ -37,7 +51,7 @@ public class LogDbContext : DbContext
         return typeof(TMessage) switch
         {
             Type type when type == typeof(SubmissionMessage) => 1,
-            _ => throw new ArgumentException("Invalid step type.")
+            _ => throw new ArgumentException("Invalid message type.")
         };
     }
 }
