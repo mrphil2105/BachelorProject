@@ -28,7 +28,7 @@ public class LogDbContext : DbContext
         where TMessage : IMessage
     {
         var message = JsonSerializer.Deserialize<TMessage>(entry.MessageJson);
-        return new LogEntryResult<TMessage>(entry.Id, message!);
+        return new LogEntryResult<TMessage>(entry.Id, entry.SubmissionId, message!);
     }
 
     private static int GetStep<TMessage>()
