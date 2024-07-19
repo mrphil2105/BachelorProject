@@ -17,7 +17,7 @@ public class ShareAssessmentsJobProcessor : IJobProcessor
     {
         _configuration = configuration;
         _dbContext = dbContext;
-        _programCommitteePrivateKey = KeyUtils.GetProgramCommitteePrivateKey();
+        _programCommitteePrivateKey = KeyUtils.GetPCPrivateKey();
     }
 
     public async Task<string?> ProcessJobAsync(Job job, CancellationToken stoppingToken)

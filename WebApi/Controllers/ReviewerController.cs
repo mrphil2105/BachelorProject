@@ -26,7 +26,7 @@ public class ReviewerController : ControllerBase
     [HttpPost]
     public async Task<ReviewerRegisteredDto> Register([FromBody] ReviewerRegisterDto registerDto)
     {
-        var programCommitteePublicKey = KeyUtils.GetProgramCommitteePublicKey();
+        var programCommitteePublicKey = KeyUtils.GetPCPublicKey();
         var sharedKey = RandomNumberGenerator.GetBytes(32);
 
         var programCommitteeEncryptedSharedKey = await EncryptionUtils.AsymmetricEncryptAsync(

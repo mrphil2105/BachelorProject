@@ -31,7 +31,7 @@ public class SubmissionController : ControllerBase
     {
         await ThrowIfInvalidSubmissionSignatureAsync(submitDto);
 
-        var programCommitteePrivateKey = KeyUtils.GetProgramCommitteePrivateKey();
+        var programCommitteePrivateKey = KeyUtils.GetPCPrivateKey();
         var submissionKey = await EncryptionUtils.AsymmetricDecryptAsync(
             submitDto.EncryptedSubmissionKey,
             programCommitteePrivateKey

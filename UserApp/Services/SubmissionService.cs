@@ -28,7 +28,7 @@ public class SubmissionService : ISubmissionService
         var (submitDto, submission) = await CreateSubmissionModelsAsync(title, description, paperFilePath);
         var submittedDto = await _apiService.PostAsync<SubmitDto, SubmittedDto>("Submission/Create", submitDto);
 
-        var programCommitteePublicKey = KeyUtils.GetProgramCommitteePublicKey();
+        var programCommitteePublicKey = KeyUtils.GetPCPublicKey();
         var isSignatureValid = await KeyUtils.VerifySignatureAsync(
             submitDto.SubmissionCommitment,
             submittedDto.SubmissionCommitmentSignature,
@@ -56,7 +56,7 @@ public class SubmissionService : ISubmissionService
         string paperFilePath
     )
     {
-        var programCommitteePublicKey = KeyUtils.GetProgramCommitteePublicKey();
+        var programCommitteePublicKey = KeyUtils.GetPCPublicKey();
         var (submissionPublicKey, submissionPrivateKey) = await KeyUtils.GenerateKeyPairAsync();
         var submissionKey = RandomNumberGenerator.GetBytes(32);
 

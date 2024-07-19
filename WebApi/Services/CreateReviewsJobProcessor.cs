@@ -17,7 +17,7 @@ public class CreateReviewsJobProcessor : IJobProcessor
 
     public async Task<string?> ProcessJobAsync(Job job, CancellationToken stoppingToken)
     {
-        var programCommitteePrivateKey = KeyUtils.GetProgramCommitteePrivateKey();
+        var programCommitteePrivateKey = KeyUtils.GetPCPrivateKey();
         var submissionId = Guid.Parse(job.Payload!);
         var paperBytes = await GetPaperAsync(submissionId);
 

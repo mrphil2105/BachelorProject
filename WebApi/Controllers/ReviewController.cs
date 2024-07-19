@@ -59,7 +59,7 @@ public class ReviewController : ControllerBase
     [HttpPost]
     public async Task<ResultDto> CreateBid([FromBody] EncryptedSignedDto encryptedSignedDto)
     {
-        var programCommitteePrivateKey = KeyUtils.GetProgramCommitteePrivateKey();
+        var programCommitteePrivateKey = KeyUtils.GetPCPrivateKey();
         var reviewer = await _dbContext.Reviewers.FirstOrDefaultAsync(reviewer =>
             reviewer.Id == encryptedSignedDto.Identifier
         );
@@ -118,7 +118,7 @@ public class ReviewController : ControllerBase
     [HttpPost]
     public async Task<ResultDto> CreateAssessment([FromBody] AssessmentDto assessmentDto)
     {
-        var programCommitteePrivateKey = KeyUtils.GetProgramCommitteePrivateKey();
+        var programCommitteePrivateKey = KeyUtils.GetPCPrivateKey();
         var review = await _dbContext
             .Reviews.Include(review => review.Reviewer)
             .Include(review => review.Submission)

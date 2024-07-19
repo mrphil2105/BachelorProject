@@ -34,7 +34,7 @@ public class ReviewService : IReviewService
 
     public async Task DownloadPaperAsync(Guid submissionId, byte[] paperSignature, string paperFilePath)
     {
-        var programCommitteePublicKey = KeyUtils.GetProgramCommitteePublicKey();
+        var programCommitteePublicKey = KeyUtils.GetPCPublicKey();
 
         var reviewerId = _sessionService.UserId!.Value;
         var queryParameters = new Dictionary<string, string>()
@@ -97,7 +97,7 @@ public class ReviewService : IReviewService
 
     public async Task SendAssessmentAsync(ReviewableSubmissionDto reviewableSubmissionDto, string assessment)
     {
-        var programCommitteePublicKey = KeyUtils.GetProgramCommitteePublicKey();
+        var programCommitteePublicKey = KeyUtils.GetPCPublicKey();
 
         var reviewerId = _sessionService.UserId!.Value;
         await using var dbContext = _dbContextFactory();

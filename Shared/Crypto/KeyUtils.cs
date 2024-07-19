@@ -30,29 +30,17 @@ public static class KeyUtils
         return isValid;
     }
 
-    public static byte[] GetProgramCommitteePublicKey()
+    public static byte[] GetPCPrivateKey()
     {
-        var publicKeyBase64 = Environment.GetEnvironmentVariable("APACHI_PC_PUBLIC_KEY");
-
-        if (publicKeyBase64 == null)
-        {
-            throw new InvalidOperationException("Enviroment variable APACHI_PC_PUBLIC_KEY must be set.");
-        }
-
-        var publicKey = Convert.FromBase64String(publicKeyBase64);
-        return publicKey;
-    }
-
-    public static byte[] GetProgramCommitteePrivateKey()
-    {
-        var privateKeyBase64 = Environment.GetEnvironmentVariable("APACHI_PC_PRIVATE_KEY");
-
-        if (privateKeyBase64 == null)
-        {
-            throw new InvalidOperationException("Enviroment variable APACHI_PC_PRIVATE_KEY must be set.");
-        }
-
+        var privateKeyBase64 = EnvironmentVariable.GetValue(EnvironmentVariable.PCPrivateKey);
         var privateKey = Convert.FromBase64String(privateKeyBase64);
         return privateKey;
+    }
+
+    public static byte[] GetPCPublicKey()
+    {
+        var publicKeyBase64 = EnvironmentVariable.GetValue(EnvironmentVariable.PCPublicKey);
+        var publicKey = Convert.FromBase64String(publicKeyBase64);
+        return publicKey;
     }
 }
