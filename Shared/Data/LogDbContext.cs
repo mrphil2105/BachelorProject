@@ -45,12 +45,13 @@ public class LogDbContext : DbContext
         return new LogEntryResult<TMessage>(entry.Id, entry.SubmissionId, message!);
     }
 
-    private static int GetStep<TMessage>()
+    private static ProtocolStep GetStep<TMessage>()
         where TMessage : IMessage
     {
         return typeof(TMessage) switch
         {
-            Type type when type == typeof(SubmissionMessage) => 1,
+            Type type when type == typeof(SubmissionMessage) => ProtocolStep.Submission,
+            Type type when type == typeof(SubmissionCommitmentsMessage) => ProtocolStep.SubmissionCommitments,
             _ => throw new ArgumentException("Invalid message type.")
         };
     }

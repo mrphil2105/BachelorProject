@@ -4,12 +4,12 @@ namespace Apachi.Shared.Crypto;
 
 public static class KeyUtils
 {
-    public static async Task<(byte[] PublicKey, byte[] PrivateKey)> GenerateKeyPairAsync()
+    public static async Task<(byte[] PrivateKey, byte[] PublicKey)> GenerateKeyPairAsync()
     {
         using var rsa = await Task.Run(() => RSA.Create(Constants.DefaultRSAKeySize));
-        var publicKey = rsa.ExportRSAPublicKey();
         var privateKey = rsa.ExportRSAPrivateKey();
-        return (publicKey, privateKey);
+        var publicKey = rsa.ExportRSAPublicKey();
+        return (privateKey, publicKey);
     }
 
     public static async Task<byte[]> CalculateSignatureAsync(byte[] data, byte[] privateKey)

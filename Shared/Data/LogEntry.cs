@@ -4,11 +4,11 @@ public class LogEntry
 {
     public Guid Id { get; set; }
 
-    public Guid SubmissionId { get; set; }
+    public required Guid SubmissionId { get; set; }
+
+    public required ProtocolStep Step { get; set; }
+
+    public required string MessageJson { get; set; }
 
     public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
-
-    public int Step { get; set; }
-
-    public string MessageJson { get; set; } = null!;
 }

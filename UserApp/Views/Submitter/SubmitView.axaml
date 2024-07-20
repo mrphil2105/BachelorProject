@@ -10,13 +10,6 @@
     mc:Ignorable="d">
     <StackPanel>
         <TextBlock FontSize="24" Text="Submit Paper" />
-        <TextBox Text="{Binding Title}" Watermark="Title" />
-        <TextBox
-            Height="100"
-            AcceptsReturn="True"
-            Text="{Binding Description}"
-            TextWrapping="Wrap"
-            Watermark="Description" />
         <DockPanel>
             <Button
                 VerticalAlignment="Top"
