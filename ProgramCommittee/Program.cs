@@ -17,6 +17,7 @@ public class Program
         var containerBuilder = new ContainerBuilder();
         containerBuilder.RegisterAssemblyModules(Assembly.GetExecutingAssembly());
         var container = containerBuilder.Build();
+
         await PrepareAsync(container);
 
         var jobScheduler = container.Resolve<JobScheduler>();

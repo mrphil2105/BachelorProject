@@ -14,7 +14,7 @@ public class LogDbContext : DbContext
     public void AddEntry<TMessage>(Guid submissionId, TMessage message)
         where TMessage : IMessage
     {
-        var step = GetStep<TMessage>();
+        var step = MessageUtils.ProtocolStepForMessageType<TMessage>();
         var messageJson = JsonSerializer.Serialize(message);
         var entry = new LogEntry
         {
@@ -30,7 +30,7 @@ public class LogDbContext : DbContext
     )
         where TMessage : IMessage
     {
-        var step = GetStep<TMessage>();
+        var step = MessageUtils.ProtocolStepForMessageType<TMessage>();
         var entries = await Entries.Where(entry => entry.Step == step && entry.CreatedDate > afterDate).ToListAsync();
         var lastCreatedDate = entries.Any() ? entries.Max(entry => entry.CreatedDate) : afterDate;
 
@@ -43,16 +43,5 @@ public class LogDbContext : DbContext
     {
         var message = JsonSerializer.Deserialize<TMessage>(entry.MessageJson);
         return new LogEntryResult<TMessage>(entry.Id, entry.SubmissionId, message!);
-    }
-
-    private static ProtocolStep GetStep<TMessage>()
-        where TMessage : IMessage
-    {
-        return typeof(TMessage) switch
-        {
-            Type type when type == typeof(SubmissionMessage) => ProtocolStep.Submission,
-            Type type when type == typeof(SubmissionCommitmentsMessage) => ProtocolStep.SubmissionCommitments,
-            _ => throw new ArgumentException("Invalid message type.")
-        };
     }
 }

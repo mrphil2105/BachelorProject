@@ -1,4 +1,6 @@
 using Apachi.ProgramCommittee.Data;
+using Apachi.Shared.Data;
+using Apachi.Shared.Data.Messages;
 using Autofac;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
@@ -24,15 +26,15 @@ public class JobRunner
         while (!cancellationToken.IsCancellationRequested && await timer.WaitForNextTickAsync(cancellationToken))
         {
             await using var lifetimeScope = _container.BeginLifetimeScope();
-            var dbContext = lifetimeScope.Resolve<AppDbContext>();
-            var jobs = await dbContext
+            var appDbContext = lifetimeScope.Resolve<AppDbContext>();
+            var jobs = await appDbContext
                 .Jobs.Where(job => job.Status == JobStatus.Ready || job.Status == JobStatus.Processing)
                 .ToListAsync();
 
             foreach (var job in jobs)
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                await ProcessJobAsync(job, lifetimeScope, dbContext, cancellationToken);
+                await ProcessJobAsync(job, lifetimeScope, appDbContext, cancellationToken);
             }
         }
     }
@@ -40,7 +42,7 @@ public class JobRunner
     private async Task ProcessJobAsync(
         Job job,
         ILifetimeScope lifetimeScope,
-        AppDbContext dbContext,
+        AppDbContext appDbContext,
         CancellationToken cancellationToken
     )
     {
@@ -48,12 +50,12 @@ public class JobRunner
         {
             job.Status = JobStatus.Failed;
             job.CompletedDate = DateTime.UtcNow;
-            await dbContext.SaveChangesAsync();
+            await appDbContext.SaveChangesAsync();
             return;
         }
 
         job.Status = JobStatus.Processing;
-        await dbContext.SaveChangesAsync();
+        await appDbContext.SaveChangesAsync();
 
         try
         {
@@ -61,25 +63,26 @@ public class JobRunner
 
             if (processor == null)
             {
-                job.Result = "No job processor is defined for the job type.";
+                job.ErrorMessage = "No job processor is defined for the job type.";
                 job.Status = JobStatus.Failed;
                 _logger.Error("No job processor is defined for job type {Type}.", job.Type);
+                return;
             }
-            else
-            {
-                job.Result = await processor.ProcessJobAsync(job, cancellationToken);
-                job.Status = JobStatus.Successful;
-                _logger.Information("Job ({Type}:{Id}) has been completed successfully.", job.Type, job.Id);
-            }
+
+            await processor.ProcessJobAsync(job, cancellationToken);
+            job.Status = JobStatus.Successful;
+            _logger.Information("Job ({Type}:{Id}) has been completed successfully.", job.Type, job.Id);
         }
         catch (Exception exception)
         {
-            job.Result = exception.Message;
+            job.ErrorMessage = exception.Message;
             job.Status = JobStatus.Failed;
-            _logger.Error("Job ({Type}:{Id}) has failed: {Result}", job.Type, job.Id, job.Result);
+            _logger.Error("Job ({Type}:{Id}) has failed: {ErrorMessage}", job.Type, job.Id, job.ErrorMessage);
         }
-
-        job.CompletedDate = DateTime.UtcNow;
-        await dbContext.SaveChangesAsync();
+        finally
+        {
+            job.CompletedDate = DateTime.UtcNow;
+            await appDbContext.SaveChangesAsync();
+        }
     }
 }

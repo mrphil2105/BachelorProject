@@ -1,3 +1,6 @@
 namespace Apachi.ProgramCommittee.Data;
 
-public enum JobType { }
+public enum JobType
+{
+    SignSubmissionCommitment
+}

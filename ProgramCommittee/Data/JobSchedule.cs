@@ -4,11 +4,11 @@ public class JobSchedule
 {
     public Guid Id { get; set; }
 
-    public JobType JobType { get; set; }
+    public required JobType JobType { get; set; }
 
     public JobScheduleStatus Status { get; set; }
 
-    public DateTime LastRun { get; set; }
+    public required TimeSpan Interval { get; set; }
 
-    public TimeSpan Interval { get; set; }
+    public DateTime LastRun { get; set; }
 }

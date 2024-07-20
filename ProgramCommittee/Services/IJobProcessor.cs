@@ -4,5 +4,5 @@ namespace Apachi.ProgramCommittee.Services;
 
 public interface IJobProcessor
 {
-    Task<string?> ProcessJobAsync(Job job, CancellationToken cancellationToken);
+    Task ProcessJobAsync(Job job, CancellationToken cancellationToken);
 }

@@ -4,11 +4,11 @@ public class Submission
 {
     public Guid Id { get; set; }
 
-    public byte[] EncryptedPrivateKey { get; set; } = null!; // K_S^-1
+    public required byte[] EncryptedPrivateKey { get; set; } // K_S^-1
 
-    public byte[] EncryptedIdentityRandomness { get; set; } = null!; // r_i
+    public required byte[] EncryptedIdentityRandomness { get; set; } // r_i
 
-    public Guid SubmitterId { get; set; }
+    public required Guid SubmitterId { get; set; }
 
     public Submitter Submitter { get; set; } = null!;
 }

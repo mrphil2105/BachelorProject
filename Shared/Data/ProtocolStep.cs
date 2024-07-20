@@ -3,6 +3,6 @@ namespace Apachi.Shared.Data;
 public enum ProtocolStep
 {
     Submission = 1,
-    SubmissionCommitments = 2,
+    SubmissionIdentityCommitments = 2,
     SubmissionCommitmentSignature
 }
