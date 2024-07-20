@@ -109,7 +109,7 @@ public class SubmissionService : ISubmissionService
     }
 
     private async Task<(
-        SubmissionCommitmentsMessage SubmissionCommitmentsMessage,
+        SubmissionIdentityCommitmentsMessage SubmissionIdentityCommitmentsMessage,
         BigInteger IdentityRandomness
     )> CreateSubmissionCommitmentsMessageAsync(
         byte[] paperBytes,
@@ -131,12 +131,12 @@ public class SubmissionService : ISubmissionService
         var bytesToBeSigned = memoryStream.ToArray();
 
         var commitmentsSignature = await KeyUtils.CalculateSignatureAsync(bytesToBeSigned, submissionPrivateKey);
-        var submissionCommitmentsMessage = new SubmissionCommitmentsMessage(
+        var submissionIdentityCommitmentsMessage = new SubmissionIdentityCommitmentsMessage(
             submissionCommitmentBytes,
             identityCommitmentBytes,
             commitmentsSignature,
             submissionPublicKey
         );
-        return (submissionCommitmentsMessage, identityRandomness);
+        return (submissionIdentityCommitmentsMessage, identityRandomness);
     }
 }
