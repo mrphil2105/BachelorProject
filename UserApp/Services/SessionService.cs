@@ -1,9 +1,11 @@
 using System.Security.Cryptography;
 using Apachi.Shared.Crypto;
-using Apachi.Shared.Dtos;
+using Apachi.Shared.Data;
 using Apachi.UserApp.Data;
 using Apachi.ViewModels.Services;
 using Microsoft.EntityFrameworkCore;
+using AppReviewer = Apachi.UserApp.Data.Reviewer;
+using LogReviewer = Apachi.Shared.Data.Reviewer;
 
 namespace Apachi.UserApp.Services;
 
@@ -11,20 +13,26 @@ public class SessionService : ISessionService
 {
     private const int HashIterations = 250_000;
 
-    private readonly Func<AppDbContext> _dbContextFactory;
+    private readonly Func<AppDbContext> _appDbContextFactory;
+    private readonly Func<LogDbContext> _logDbContextFactory;
     private readonly IApiService _apiService;
 
     private User? _user;
 
-    public SessionService(Func<AppDbContext> dbContextFactory, IApiService apiService)
+    public SessionService(
+        Func<AppDbContext> appDbContextFactory,
+        Func<LogDbContext> logDbContextFactory,
+        IApiService apiService
+    )
     {
-        _dbContextFactory = dbContextFactory;
+        _appDbContextFactory = appDbContextFactory;
+        _logDbContextFactory = logDbContextFactory;
         _apiService = apiService;
     }
 
     public bool IsLoggedIn => _user != null && AesKey != null && HmacKey != null;
 
-    public bool IsReviewer => _user is Reviewer;
+    public bool IsReviewer => _user is AppReviewer;
 
     public string? Username => _user?.Username;
 
@@ -36,10 +44,10 @@ public class SessionService : ISessionService
 
     public async Task<bool> LoginAsync(string username, string password, bool isReviewer)
     {
-        await using var dbContext = _dbContextFactory();
+        await using var appDbContext = _appDbContextFactory();
         User? user = isReviewer
-            ? await dbContext.Reviewers.FirstOrDefaultAsync(reviewer => reviewer.Username == username)
-            : await dbContext.Submitters.FirstOrDefaultAsync(submitter => submitter.Username == username);
+            ? await appDbContext.Reviewers.FirstOrDefaultAsync(reviewer => reviewer.Username == username)
+            : await appDbContext.Submitters.FirstOrDefaultAsync(submitter => submitter.Username == username);
 
         if (user == null)
         {
@@ -61,10 +69,10 @@ public class SessionService : ISessionService
 
     public async Task<bool> RegisterAsync(string username, string password, bool isReviewer)
     {
-        await using var dbContext = _dbContextFactory();
+        await using var appDbContext = _appDbContextFactory();
         var hasExistingUser = isReviewer
-            ? await dbContext.Reviewers.AnyAsync(reviewer => reviewer.Username == username)
-            : await dbContext.Submitters.AnyAsync(submitter => submitter.Username == username);
+            ? await appDbContext.Reviewers.AnyAsync(reviewer => reviewer.Username == username)
+            : await appDbContext.Submitters.AnyAsync(submitter => submitter.Username == username);
 
         if (hasExistingUser)
         {
@@ -77,7 +85,7 @@ public class SessionService : ISessionService
         if (isReviewer)
         {
             var reviewer = await CreateReviewerAsync(username, salt, aesKey, hmacKey, authenticationHash);
-            dbContext.Reviewers.Add(reviewer);
+            appDbContext.Reviewers.Add(reviewer);
         }
         else
         {
@@ -87,10 +95,10 @@ public class SessionService : ISessionService
                 PasswordSalt = salt,
                 AuthenticationHash = authenticationHash
             };
-            dbContext.Submitters.Add(submitter);
+            appDbContext.Submitters.Add(submitter);
         }
 
-        await dbContext.SaveChangesAsync();
+        await appDbContext.SaveChangesAsync();
         return true;
     }
 
@@ -101,7 +109,7 @@ public class SessionService : ISessionService
         HmacKey = null;
     }
 
-    private async Task<Reviewer> CreateReviewerAsync(
+    private async Task<AppReviewer> CreateReviewerAsync(
         string username,
         byte[] salt,
         byte[] aesKey,
@@ -109,29 +117,36 @@ public class SessionService : ISessionService
         byte[] authenticationHash
     )
     {
-        var (publicKey, privateKey) = await KeyUtils.GenerateKeyPairAsync();
+        var sharedKey = RandomNumberGenerator.GetBytes(32);
+        var pcPublicKey = KeyUtils.GetPCPublicKey();
+        var pcEncryptedSharedKey = await EncryptionUtils.AsymmetricEncryptAsync(sharedKey, pcPublicKey);
 
-        var registerDto = new ReviewerRegisterDto(publicKey);
-        var registeredDto = await _apiService.PostAsync<ReviewerRegisterDto, ReviewerRegisteredDto>(
-            "Reviewer/Register",
-            registerDto
-        );
+        var (reviewerPrivateKey, reviewerPublicKey) = await KeyUtils.GenerateKeyPairAsync();
+        var sharedKeySignature = await KeyUtils.CalculateSignatureAsync(pcEncryptedSharedKey, reviewerPrivateKey);
 
-        var sharedKey = await EncryptionUtils.AsymmetricDecryptAsync(registeredDto.EncryptedSharedKey, privateKey);
+        await using var logDbContext = _logDbContextFactory();
+        var logReviewer = new LogReviewer
+        {
+            PublicKey = reviewerPublicKey,
+            EncryptedSharedKey = pcEncryptedSharedKey,
+            SharedKeySignature = sharedKeySignature
+        };
+        logDbContext.Reviewers.Add(logReviewer);
+        await logDbContext.SaveChangesAsync();
 
-        var encryptedPrivateKey = await EncryptionUtils.SymmetricEncryptAsync(privateKey, aesKey, hmacKey);
+        var encryptedPrivateKey = await EncryptionUtils.SymmetricEncryptAsync(reviewerPrivateKey, aesKey, hmacKey);
         var encryptedSharedKey = await EncryptionUtils.SymmetricEncryptAsync(sharedKey, aesKey, hmacKey);
 
-        var reviewer = new Reviewer
+        var appReviewer = new AppReviewer
         {
-            Id = registeredDto.ReviewerId,
+            Id = logReviewer.Id,
             Username = username,
             PasswordSalt = salt,
             AuthenticationHash = authenticationHash,
             EncryptedPrivateKey = encryptedPrivateKey,
             EncryptedSharedKey = encryptedSharedKey
         };
-        return reviewer;
+        return appReviewer;
     }
 
     private static async Task<(byte[] AesKey, byte[] HmacKey, byte[] AuthenticationHash)> HashPasswordAsync(

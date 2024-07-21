@@ -4,9 +4,9 @@ public abstract class User
 {
     public Guid Id { get; set; }
 
-    public string Username { get; set; } = null!;
+    public required string Username { get; set; }
 
-    public byte[] PasswordSalt { get; set; } = null!;
+    public required byte[] PasswordSalt { get; set; }
 
-    public byte[] AuthenticationHash { get; set; } = null!;
+    public required byte[] AuthenticationHash { get; set; }
 }

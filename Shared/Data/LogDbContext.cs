@@ -9,6 +9,8 @@ public class LogDbContext : DbContext
     public LogDbContext(DbContextOptions<LogDbContext> options)
         : base(options) { }
 
+    public DbSet<Reviewer> Reviewers => Set<Reviewer>();
+
     public DbSet<LogEntry> Entries => Set<LogEntry>();
 
     public void AddEntry<TMessage>(Guid submissionId, TMessage message)

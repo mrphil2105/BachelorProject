@@ -2,7 +2,7 @@ namespace Apachi.UserApp.Data;
 
 public class Reviewer : User
 {
-    public byte[] EncryptedPrivateKey { get; set; } = null!; // K_R^-1
+    public required byte[] EncryptedPrivateKey { get; set; } // K_R^-1
 
-    public byte[] EncryptedSharedKey { get; set; } = null!; // Shared key between PC and R.
+    public required byte[] EncryptedSharedKey { get; set; } // Shared key between PC and R.
 }
