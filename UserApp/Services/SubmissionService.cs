@@ -43,8 +43,8 @@ public class SubmissionService : ISubmissionService
         var submissionId = Guid.NewGuid();
 
         await using var logDbContext = _logDbContextFactory();
-        logDbContext.AddEntry(submissionId, submissionMessage);
-        logDbContext.AddEntry(submissionId, submissionCommitmentsMessage);
+        logDbContext.AddMessage(submissionId, submissionMessage);
+        logDbContext.AddMessage(submissionId, submissionCommitmentsMessage);
         await logDbContext.SaveChangesAsync();
 
         var encryptedSubmissionPrivateKey = await _sessionService.SymmetricEncryptAsync(submissionPrivateKey);

@@ -13,7 +13,7 @@ public class LogDbContext : DbContext
 
     public DbSet<LogEntry> Entries => Set<LogEntry>();
 
-    public void AddEntry<TMessage>(Guid submissionId, TMessage message)
+    public void AddMessage<TMessage>(Guid submissionId, TMessage message)
         where TMessage : IMessage
     {
         var step = MessageUtils.ProtocolStepForMessageType<TMessage>();

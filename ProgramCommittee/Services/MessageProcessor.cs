@@ -23,7 +23,7 @@ public abstract class MessageProcessor<TMessage, TResponseMessage> : IJobProcess
     {
         var message = await _logDbContext.GetMessageAsync<TMessage>(job.SubmissionId);
         var responseMessage = await ProcessMessageAsync(message, cancellationToken);
-        _logDbContext.AddEntry(job.SubmissionId, responseMessage);
+        _logDbContext.AddMessage(job.SubmissionId, responseMessage);
         await _logDbContext.SaveChangesAsync();
     }
 }
