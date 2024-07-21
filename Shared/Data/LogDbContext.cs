@@ -27,6 +27,26 @@ public class LogDbContext : DbContext
         Entries.Add(entry);
     }
 
+    public async Task<TMessage> GetMessageAsync<TMessage>(Guid submissionId)
+        where TMessage : IMessage
+    {
+        var step = MessageUtils.ProtocolStepForMessageType<TMessage>();
+        var entry = await Entries.SingleAsync(entry => entry.SubmissionId == submissionId && entry.Step == step);
+        var message = JsonSerializer.Deserialize<TMessage>(entry.MessageJson)!;
+        return message;
+    }
+
+    public async Task<List<TMessage>> GetMessagesAsync<TMessage>(Guid submissionId)
+        where TMessage : IMessage
+    {
+        var step = MessageUtils.ProtocolStepForMessageType<TMessage>();
+        var entries = await Entries
+            .Where(entry => entry.SubmissionId == submissionId && entry.Step == step)
+            .ToListAsync();
+        var messages = entries.Select(entry => JsonSerializer.Deserialize<TMessage>(entry.MessageJson)!).ToList();
+        return messages;
+    }
+
     public async Task<(List<LogEntryResult<TMessage>> Results, DateTime LastCreatedDate)> GetEntriesAsync<TMessage>(
         DateTime afterDate
     )

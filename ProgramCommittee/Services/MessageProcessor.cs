@@ -21,12 +21,7 @@ public abstract class MessageProcessor<TMessage, TResponseMessage> : IJobProcess
 
     async Task IJobProcessor.ProcessJobAsync(Job job, CancellationToken cancellationToken)
     {
-        var step = MessageUtils.ProtocolStepForMessageType<TMessage>();
-        var logEntry = await _logDbContext.Entries.SingleAsync(entry =>
-            entry.SubmissionId == job.SubmissionId && entry.Step == step
-        );
-        var message = JsonSerializer.Deserialize<TMessage>(logEntry.MessageJson)!;
-
+        var message = await _logDbContext.GetMessageAsync<TMessage>(job.SubmissionId);
         var responseMessage = await ProcessMessageAsync(message, cancellationToken);
         _logDbContext.AddEntry(job.SubmissionId, responseMessage);
         await _logDbContext.SaveChangesAsync();
