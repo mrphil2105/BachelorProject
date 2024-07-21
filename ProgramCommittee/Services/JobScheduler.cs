@@ -86,42 +86,34 @@ public class JobScheduler
         LogDbContext logDbContext
     )
     {
-        try
+        var jobs = new List<Job>();
+        var step = ProtocolStepForJobType(jobType);
+        var submissionIds = await logDbContext.Entries.Select(entry => entry.SubmissionId).Distinct().ToListAsync();
+
+        foreach (var submissionId in submissionIds)
         {
-            var jobs = new List<Job>();
-            var step = ProtocolStepForJobType(jobType);
-            var submissionIds = await logDbContext.Entries.Select(entry => entry.SubmissionId).Distinct().ToListAsync();
+            var maxEntry = await logDbContext
+                .Entries.Where(entry => entry.SubmissionId == submissionId)
+                .OrderByDescending(entry => entry.Step)
+                .FirstAsync();
 
-            foreach (var submissionId in submissionIds)
+            if (maxEntry.Step != step)
             {
-                var maxEntry = await logDbContext
-                    .Entries.Where(entry => entry.SubmissionId == submissionId)
-                    .OrderByDescending(entry => entry.Step)
-                    .FirstAsync();
-
-                if (maxEntry.Step != step)
-                {
-                    continue;
-                }
-
-                var shouldSchedule = await NeedJobScheduleAsync(jobType, submissionId, appDbContext);
-
-                if (!shouldSchedule)
-                {
-                    continue;
-                }
-
-                var job = new Job { SubmissionId = submissionId, Type = jobType };
-                jobs.Add(job);
+                continue;
             }
 
-            return jobs;
+            var shouldSchedule = await NeedJobScheduleAsync(jobType, submissionId, appDbContext);
+
+            if (!shouldSchedule)
+            {
+                continue;
+            }
+
+            var job = new Job { SubmissionId = submissionId, Type = jobType };
+            jobs.Add(job);
         }
-        catch (Exception ex)
-        {
-            Console.WriteLine(ex);
-            throw;
-        }
+
+        return jobs;
     }
 
     private static async Task<bool> NeedJobScheduleAsync(JobType jobType, Guid submissionId, AppDbContext appDbContext)
@@ -141,11 +133,13 @@ public class JobScheduler
         return hasOnlyFailedJobs;
     }
 
+    // Returns the protocol step that is required to exist for a job to be scheduled.
     private static ProtocolStep ProtocolStepForJobType(JobType jobType)
     {
         return jobType switch
         {
             JobType.SignSubmissionCommitment => ProtocolStep.SubmissionIdentityCommitments,
+            JobType.SharePaperWithReviewers => ProtocolStep.SubmissionCommitmentSignature,
             _ => throw new ArgumentException("Invalid job type specified.", nameof(jobType))
         };
     }
