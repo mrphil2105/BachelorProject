@@ -46,24 +46,4 @@ public class LogDbContext : DbContext
         var messages = entries.Select(entry => JsonSerializer.Deserialize<TMessage>(entry.MessageJson)!).ToList();
         return messages;
     }
-
-    public async Task<(List<LogEntryResult<TMessage>> Results, DateTime LastCreatedDate)> GetEntriesAsync<TMessage>(
-        DateTime afterDate
-    )
-        where TMessage : IMessage
-    {
-        var step = MessageUtils.ProtocolStepForMessageType<TMessage>();
-        var entries = await Entries.Where(entry => entry.Step == step && entry.CreatedDate > afterDate).ToListAsync();
-        var lastCreatedDate = entries.Any() ? entries.Max(entry => entry.CreatedDate) : afterDate;
-
-        var results = entries.Select(entry => CreateEntryResult<TMessage>(entry)).ToList();
-        return (results, lastCreatedDate);
-    }
-
-    private static LogEntryResult<TMessage> CreateEntryResult<TMessage>(LogEntry entry)
-        where TMessage : IMessage
-    {
-        var message = JsonSerializer.Deserialize<TMessage>(entry.MessageJson);
-        return new LogEntryResult<TMessage>(entry.Id, entry.SubmissionId, message!);
-    }
 }
