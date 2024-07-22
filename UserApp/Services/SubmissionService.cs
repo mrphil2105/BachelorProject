@@ -118,9 +118,11 @@ public class SubmissionService : ISubmissionService
         byte[] submissionPublicKey
     )
     {
+        var idBytes = _sessionService.UserId!.Value.ToByteArray(true);
+
         var identityRandomness = DataUtils.GenerateBigInteger();
         var submissionCommitment = Commitment.Create(paperBytes, submissionRandomness);
-        var identityCommitment = Commitment.Create(paperBytes, identityRandomness);
+        var identityCommitment = Commitment.Create(idBytes, identityRandomness);
 
         var submissionCommitmentBytes = submissionCommitment.ToBytes();
         var identityCommitmentBytes = identityCommitment.ToBytes();
