@@ -5,7 +5,9 @@ using Apachi.UserApp.Data;
 using Apachi.ViewModels.Services;
 using Microsoft.EntityFrameworkCore;
 using AppReviewer = Apachi.UserApp.Data.Reviewer;
+using AppSubmitter = Apachi.UserApp.Data.Submitter;
 using LogReviewer = Apachi.Shared.Data.Reviewer;
+using LogSubmitter = Apachi.Shared.Data.Submitter;
 
 namespace Apachi.UserApp.Services;
 
@@ -89,12 +91,7 @@ public class SessionService : ISessionService
         }
         else
         {
-            var submitter = new Submitter
-            {
-                Username = username,
-                PasswordSalt = salt,
-                AuthenticationHash = authenticationHash
-            };
+            var submitter = await CreateSubmitterAsync(username, salt, authenticationHash);
             appDbContext.Submitters.Add(submitter);
         }
 
@@ -107,6 +104,23 @@ public class SessionService : ISessionService
         _user = null;
         AesKey = null;
         HmacKey = null;
+    }
+
+    private async Task<AppSubmitter> CreateSubmitterAsync(string username, byte[] salt, byte[] authenticationHash)
+    {
+        await using var logDbContext = _logDbContextFactory();
+        var logSubmitter = new LogSubmitter();
+        logDbContext.Submitters.Add(logSubmitter);
+        await logDbContext.SaveChangesAsync();
+
+        var appSubmitter = new AppSubmitter
+        {
+            Id = logSubmitter.Id,
+            Username = username,
+            PasswordSalt = salt,
+            AuthenticationHash = authenticationHash
+        };
+        return appSubmitter;
     }
 
     private async Task<AppReviewer> CreateReviewerAsync(
