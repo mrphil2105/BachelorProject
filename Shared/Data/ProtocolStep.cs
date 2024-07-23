@@ -4,5 +4,6 @@ public enum ProtocolStep
 {
     Submission = 1,
     SubmissionIdentityCommitments = 2,
-    SubmissionCommitmentSignature
+    SubmissionCommitmentSignature = 3,
+    PaperReviewerShare = 4
 }

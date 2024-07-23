@@ -1,6 +1,4 @@
 using Apachi.ProgramCommittee.Data;
-using Apachi.Shared.Data;
-using Apachi.Shared.Data.Messages;
 using Autofac;
 using Microsoft.EntityFrameworkCore;
 using Serilog;

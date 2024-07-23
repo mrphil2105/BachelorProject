@@ -1,8 +1,6 @@
-using System.Text.Json;
 using Apachi.ProgramCommittee.Data;
 using Apachi.Shared.Data;
 using Apachi.Shared.Data.Messages;
-using Microsoft.EntityFrameworkCore;
 
 namespace Apachi.ProgramCommittee.Services;
 
