@@ -52,7 +52,7 @@ public class Program
 
         if (!scheduleExists)
         {
-            var jobSchedule = new JobSchedule { JobType = jobType, Interval = TimeSpan.FromMinutes(5) };
+            var jobSchedule = new JobSchedule { JobType = jobType, Interval = TimeSpan.FromSeconds(30) };
             dbContext.JobSchedules.Add(jobSchedule);
             await dbContext.SaveChangesAsync();
         }

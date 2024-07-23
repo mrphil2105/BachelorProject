@@ -20,7 +20,7 @@ public class JobRunner
 
     public async Task ExecuteAsync(CancellationToken cancellationToken)
     {
-        var period = TimeSpan.FromSeconds(30);
+        var period = TimeSpan.FromSeconds(10);
         using var timer = new PeriodicTimer(period);
 
         while (!cancellationToken.IsCancellationRequested && await timer.WaitForNextTickAsync(cancellationToken))
