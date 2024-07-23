@@ -1,10 +1,11 @@
 using Apachi.Shared.Dtos;
+using Apachi.ViewModels.Models;
 
 namespace Apachi.ViewModels.Services;
 
 public interface IReviewService
 {
-    Task<List<MatchableSubmissionDto>> GetMatchableSubmissionsAsync();
+    Task<List<MatchableSubmissionModel>> GetMatchableSubmissionsAsync();
 
     Task DownloadPaperAsync(Guid submissionId, byte[] paperSignature, string paperFilePath);
 

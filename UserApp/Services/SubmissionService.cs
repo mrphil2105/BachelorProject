@@ -33,7 +33,7 @@ public class SubmissionService : ISubmissionService
         var paperBytes = await File.ReadAllBytesAsync(paperFilePath);
         var (submissionMessage, submissionRandomness, submissionPrivateKey, submissionPublicKey) =
             await CreateSubmissionMessageAsync(paperBytes);
-        var (submissionCommitmentsMessage, identityRandomness) = await CreateSubmissionCommitmentsMessageAsync(
+        var (commitmentsMessage, identityRandomness) = await CreateSubmissionIdentityCommitmentsMessageAsync(
             paperBytes,
             submissionRandomness,
             submissionPrivateKey,
@@ -44,7 +44,7 @@ public class SubmissionService : ISubmissionService
 
         await using var logDbContext = _logDbContextFactory();
         logDbContext.AddMessage(submissionId, submissionMessage);
-        logDbContext.AddMessage(submissionId, submissionCommitmentsMessage);
+        logDbContext.AddMessage(submissionId, commitmentsMessage);
         await logDbContext.SaveChangesAsync();
 
         var encryptedSubmissionPrivateKey = await _sessionService.SymmetricEncryptAsync(submissionPrivateKey);
@@ -111,7 +111,7 @@ public class SubmissionService : ISubmissionService
     private async Task<(
         SubmissionIdentityCommitmentsMessage SubmissionIdentityCommitmentsMessage,
         BigInteger IdentityRandomness
-    )> CreateSubmissionCommitmentsMessageAsync(
+    )> CreateSubmissionIdentityCommitmentsMessageAsync(
         byte[] paperBytes,
         BigInteger submissionRandomness,
         byte[] submissionPrivateKey,
@@ -133,12 +133,12 @@ public class SubmissionService : ISubmissionService
         var bytesToBeSigned = memoryStream.ToArray();
 
         var commitmentsSignature = await KeyUtils.CalculateSignatureAsync(bytesToBeSigned, submissionPrivateKey);
-        var submissionIdentityCommitmentsMessage = new SubmissionIdentityCommitmentsMessage(
+        var commitmentsMessage = new SubmissionIdentityCommitmentsMessage(
             submissionCommitmentBytes,
             identityCommitmentBytes,
             commitmentsSignature,
             submissionPublicKey
         );
-        return (submissionIdentityCommitmentsMessage, identityRandomness);
+        return (commitmentsMessage, identityRandomness);
     }
 }

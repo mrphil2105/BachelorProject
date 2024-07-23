@@ -1,8 +1,11 @@
 using System.Security.Cryptography;
 using System.Text;
 using Apachi.Shared.Crypto;
+using Apachi.Shared.Data;
+using Apachi.Shared.Data.Messages;
 using Apachi.Shared.Dtos;
 using Apachi.UserApp.Data;
+using Apachi.ViewModels.Models;
 using Apachi.ViewModels.Services;
 using Microsoft.EntityFrameworkCore;
 
@@ -11,25 +14,97 @@ namespace Apachi.UserApp.Services;
 public class ReviewService : IReviewService
 {
     private readonly ISessionService _sessionService;
-    private readonly Func<AppDbContext> _dbContextFactory;
+    private readonly Func<AppDbContext> _appDbContextFactory;
+    private readonly Func<LogDbContext> _logDbContextFactory;
     private readonly IApiService _apiService;
 
-    public ReviewService(ISessionService sessionService, Func<AppDbContext> dbContextFactory, IApiService apiService)
+    public ReviewService(
+        ISessionService sessionService,
+        Func<AppDbContext> dbContextFactory,
+        Func<LogDbContext> logDbContextFactory,
+        IApiService apiService
+    )
     {
         _sessionService = sessionService;
-        _dbContextFactory = dbContextFactory;
+        _appDbContextFactory = dbContextFactory;
+        _logDbContextFactory = logDbContextFactory;
         _apiService = apiService;
     }
 
-    public async Task<List<MatchableSubmissionDto>> GetMatchableSubmissionsAsync()
+    public async Task<List<MatchableSubmissionModel>> GetMatchableSubmissionsAsync()
     {
-        var reviewerId = _sessionService.UserId!.Value;
-        var queryParameters = new Dictionary<string, string>() { { "reviewerId", reviewerId.ToString() } };
-        var matchableSubmissionDtos = await _apiService.GetAsync<List<MatchableSubmissionDto>>(
-            "Review/GetMatchableSubmissions",
-            queryParameters
+        await using var dbContext = _appDbContextFactory();
+        var reviewer = await dbContext.Reviewers.FirstOrDefaultAsync(reviewer =>
+            reviewer.Id == _sessionService.UserId!.Value
         );
-        return matchableSubmissionDtos;
+        var sharedKey = await _sessionService.SymmetricDecryptAsync(reviewer!.EncryptedSharedKey);
+        var pcPublicKey = KeyUtils.GetPCPublicKey();
+
+        await using var logDbContext = _logDbContextFactory();
+        var submissionIds = await logDbContext.Entries.Select(entry => entry.SubmissionId).Distinct().ToListAsync();
+
+        var models = new List<MatchableSubmissionModel>();
+
+        foreach (var submissionId in submissionIds)
+        {
+            var hasMaxEntry = await logDbContext.HasMaxEntryAsync(submissionId, ProtocolStep.PaperReviewerShare);
+
+            if (!hasMaxEntry)
+            {
+                continue;
+            }
+
+            var entries = await logDbContext.GetEntriesAsync<PaperReviewerShareMessage>(submissionId);
+            var matchingEntry = await FindMatchingPaperShareAsync(entries, sharedKey, pcPublicKey);
+
+            if (matchingEntry != null)
+            {
+                var model = new MatchableSubmissionModel(
+                    matchingEntry.Id,
+                    matchingEntry.SubmissionId,
+                    matchingEntry.CreatedDate
+                );
+                models.Add(model);
+            }
+        }
+
+        return models;
+    }
+
+    private async Task<LogEntryResult<PaperReviewerShareMessage>?> FindMatchingPaperShareAsync(
+        List<LogEntryResult<PaperReviewerShareMessage>> entries,
+        byte[] sharedKey,
+        byte[] pcPublicKey
+    )
+    {
+        // Decrypt each and check the signature to find out if the message is targeted at the current reviewer.
+        foreach (var entry in entries)
+        {
+            byte[] paperBytes;
+
+            try
+            {
+                paperBytes = await EncryptionUtils.SymmetricDecryptAsync(entry.Message.EncryptedPaper, sharedKey, null);
+            }
+            catch (CryptographicException)
+            {
+                // Ignore exception about invalid padding as it means the paper is not encrypted with sharedKey.
+                continue;
+            }
+
+            var isSignatureValid = await KeyUtils.VerifySignatureAsync(
+                paperBytes,
+                entry.Message.PaperSignature,
+                pcPublicKey
+            );
+
+            if (isSignatureValid)
+            {
+                return entry;
+            }
+        }
+
+        return null;
     }
 
     public async Task DownloadPaperAsync(Guid submissionId, byte[] paperSignature, string paperFilePath)
@@ -45,7 +120,7 @@ public class ReviewService : IReviewService
 
         await using var contentStream = await _apiService.GetFileAsync("Review/GetPaper", queryParameters);
 
-        await using var dbContext = _dbContextFactory();
+        await using var dbContext = _appDbContextFactory();
         var reviewer = await dbContext.Reviewers.FirstOrDefaultAsync(reviewer => reviewer.Id == reviewerId);
         var sharedKey = await _sessionService.SymmetricDecryptAsync(reviewer!.EncryptedSharedKey);
 
@@ -67,7 +142,7 @@ public class ReviewService : IReviewService
     public async Task SendBidAsync(Guid submissionId, bool wantsToReview)
     {
         var reviewerId = _sessionService.UserId!.Value;
-        await using var dbContext = _dbContextFactory();
+        await using var dbContext = _appDbContextFactory();
         var reviewer = await dbContext.Reviewers.FirstOrDefaultAsync(reviewer => reviewer.Id == reviewerId);
 
         var privateKey = await _sessionService.SymmetricDecryptAsync(reviewer!.EncryptedPrivateKey);
@@ -100,7 +175,7 @@ public class ReviewService : IReviewService
         var programCommitteePublicKey = KeyUtils.GetPCPublicKey();
 
         var reviewerId = _sessionService.UserId!.Value;
-        await using var dbContext = _dbContextFactory();
+        await using var dbContext = _appDbContextFactory();
         var reviewer = await dbContext.Reviewers.FirstOrDefaultAsync(reviewer => reviewer.Id == reviewerId);
 
         var privateKey = await _sessionService.SymmetricDecryptAsync(reviewer!.EncryptedPrivateKey);
@@ -154,7 +229,7 @@ public class ReviewService : IReviewService
     public async Task SaveAssessmentAsync(Guid submissionId, string assessment)
     {
         var reviewerId = _sessionService.UserId!.Value;
-        await using var dbContext = _dbContextFactory();
+        await using var dbContext = _appDbContextFactory();
         var review = await dbContext.Reviews.FirstOrDefaultAsync(review =>
             review.ReviewerId == reviewerId && review.SubmissionId == submissionId
         );
@@ -174,7 +249,7 @@ public class ReviewService : IReviewService
     public async Task<string?> LoadAssessmentAsync(Guid submissionId)
     {
         var reviewerId = _sessionService.UserId!.Value;
-        await using var dbContext = _dbContextFactory();
+        await using var dbContext = _appDbContextFactory();
         var review = await dbContext.Reviews.FirstOrDefaultAsync(review =>
             review.ReviewerId == reviewerId && review.SubmissionId == submissionId
         );
