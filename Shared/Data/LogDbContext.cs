@@ -48,4 +48,13 @@ public class LogDbContext : DbContext
         var messages = entries.Select(entry => JsonSerializer.Deserialize<TMessage>(entry.MessageJson)!).ToList();
         return messages;
     }
+
+    public async Task<bool> HasMaxEntryAsync(Guid submissionId, ProtocolStep step)
+    {
+        var maxEntry = await Entries
+            .Where(entry => entry.SubmissionId == submissionId)
+            .OrderByDescending(entry => entry.Step)
+            .FirstAsync();
+        return maxEntry.Step == step;
+    }
 }

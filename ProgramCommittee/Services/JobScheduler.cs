@@ -92,12 +92,9 @@ public class JobScheduler
 
         foreach (var submissionId in submissionIds)
         {
-            var maxEntry = await logDbContext
-                .Entries.Where(entry => entry.SubmissionId == submissionId)
-                .OrderByDescending(entry => entry.Step)
-                .FirstAsync();
+            var hasMaxEntry = await logDbContext.HasMaxEntryAsync(submissionId, step);
 
-            if (maxEntry.Step != step)
+            if (!hasMaxEntry)
             {
                 continue;
             }
