@@ -49,6 +49,24 @@ public class LogDbContext : DbContext
         return messages;
     }
 
+    public async Task<List<LogEntryResult<TMessage>>> GetEntriesAsync<TMessage>(Guid submissionId)
+        where TMessage : IMessage
+    {
+        var step = MessageUtils.ProtocolStepForMessageType<TMessage>();
+        var entries = await Entries
+            .Where(entry => entry.SubmissionId == submissionId && entry.Step == step)
+            .ToListAsync();
+        var results = entries
+            .Select(entry =>
+            {
+                var message = JsonSerializer.Deserialize<TMessage>(entry.MessageJson)!;
+                var result = new LogEntryResult<TMessage>(entry.Id, entry.SubmissionId, message, entry.CreatedDate);
+                return result;
+            })
+            .ToList();
+        return results;
+    }
+
     public async Task<bool> HasMaxEntryAsync(Guid submissionId, ProtocolStep step)
     {
         var maxEntry = await Entries
