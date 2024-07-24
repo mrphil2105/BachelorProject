@@ -49,6 +49,15 @@ public class LogDbContext : DbContext
         return messages;
     }
 
+    public async Task<TMessage> GetMessageByEntryIdAsync<TMessage>(Guid entryId)
+        where TMessage : IMessage
+    {
+        var step = MessageUtils.ProtocolStepForMessageType<TMessage>();
+        var entry = await Entries.SingleAsync(entry => entry.Id == entryId && entry.Step == step);
+        var message = JsonSerializer.Deserialize<TMessage>(entry.MessageJson)!;
+        return message;
+    }
+
     public async Task<List<LogEntryResult<TMessage>>> GetEntriesAsync<TMessage>(Guid submissionId)
         where TMessage : IMessage
     {

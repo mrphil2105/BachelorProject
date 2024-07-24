@@ -7,7 +7,7 @@ public interface IReviewService
 {
     Task<List<MatchableSubmissionModel>> GetMatchableSubmissionsAsync();
 
-    Task DownloadPaperAsync(Guid submissionId, byte[] paperSignature, string paperFilePath);
+    Task DownloadPaperAsync(Guid logEntryId, string paperFilePath);
 
     Task SendBidAsync(Guid submissionId, bool wantsToReview);
 

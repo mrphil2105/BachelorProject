@@ -34,7 +34,7 @@ public class MatchViewModel : Conductor<MatchableSubmissionModel>.Collection.All
             return;
         }
 
-        await _reviewService.DownloadPaperAsync(model.SubmissionId, Array.Empty<byte>(), paperFilePath);
+        await _reviewService.DownloadPaperAsync(model.LogEntryId, paperFilePath);
     }
 
     public Task BidReview(MatchableSubmissionModel model)
