@@ -48,7 +48,6 @@ public class JobScheduler
             return;
         }
 
-        _logger.Information("Scheduling jobs for job type {JobType}.", jobSchedule.JobType);
         jobSchedule.Status = JobScheduleStatus.Running;
         await appDbContext.SaveChangesAsync();
 
@@ -61,7 +60,7 @@ public class JobScheduler
         await appDbContext.SaveChangesAsync();
     }
 
-    private static async Task<List<Job>> JobsForJobTypeAsync(
+    private async Task<List<Job>> JobsForJobTypeAsync(
         JobType jobType,
         AppDbContext appDbContext,
         LogDbContext logDbContext
@@ -75,6 +74,11 @@ public class JobScheduler
                 var jobsToAdd = await JobsForGenericJobAsync(jobType, appDbContext, logDbContext);
                 jobs.AddRange(jobsToAdd);
                 break;
+        }
+
+        if (jobs.Count > 0)
+        {
+            _logger.Information("Scheduling {Count} job(s) for job type {JobType}.", jobs.Count, jobType);
         }
 
         return jobs;
