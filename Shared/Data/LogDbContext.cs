@@ -1,4 +1,4 @@
-using System.Text.Json;
+using Apachi.Shared.Crypto;
 using Apachi.Shared.Data.Messages;
 using Microsoft.EntityFrameworkCore;
 
@@ -19,12 +19,12 @@ public class LogDbContext : DbContext
         where TMessage : IMessage
     {
         var step = MessageUtils.ProtocolStepForMessageType<TMessage>();
-        var messageJson = JsonSerializer.Serialize(message);
+        var messageBytes = SerializeMessage(message);
         var entry = new LogEntry
         {
             SubmissionId = submissionId,
             Step = step,
-            MessageJson = messageJson
+            MessageBytes = messageBytes
         };
         Entries.Add(entry);
     }
@@ -34,7 +34,7 @@ public class LogDbContext : DbContext
     {
         var step = MessageUtils.ProtocolStepForMessageType<TMessage>();
         var entry = await Entries.SingleAsync(entry => entry.SubmissionId == submissionId && entry.Step == step);
-        var message = JsonSerializer.Deserialize<TMessage>(entry.MessageJson)!;
+        var message = DeserializeMessage<TMessage>(entry.MessageBytes);
         return message;
     }
 
@@ -45,7 +45,7 @@ public class LogDbContext : DbContext
         var entries = await Entries
             .Where(entry => entry.SubmissionId == submissionId && entry.Step == step)
             .ToListAsync();
-        var messages = entries.Select(entry => JsonSerializer.Deserialize<TMessage>(entry.MessageJson)!).ToList();
+        var messages = entries.Select(entry => DeserializeMessage<TMessage>(entry.MessageBytes)).ToList();
         return messages;
     }
 
@@ -54,7 +54,7 @@ public class LogDbContext : DbContext
     {
         var step = MessageUtils.ProtocolStepForMessageType<TMessage>();
         var entry = await Entries.SingleAsync(entry => entry.Id == entryId && entry.Step == step);
-        var message = JsonSerializer.Deserialize<TMessage>(entry.MessageJson)!;
+        var message = DeserializeMessage<TMessage>(entry.MessageBytes);
         return message;
     }
 
@@ -68,7 +68,7 @@ public class LogDbContext : DbContext
         var results = entries
             .Select(entry =>
             {
-                var message = JsonSerializer.Deserialize<TMessage>(entry.MessageJson)!;
+                var message = DeserializeMessage<TMessage>(entry.MessageBytes);
                 var result = new LogEntryResult<TMessage>(entry.Id, entry.SubmissionId, message, entry.CreatedDate);
                 return result;
             })
@@ -83,5 +83,21 @@ public class LogDbContext : DbContext
             .OrderByDescending(entry => entry.Step)
             .FirstAsync();
         return maxEntry.Step == step;
+    }
+
+    public static byte[] SerializeMessage<TMessage>(TMessage message)
+        where TMessage : IMessage
+    {
+        var values = typeof(TMessage).GetProperties().Select(property => (byte[])property.GetValue(message)!).ToList();
+        var serialized = DataUtils.SerializeByteArrays(values);
+        return serialized;
+    }
+
+    public static TMessage DeserializeMessage<TMessage>(byte[] serialized)
+        where TMessage : IMessage
+    {
+        var values = DataUtils.DeserializeByteArrays(serialized).ToArray();
+        var message = (TMessage)Activator.CreateInstance(typeof(TMessage), (object[])values)!;
+        return message;
     }
 }

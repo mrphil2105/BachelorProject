@@ -8,7 +8,7 @@ public class LogEntry
 
     public required ProtocolStep Step { get; set; }
 
-    public required string MessageJson { get; set; }
+    public required byte[] MessageBytes { get; set; }
 
     public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
 }
