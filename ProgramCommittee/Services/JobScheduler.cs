@@ -66,15 +66,11 @@ public class JobScheduler
         LogDbContext logDbContext
     )
     {
-        var jobs = new List<Job>();
-
-        switch (jobType)
+        var jobs = jobType switch
         {
-            default:
-                var jobsToAdd = await JobsForGenericJobAsync(jobType, appDbContext, logDbContext);
-                jobs.AddRange(jobsToAdd);
-                break;
-        }
+            JobType.MatchPaperToReviewers => await JobsForMatchPaperToReviewersAsync(appDbContext, logDbContext),
+            _ => await JobsForGenericJobAsync(jobType, appDbContext, logDbContext)
+        };
 
         if (jobs.Count > 0)
         {
@@ -117,6 +113,50 @@ public class JobScheduler
         return jobs;
     }
 
+    private static async Task<List<Job>> JobsForMatchPaperToReviewersAsync(
+        AppDbContext appDbContext,
+        LogDbContext logDbContext
+    )
+    {
+        var jobs = new List<Job>();
+        var step = ProtocolStepForJobType(JobType.MatchPaperToReviewers);
+        var submissionIds = await logDbContext.Entries.Select(entry => entry.SubmissionId).Distinct().ToListAsync();
+
+        foreach (var submissionId in submissionIds)
+        {
+            var hasMaxEntry = await logDbContext.HasMaxEntryAsync(submissionId, step);
+
+            if (!hasMaxEntry)
+            {
+                continue;
+            }
+
+            var shouldSchedule = await NeedJobScheduleAsync(JobType.MatchPaperToReviewers, submissionId, appDbContext);
+
+            if (!shouldSchedule)
+            {
+                continue;
+            }
+
+            var reviewerCount = await logDbContext.Entries.CountAsync(entry =>
+                entry.SubmissionId == submissionId && entry.Step == ProtocolStep.PaperReviewerShare
+            );
+            var bidCount = await logDbContext.Entries.CountAsync(entry =>
+                entry.SubmissionId == submissionId && entry.Step == ProtocolStep.Bid
+            );
+
+            if (bidCount != reviewerCount)
+            {
+                continue;
+            }
+
+            var job = new Job { SubmissionId = submissionId, Type = JobType.MatchPaperToReviewers };
+            jobs.Add(job);
+        }
+
+        return jobs;
+    }
+
     private static async Task<bool> NeedJobScheduleAsync(JobType jobType, Guid submissionId, AppDbContext appDbContext)
     {
         var hasAnyJobs = await appDbContext.Jobs.AnyAsync(job =>
@@ -141,6 +181,7 @@ public class JobScheduler
         {
             JobType.SignSubmissionCommitment => ProtocolStep.SubmissionIdentityCommitments,
             JobType.SharePaperWithReviewers => ProtocolStep.SubmissionCommitmentSignature,
+            JobType.MatchPaperToReviewers => ProtocolStep.Bid,
             _ => throw new ArgumentException("Invalid job type specified.", nameof(jobType))
         };
     }
