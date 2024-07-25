@@ -49,13 +49,14 @@ public class LogDbContext : DbContext
         return messages;
     }
 
-    public async Task<TMessage> GetMessageByEntryIdAsync<TMessage>(Guid entryId)
+    public async Task<LogEntryResult<TMessage>> GetEntryAsync<TMessage>(Guid entryId)
         where TMessage : IMessage
     {
         var step = MessageUtils.ProtocolStepForMessageType<TMessage>();
         var entry = await Entries.SingleAsync(entry => entry.Id == entryId && entry.Step == step);
         var message = DeserializeMessage<TMessage>(entry.MessageBytes);
-        return message;
+        var result = new LogEntryResult<TMessage>(entry.Id, entry.SubmissionId, message, entry.CreatedDate);
+        return result;
     }
 
     public async Task<List<LogEntryResult<TMessage>>> GetEntriesAsync<TMessage>(Guid submissionId)

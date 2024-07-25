@@ -30,6 +30,16 @@ public static class KeyUtils
         return isValid;
     }
 
+    public static async Task ThrowOnInvalidSignatureAsync(byte[] data, byte[] signature, byte[] publicKey)
+    {
+        var isSignatureValid = await VerifySignatureAsync(data, signature, publicKey);
+
+        if (!isSignatureValid)
+        {
+            throw new CryptographicException("The signature is invalid.");
+        }
+    }
+
     public static byte[] GetPCPrivateKey()
     {
         var privateKeyBase64 = EnvironmentVariable.GetValue(EnvironmentVariable.PCPrivateKey);

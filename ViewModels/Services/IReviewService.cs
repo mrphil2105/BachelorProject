@@ -9,7 +9,7 @@ public interface IReviewService
 
     Task DownloadPaperAsync(Guid logEntryId, string paperFilePath);
 
-    Task SendBidAsync(Guid submissionId, bool wantsToReview);
+    Task SendBidAsync(Guid logEntryId, bool wantsToReview);
 
     Task SendAssessmentAsync(ReviewableSubmissionDto reviewableSubmissionDto, string assessment);
 

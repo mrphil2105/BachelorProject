@@ -51,7 +51,7 @@ public class MatchViewModel : Conductor<MatchableSubmissionModel>.Collection.All
     {
         try
         {
-            await _reviewService.SendBidAsync(model.SubmissionId, wantsToReview);
+            await _reviewService.SendBidAsync(model.LogEntryId, wantsToReview);
             Items.Remove(model);
             await _viewService.ShowMessageBoxAsync(
                 this,

@@ -34,10 +34,11 @@ public class ReviewService : IReviewService
     public async Task<List<MatchableSubmissionModel>> GetMatchableSubmissionsAsync()
     {
         await using var appDbContext = _appDbContextFactory();
-        var reviewer = await appDbContext.Reviewers.FirstOrDefaultAsync(reviewer =>
+        var reviewer = await appDbContext.Reviewers.FirstAsync(reviewer =>
             reviewer.Id == _sessionService.UserId!.Value
         );
-        var sharedKey = await _sessionService.SymmetricDecryptAsync(reviewer!.EncryptedSharedKey);
+
+        var sharedKey = await _sessionService.SymmetricDecryptAsync(reviewer.EncryptedSharedKey);
         var pcPublicKey = KeyUtils.GetPCPublicKey();
 
         await using var logDbContext = _logDbContextFactory();
@@ -110,59 +111,60 @@ public class ReviewService : IReviewService
     public async Task DownloadPaperAsync(Guid logEntryId, string paperFilePath)
     {
         await using var appDbContext = _appDbContextFactory();
-        var reviewer = await appDbContext.Reviewers.FirstOrDefaultAsync(reviewer =>
+        var reviewer = await appDbContext.Reviewers.FirstAsync(reviewer =>
             reviewer.Id == _sessionService.UserId!.Value
         );
-        var sharedKey = await _sessionService.SymmetricDecryptAsync(reviewer!.EncryptedSharedKey);
+
+        var sharedKey = await _sessionService.SymmetricDecryptAsync(reviewer.EncryptedSharedKey);
         var pcPublicKey = KeyUtils.GetPCPublicKey();
 
         await using var logDbContext = _logDbContextFactory();
-        var shareMessage = await logDbContext.GetMessageByEntryIdAsync<PaperReviewerShareMessage>(logEntryId);
-        var paperBytes = await EncryptionUtils.SymmetricDecryptAsync(shareMessage.EncryptedPaper, sharedKey, null);
-
-        var isSignatureValid = await KeyUtils.VerifySignatureAsync(
-            paperBytes,
-            shareMessage.PaperSignature,
-            pcPublicKey
+        var shareEntry = await logDbContext.GetEntryAsync<PaperReviewerShareMessage>(logEntryId);
+        var paperBytes = await EncryptionUtils.SymmetricDecryptAsync(
+            shareEntry.Message.EncryptedPaper,
+            sharedKey,
+            null
         );
 
-        if (!isSignatureValid)
-        {
-            throw new CryptographicException("The paper signature is invalid.");
-        }
+        await KeyUtils.ThrowOnInvalidSignatureAsync(paperBytes, shareEntry.Message.PaperSignature, pcPublicKey);
 
         await File.WriteAllBytesAsync(paperFilePath, paperBytes);
     }
 
-    public async Task SendBidAsync(Guid submissionId, bool wantsToReview)
+    public async Task SendBidAsync(Guid logEntryId, bool wantsToReview)
     {
-        var reviewerId = _sessionService.UserId!.Value;
         await using var appDbContext = _appDbContextFactory();
-        var reviewer = await appDbContext.Reviewers.FirstOrDefaultAsync(reviewer => reviewer.Id == reviewerId);
-
-        var privateKey = await _sessionService.SymmetricDecryptAsync(reviewer!.EncryptedPrivateKey);
-        var sharedKey = await _sessionService.SymmetricDecryptAsync(reviewer.EncryptedSharedKey);
-
-        var bidDto = new BidDto(submissionId, wantsToReview);
-        var resultDto = await _apiService.PostEncryptedSignedAsync<BidDto, ResultDto>(
-            "Review/CreateBid",
-            bidDto,
-            reviewerId,
-            sharedKey,
-            privateKey
+        var reviewer = await appDbContext.Reviewers.FirstAsync(reviewer =>
+            reviewer.Id == _sessionService.UserId!.Value
         );
 
-        if (!resultDto.Success)
-        {
-            throw new OperationFailedException($"Failed to create bid: {resultDto.Message}");
-        }
+        var privateKey = await _sessionService.SymmetricDecryptAsync(reviewer.EncryptedPrivateKey);
+        var sharedKey = await _sessionService.SymmetricDecryptAsync(reviewer.EncryptedSharedKey);
+        var pcPublicKey = KeyUtils.GetPCPublicKey();
 
-        if (wantsToReview)
-        {
-            var review = new Review { ReviewerId = reviewerId, SubmissionId = submissionId };
-            appDbContext.Reviews.Add(review);
-            await appDbContext.SaveChangesAsync();
-        }
+        await using var logDbContext = _logDbContextFactory();
+        var shareEntry = await logDbContext.GetEntryAsync<PaperReviewerShareMessage>(logEntryId);
+        var paperBytes = await EncryptionUtils.SymmetricDecryptAsync(
+            shareEntry.Message.EncryptedPaper,
+            sharedKey,
+            null
+        );
+
+        await KeyUtils.ThrowOnInvalidSignatureAsync(paperBytes, shareEntry.Message.PaperSignature, pcPublicKey);
+
+        var bidBytes = new byte[] { (byte)(wantsToReview ? 1 : 0) };
+        var encryptedPaper = await EncryptionUtils.SymmetricEncryptAsync(paperBytes, sharedKey, null);
+        var encryptedBid = await EncryptionUtils.SymmetricEncryptAsync(bidBytes, sharedKey, null);
+
+        await using var memoryStream = new MemoryStream();
+        await memoryStream.WriteAsync(paperBytes);
+        await memoryStream.WriteAsync(bidBytes);
+        var bytesToSign = memoryStream.ToArray();
+        var signature = await KeyUtils.CalculateSignatureAsync(bytesToSign, privateKey);
+
+        var bidMessage = new BidMessage(encryptedPaper, encryptedBid, signature);
+        logDbContext.AddMessage(shareEntry.SubmissionId, bidMessage);
+        await logDbContext.SaveChangesAsync();
     }
 
     public async Task SendAssessmentAsync(ReviewableSubmissionDto reviewableSubmissionDto, string assessment)
