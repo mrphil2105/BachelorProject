@@ -4,5 +4,6 @@ public enum JobType
 {
     SignSubmissionCommitment,
     SharePaperWithReviewers,
-    MatchPaperToReviewers
+    MatchPaperToReviewers,
+    ShareReviewRandomnessWithReviewers
 }

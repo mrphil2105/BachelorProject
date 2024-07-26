@@ -182,6 +182,7 @@ public class JobScheduler
             JobType.SignSubmissionCommitment => ProtocolStep.SubmissionIdentityCommitments,
             JobType.SharePaperWithReviewers => ProtocolStep.SubmissionCommitmentSignature,
             JobType.MatchPaperToReviewers => ProtocolStep.Bid,
+            JobType.ShareReviewRandomnessWithReviewers => ProtocolStep.PaperReviewersMatching,
             _ => throw new ArgumentException("Invalid job type specified.", nameof(jobType))
         };
     }
