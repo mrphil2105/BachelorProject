@@ -2,11 +2,12 @@ namespace Apachi.UnitTests.Shared.CryptoTests;
 
 public class EncryptionUtilsTests : IAsyncLifetime
 {
-    private (byte[] publicKey, byte[] privateKey) _keyPair;
+    private byte[] _privateKey = null!;
+    private byte[] _publicKey = null!;
 
     public async Task InitializeAsync()
     {
-        _keyPair = await GenerateKeyPairAsync();
+        (_privateKey, _publicKey) = await GenerateKeyPairAsync();
     }
 
     public Task DisposeAsync()
@@ -17,15 +18,15 @@ public class EncryptionUtilsTests : IAsyncLifetime
     [Theory, AutoData]
     public async Task CryptData_ShouldReturnEncryptedData_WhenCalled(byte[] data)
     {
-        byte[] actual = await AsymmetricEncryptAsync(data, _keyPair.publicKey);
+        byte[] actual = await AsymmetricEncryptAsync(data, _publicKey);
         actual.Should().NotEqual(data);
     }
 
     [Theory, AutoData]
     public async Task CryptData_ShouldReturnDecryptedData_WhenCalled(byte[] data)
     {
-        byte[] encryptedData = await AsymmetricEncryptAsync(data, _keyPair.publicKey);
-        byte[] decryptedData = await AsymmetricDecryptAsync(encryptedData, _keyPair.privateKey);
+        byte[] encryptedData = await AsymmetricEncryptAsync(data, _publicKey);
+        byte[] decryptedData = await AsymmetricDecryptAsync(encryptedData, _privateKey);
 
         decryptedData.Should().Equal(data);
     }
@@ -33,8 +34,7 @@ public class EncryptionUtilsTests : IAsyncLifetime
     [Theory, AutoData]
     public async Task AsymmetricEncrypt_ShouldReturnEncryptedData_WhenCalled(byte[] data)
     {
-        byte[] actual = await AsymmetricEncryptAsync(data, _keyPair.publicKey);
-
+        byte[] actual = await AsymmetricEncryptAsync(data, _publicKey);
         actual.Should().NotEqual(data);
     }
 }
