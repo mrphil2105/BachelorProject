@@ -3,11 +3,11 @@ using Avalonia.Data.Converters;
 
 namespace Apachi.UserApp.Converters;
 
-public class DateTimeOffsetConverter : IValueConverter
+public class DateTimeConverter : IValueConverter
 {
     public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
     {
-        if (value is DateTimeOffset dateTime)
+        if (value is DateTime dateTime)
         {
             var humanReadable = dateTime.ToString("dd/MM/yyyy HH:mm");
             return humanReadable;

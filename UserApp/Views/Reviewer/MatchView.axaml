@@ -21,7 +21,7 @@
                                 FontSize="16"
                                 FontWeight="Medium"
                                 Text="{Binding SubmissionId}" />
-                            <TextBlock Text="{Binding CreatedDate, Converter={x:Static c:CustomConverters.DateTimeOffset}}" />
+                            <TextBlock Text="{Binding CreatedDate, Converter={x:Static c:CustomConverters.DateTime}}" />
                             <StackPanel Orientation="Horizontal">
                                 <Button
                                     Command="{e:Action DownloadPaper}"

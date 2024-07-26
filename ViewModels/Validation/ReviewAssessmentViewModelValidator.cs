@@ -7,10 +7,10 @@ public class ReviewAssessmentViewModelValidator : AbstractValidator<ReviewAssess
 {
     public ReviewAssessmentViewModelValidator()
     {
-        RuleFor(model => model.Assessment)
+        RuleFor(model => model.Review)
             .NotEmpty()
-            .WithMessage("The assessment field is required.")
+            .WithMessage("The review field is required.")
             .MaximumLength(10000)
-            .WithMessage("The assessment must not be longer than 10000 characters.");
+            .WithMessage("The review must not be longer than 10000 characters.");
     }
 }

@@ -1,9 +1,9 @@
-using Apachi.Shared.Dtos;
+using Apachi.ViewModels.Models;
 using Apachi.ViewModels.Services;
 
 namespace Apachi.ViewModels.Reviewer;
 
-public class ReviewListViewModel : Conductor<ReviewableSubmissionDto>.Collection.AllActive
+public class ReviewListViewModel : Conductor<ReviewableSubmissionModel>.Collection.AllActive
 {
     private readonly IViewService _viewService;
     private readonly IReviewService _reviewService;
@@ -23,7 +23,7 @@ public class ReviewListViewModel : Conductor<ReviewableSubmissionDto>.Collection
         set => Set(ref _isLoading, value);
     }
 
-    public async Task DownloadPaper(ReviewableSubmissionDto reviewableSubmissionDto)
+    public async Task DownloadPaper(ReviewableSubmissionModel model)
     {
         var paperFilePath = await _viewService.ShowSaveFileDialogAsync(this);
 
@@ -32,26 +32,22 @@ public class ReviewListViewModel : Conductor<ReviewableSubmissionDto>.Collection
             return;
         }
 
-        await _reviewService.DownloadPaperAsync(
-            reviewableSubmissionDto.SubmissionId,
-            reviewableSubmissionDto.PaperSignature,
-            paperFilePath
-        );
+        await _reviewService.DownloadPaperAsync(model.SubmissionId, paperFilePath);
     }
 
-    public Task Assess(ReviewableSubmissionDto reviewableSubmissionDto)
+    public Task Review(ReviewableSubmissionModel model)
     {
-        return ((ReviewViewModel)Parent!).GoToAssessment(reviewableSubmissionDto);
+        return ((ReviewViewModel)Parent!).GoToReview(model);
     }
 
     protected override async Task OnInitializeAsync(CancellationToken cancellationToken)
     {
-        List<ReviewableSubmissionDto> reviewableSubmissionDtos;
+        List<ReviewableSubmissionModel> models;
 
         try
         {
             IsLoading = true;
-            reviewableSubmissionDtos = await _reviewerService.GetReviewableSubmissionsAsync();
+            models = await _reviewService.GetReviewableSubmissionsAsync();
         }
         catch (HttpRequestException exception)
         {
@@ -66,7 +62,7 @@ public class ReviewListViewModel : Conductor<ReviewableSubmissionDto>.Collection
         }
 
         Items.Clear();
-        Items.AddRange(reviewableSubmissionDtos);
+        Items.AddRange(models);
         IsLoading = false;
     }
 }
