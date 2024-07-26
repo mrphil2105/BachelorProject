@@ -7,12 +7,12 @@ namespace Apachi.Shared.Crypto;
 
 // Implemented using Chaum-pedersen proofs: https://asecuritysite.com/powershell/chaum 
 
-public class NIZKProof
+public class EqualityProof
 {
     private readonly BigInteger _c;
     private readonly BigInteger _s;
 
-    public NIZKProof(BigInteger c, BigInteger s)
+    public EqualityProof(BigInteger c, BigInteger s)
     {
         _c = c;
         _s = s;
@@ -44,15 +44,15 @@ public class NIZKProof
         return DataUtils.SerializeBigIntegers(_c, _s);
     }
 
-    public static NIZKProof FromBytes(byte[] bytes)
+    public static EqualityProof FromBytes(byte[] bytes)
     {
         var integers = DataUtils.DeserializeBigIntegers(bytes);
         var c = integers[0];
         var s = integers[1];
-        return new NIZKProof(c, s);
+        return new EqualityProof(c, s);
     }
 
-    public static NIZKProof Create(ECPoint g, ECPoint h, BigInteger x, string curveName = Constants.DefaultCurveName)
+    public static EqualityProof Create(ECPoint g, ECPoint h, BigInteger x, string curveName = Constants.DefaultCurveName)
     {
         var parameters = NistNamedCurves.GetByName(curveName);
         var curveOrder = parameters.N;
@@ -77,6 +77,6 @@ public class NIZKProof
         // compute response s = k - x * c
         var s = k.Subtract(x.Multiply(c)).Mod(curveOrder);
         
-        return new NIZKProof(c, s);
+        return new EqualityProof(c, s);
     }
 }
