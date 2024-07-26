@@ -8,5 +8,7 @@ public enum ProtocolStep
     PaperReviewerShare = 4,
     Bid = 5,
     PaperReviewersMatching = 6,
-    ReviewRandomnessReviewerShare = 7
+    ReviewRandomnessReviewerShare = 7,
+    Review = 8,
+    ReviewCommitmentNonceSignature = 9
 }

@@ -3,7 +3,6 @@ using System.Text;
 using Apachi.Shared.Crypto;
 using Apachi.Shared.Data;
 using Apachi.Shared.Data.Messages;
-using Apachi.Shared.Dtos;
 using Apachi.UserApp.Data;
 using Apachi.ViewModels.Models;
 using Apachi.ViewModels.Services;
@@ -48,22 +47,29 @@ public class ReviewService : IReviewService
 
         foreach (var submissionId in submissionIds)
         {
-            var hasMaxEntry = await logDbContext.HasMaxEntryAsync(submissionId, ProtocolStep.PaperReviewerShare);
+            var maxStep = await logDbContext.GetMaxProtocolStepAsync(submissionId);
 
-            if (!hasMaxEntry)
+            // If another reviewer has sent their bid the max entry message will be Bid.
+            if (!(maxStep is ProtocolStep.PaperReviewerShare or ProtocolStep.Bid))
             {
                 continue;
             }
 
-            var entries = await logDbContext.GetEntriesAsync<PaperReviewerShareMessage>(submissionId);
-            var matchingEntry = await FindMatchingPaperShareAsync(entries, sharedKey, pcPublicKey);
+            var shareEntries = await logDbContext.GetEntriesAsync<PaperReviewerShareMessage>(submissionId);
+            var matchingShareEntry = await FindMatchingShareAsync(
+                shareEntries,
+                sharedKey,
+                pcPublicKey,
+                message => new[] { message.EncryptedPaper },
+                message => message.PaperSignature
+            );
 
-            if (matchingEntry != null)
+            if (matchingShareEntry != null)
             {
                 var model = new MatchableSubmissionModel(
-                    matchingEntry.Id,
-                    matchingEntry.SubmissionId,
-                    matchingEntry.CreatedDate
+                    matchingShareEntry.Id,
+                    matchingShareEntry.SubmissionId,
+                    matchingShareEntry.CreatedDate
                 );
                 models.Add(model);
             }
@@ -72,36 +78,91 @@ public class ReviewService : IReviewService
         return models;
     }
 
-    private async Task<LogEntryResult<PaperReviewerShareMessage>?> FindMatchingPaperShareAsync(
-        List<LogEntryResult<PaperReviewerShareMessage>> entries,
-        byte[] sharedKey,
-        byte[] pcPublicKey
-    )
+    public async Task<List<ReviewableSubmissionModel>> GetReviewableSubmissionsAsync()
     {
-        // Decrypt each and check the signature to find out if the message is targeted at the current reviewer.
-        foreach (var entry in entries)
-        {
-            byte[] paperBytes;
+        await using var appDbContext = _appDbContextFactory();
+        var reviewer = await appDbContext.Reviewers.FirstAsync(reviewer =>
+            reviewer.Id == _sessionService.UserId!.Value
+        );
 
-            try
+        var sharedKey = await _sessionService.SymmetricDecryptAsync(reviewer.EncryptedSharedKey);
+        var pcPublicKey = KeyUtils.GetPCPublicKey();
+
+        await using var logDbContext = _logDbContextFactory();
+        var submissionIds = await logDbContext.Entries.Select(entry => entry.SubmissionId).Distinct().ToListAsync();
+
+        var models = new List<ReviewableSubmissionModel>();
+
+        foreach (var submissionId in submissionIds)
+        {
+            var maxStep = await logDbContext.GetMaxProtocolStepAsync(submissionId);
+
+            // If another reviewer has sent their review the max entry message will be ReviewCommitmentNonceSignature.
+            if (!(maxStep is ProtocolStep.ReviewRandomnessReviewerShare or ProtocolStep.ReviewCommitmentNonceSignature))
             {
-                paperBytes = await EncryptionUtils.SymmetricDecryptAsync(entry.Message.EncryptedPaper, sharedKey, null);
-            }
-            catch (CryptographicException)
-            {
-                // Ignore exception about invalid padding as it means the paper is not encrypted with sharedKey.
                 continue;
             }
 
-            var isSignatureValid = await KeyUtils.VerifySignatureAsync(
-                paperBytes,
-                entry.Message.PaperSignature,
-                pcPublicKey
+            var shareEntries = await logDbContext.GetEntriesAsync<ReviewRandomnessReviewerShareMessage>(submissionId);
+            var matchingShareEntry = await FindMatchingShareAsync(
+                shareEntries,
+                sharedKey,
+                pcPublicKey,
+                message => new[] { message.EncryptedPaper, message.EncryptedReviewRandomness },
+                message => message.Signature
             );
+
+            if (matchingShareEntry != null)
+            {
+                var model = new ReviewableSubmissionModel(
+                    matchingShareEntry.Id,
+                    matchingShareEntry.SubmissionId,
+                    matchingShareEntry.CreatedDate
+                );
+                models.Add(model);
+            }
+        }
+
+        return models;
+    }
+
+    private async Task<LogEntryResult<TMessage>?> FindMatchingShareAsync<TMessage>(
+        List<LogEntryResult<TMessage>> shareEntries,
+        byte[] sharedKey,
+        byte[] pcPublicKey,
+        Func<TMessage, IEnumerable<byte[]>> dataSelector,
+        Func<TMessage, byte[]> signatureSelector
+    )
+        where TMessage : IMessage
+    {
+        // Decrypt each and check the signature to find out if the message is targeted at the current reviewer.
+        foreach (var shareEntry in shareEntries)
+        {
+            await using var memoryStream = new MemoryStream();
+
+            try
+            {
+                var data = dataSelector(shareEntry.Message);
+
+                foreach (var encrypted in data)
+                {
+                    var decrypted = await EncryptionUtils.SymmetricDecryptAsync(encrypted, sharedKey, null);
+                    await memoryStream.WriteAsync(decrypted);
+                }
+            }
+            catch (CryptographicException)
+            {
+                // Ignore exception about invalid padding as it means the data is not encrypted with sharedKey.
+                continue;
+            }
+
+            var bytesToVerify = memoryStream.ToArray();
+            var signature = signatureSelector(shareEntry.Message);
+            var isSignatureValid = await KeyUtils.VerifySignatureAsync(bytesToVerify, signature, pcPublicKey);
 
             if (isSignatureValid)
             {
-                return entry;
+                return shareEntry;
             }
         }
 
@@ -167,60 +228,44 @@ public class ReviewService : IReviewService
         await logDbContext.SaveChangesAsync();
     }
 
-    public async Task SendAssessmentAsync(ReviewableSubmissionDto reviewableSubmissionDto, string assessment)
+    public async Task SendReviewAsync(Guid logEntryId, string review)
     {
-        var programCommitteePublicKey = KeyUtils.GetPCPublicKey();
+        await using var appDbContext = _appDbContextFactory();
+        var reviewer = await appDbContext.Reviewers.FirstAsync(reviewer =>
+            reviewer.Id == _sessionService.UserId!.Value
+        );
 
-        var reviewerId = _sessionService.UserId!.Value;
-        await using var dbContext = _appDbContextFactory();
-        var reviewer = await dbContext.Reviewers.FirstOrDefaultAsync(reviewer => reviewer.Id == reviewerId);
-
-        var privateKey = await _sessionService.SymmetricDecryptAsync(reviewer!.EncryptedPrivateKey);
+        var privateKey = await _sessionService.SymmetricDecryptAsync(reviewer.EncryptedPrivateKey);
         var sharedKey = await _sessionService.SymmetricDecryptAsync(reviewer.EncryptedSharedKey);
 
-        var reviewRandomness = await EncryptionUtils.SymmetricDecryptAsync(
-            reviewableSubmissionDto.EncryptedReviewRandomness,
+        await using var logDbContext = _logDbContextFactory();
+        var shareEntry = await logDbContext.GetEntryAsync<ReviewRandomnessReviewerShareMessage>(logEntryId);
+        var matchingMessage = await logDbContext.GetMessageAsync<PaperReviewersMatchingMessage>(
+            shareEntry.SubmissionId
+        );
+
+        var paperBytes = await EncryptionUtils.SymmetricDecryptAsync(
+            shareEntry.Message.EncryptedPaper,
             sharedKey,
             null
         );
-        var isSignatureValid = await KeyUtils.VerifySignatureAsync(
-            reviewRandomness,
-            reviewableSubmissionDto.ReviewRandomnessSignature,
-            programCommitteePublicKey
-        );
 
-        if (!isSignatureValid)
-        {
-            throw new CryptographicException("The received review randomness signature is invalid.");
-        }
+        var reviewBytes = Encoding.UTF8.GetBytes(review);
+        var encryptedReview = await EncryptionUtils.SymmetricEncryptAsync(reviewBytes, sharedKey, null);
+        var reviewSignature = await KeyUtils.CalculateSignatureAsync(reviewBytes, privateKey);
+        var reviewMessage = new ReviewMessage(encryptedReview, reviewSignature);
 
-        var assessmentBytes = Encoding.UTF8.GetBytes(assessment);
-        var encryptedAssessment = await EncryptionUtils.SymmetricEncryptAsync(assessmentBytes, sharedKey, null);
-        var assessmentSignature = await KeyUtils.CalculateSignatureAsync(assessmentBytes, privateKey);
+        await using var memoryStream = new MemoryStream();
+        await memoryStream.WriteAsync(matchingMessage.ReviewCommitment);
+        await memoryStream.WriteAsync(matchingMessage.ReviewNonce);
+        var bytesToSign = memoryStream.ToArray();
 
-        var reviewCommitmentSignature = await KeyUtils.CalculateSignatureAsync(
-            reviewableSubmissionDto.ReviewCommitment,
-            privateKey
-        );
-        var reviewNonceSignature = await KeyUtils.CalculateSignatureAsync(
-            reviewableSubmissionDto.ReviewNonce,
-            privateKey
-        );
+        var signature = await KeyUtils.CalculateSignatureAsync(bytesToSign, privateKey);
+        var signatureMessage = new ReviewCommitmentNonceSignatureMessage(signature);
 
-        var assessmentDto = new AssessmentDto(
-            reviewerId,
-            reviewableSubmissionDto.SubmissionId,
-            encryptedAssessment,
-            assessmentSignature,
-            reviewCommitmentSignature,
-            reviewNonceSignature
-        );
-        var resultDto = await _apiService.PostAsync<AssessmentDto, ResultDto>("Review/CreateAssessment", assessmentDto);
-
-        if (!resultDto.Success)
-        {
-            throw new OperationFailedException($"Failed to create assessment: {resultDto.Message}");
-        }
+        logDbContext.AddMessage(shareEntry.SubmissionId, reviewMessage);
+        logDbContext.AddMessage(shareEntry.SubmissionId, signatureMessage);
+        await logDbContext.SaveChangesAsync();
     }
 
     public async Task SaveAssessmentAsync(Guid submissionId, string assessment)

@@ -77,13 +77,19 @@ public class LogDbContext : DbContext
         return results;
     }
 
-    public async Task<bool> HasMaxEntryAsync(Guid submissionId, ProtocolStep step)
+    public async Task<ProtocolStep> GetMaxProtocolStepAsync(Guid submissionId)
     {
         var maxEntry = await Entries
             .Where(entry => entry.SubmissionId == submissionId)
             .OrderByDescending(entry => entry.Step)
             .FirstAsync();
-        return maxEntry.Step == step;
+        return maxEntry.Step;
+    }
+
+    public async Task<bool> HasMaxEntryAsync(Guid submissionId, ProtocolStep step)
+    {
+        var maxStep = await GetMaxProtocolStepAsync(submissionId);
+        return maxStep == step;
     }
 
     public static byte[] SerializeMessage<TMessage>(TMessage message)
