@@ -6,13 +6,13 @@ using Org.BouncyCastle.Math.EC;
 
 namespace Apachi.UnitTests.Shared.CryptoTests;
 
-public class NIZKProofTests
+public class EqualityProofTests
 {
     private readonly BigInteger _privateKey;
     private readonly ECPoint _g;
     private readonly ECPoint _h;
 
-    public NIZKProofTests()
+    public EqualityProofTests()
     {
         _privateKey = DataUtils.GenerateBigInteger();
         var curveParams = NistNamedCurves.GetByName(Constants.DefaultCurveName);
@@ -28,7 +28,7 @@ public class NIZKProofTests
         var y = _g.Multiply(_privateKey);
         var z = _h.Multiply(_privateKey);
         
-        var proof = NIZKProof.Create(_g, _h, _privateKey);
+        var proof = EqualityProof.Create(_g, _h, _privateKey);
         
         bool actual = proof.Verify(_g, _h, y, z);
         
@@ -42,7 +42,7 @@ public class NIZKProofTests
         var z = _h.Multiply(_privateKey);
 
         var invalidPrivateKey = DataUtils.GenerateBigInteger();
-        var proof = NIZKProof.Create(_g, _h, invalidPrivateKey);
+        var proof = EqualityProof.Create(_g, _h, invalidPrivateKey);
         
         bool actual = proof.Verify(_g, _h, y, z);
         
@@ -52,10 +52,10 @@ public class NIZKProofTests
     [Fact]
     public void NIZKProof_FromBytesToBytes_ShouldReturnTrue_WhenProofIsValid()
     {
-        var proof = NIZKProof.Create(_g, _h, _privateKey);
+        var proof = EqualityProof.Create(_g, _h, _privateKey);
         byte[] serialized = proof.ToBytes();
         
-        NIZKProof deserialized = NIZKProof.FromBytes(serialized);
+        EqualityProof deserialized = EqualityProof.FromBytes(serialized);
         
         var y = _g.Multiply(_privateKey);
         var z = _h.Multiply(_privateKey);
@@ -67,10 +67,10 @@ public class NIZKProofTests
     [Fact]
     public void NIZKProof_FromBytesToBytes_ShouldReturnFalse_WhenProofIsInvalid()
     {
-        var proof = NIZKProof.Create(_g, _h, _privateKey);
+        var proof = EqualityProof.Create(_g, _h, _privateKey);
         byte[] serialized = proof.ToBytes();
         
-        NIZKProof deserialized = NIZKProof.FromBytes(serialized);
+        EqualityProof deserialized = EqualityProof.FromBytes(serialized);
         
         var y = _g.Multiply(_privateKey);
         var z = _h.Multiply(DataUtils.GenerateBigInteger());
