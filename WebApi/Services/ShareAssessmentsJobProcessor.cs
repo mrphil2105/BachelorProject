@@ -1,7 +1,6 @@
 using System.Security.Cryptography;
 using System.Text;
 using Apachi.Shared;
-using Apachi.Shared.Crypto;
 using Apachi.WebApi.Data;
 using Microsoft.EntityFrameworkCore;
 
@@ -17,7 +16,7 @@ public class ShareAssessmentsJobProcessor : IJobProcessor
     {
         _configuration = configuration;
         _dbContext = dbContext;
-        _programCommitteePrivateKey = KeyUtils.GetPCPrivateKey();
+        _programCommitteePrivateKey = GetPCPrivateKey();
     }
 
     public async Task<string?> ProcessJobAsync(Job job, CancellationToken stoppingToken)
@@ -25,7 +24,7 @@ public class ShareAssessmentsJobProcessor : IJobProcessor
         var submissionId = Guid.Parse(job.Payload!);
 
         var groupKey = RandomNumberGenerator.GetBytes(32);
-        var gradeRandomness = DataUtils.GenerateBigInteger();
+        var gradeRandomness = GenerateBigInteger();
         var gradeRandomnessBytes = gradeRandomness.ToByteArray();
 
         var submission = await _dbContext.Submissions.FirstOrDefaultAsync(submission => submission.Id == submissionId);
@@ -51,13 +50,9 @@ public class ShareAssessmentsJobProcessor : IJobProcessor
             assessmentsSet.Add(review.AssessmentSignature!);
         }
 
-        var serializedAssessmentsSet = DataUtils.SerializeByteArrays(assessmentsSet);
-        submission.EncryptedAssessmentsSet = await EncryptionUtils.SymmetricEncryptAsync(
-            serializedAssessmentsSet,
-            groupKey,
-            null
-        );
-        submission.AssessmentsSetSignature = await KeyUtils.CalculateSignatureAsync(
+        var serializedAssessmentsSet = SerializeByteArrays(assessmentsSet);
+        submission.EncryptedAssessmentsSet = await SymmetricEncryptAsync(serializedAssessmentsSet, groupKey, null);
+        submission.AssessmentsSetSignature = await CalculateSignatureAsync(
             serializedAssessmentsSet,
             _programCommitteePrivateKey
         );
@@ -68,18 +63,12 @@ public class ShareAssessmentsJobProcessor : IJobProcessor
 
     private async Task ShareGroupKeyAndGradeRandomnessAsync(Review review, byte[] groupKey, byte[] gradeRandomness)
     {
-        var sharedKey = await EncryptionUtils.AsymmetricDecryptAsync(
-            review.Reviewer.EncryptedSharedKey,
-            _programCommitteePrivateKey
-        );
+        var sharedKey = await AsymmetricDecryptAsync(review.Reviewer.EncryptedSharedKey, _programCommitteePrivateKey);
 
-        review.EncryptedGroupKey = await EncryptionUtils.SymmetricEncryptAsync(groupKey, sharedKey, null);
-        review.GroupKeySignature = await KeyUtils.CalculateSignatureAsync(groupKey, _programCommitteePrivateKey);
+        review.EncryptedGroupKey = await SymmetricEncryptAsync(groupKey, sharedKey, null);
+        review.GroupKeySignature = await CalculateSignatureAsync(groupKey, _programCommitteePrivateKey);
 
-        review.EncryptedGradeRandomness = await EncryptionUtils.SymmetricEncryptAsync(gradeRandomness, sharedKey, null);
-        review.GradeRandomnessSignature = await KeyUtils.CalculateSignatureAsync(
-            gradeRandomness,
-            _programCommitteePrivateKey
-        );
+        review.EncryptedGradeRandomness = await SymmetricEncryptAsync(gradeRandomness, sharedKey, null);
+        review.GradeRandomnessSignature = await CalculateSignatureAsync(gradeRandomness, _programCommitteePrivateKey);
     }
 }

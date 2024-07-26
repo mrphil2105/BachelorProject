@@ -69,20 +69,20 @@ public class SubmissionService : ISubmissionService
         byte[] submissionPublicKey
     )> CreateSubmissionMessageAsync(byte[] paperBytes)
     {
-        var submissionRandomness = DataUtils.GenerateBigInteger();
-        var reviewRandomness = DataUtils.GenerateBigInteger();
+        var submissionRandomness = GenerateBigInteger();
+        var reviewRandomness = GenerateBigInteger();
 
         var submissionKey = RandomNumberGenerator.GetBytes(32);
-        var pcPublicKey = KeyUtils.GetPCPublicKey();
-        var encryptedSubmissionKey = await EncryptionUtils.AsymmetricEncryptAsync(submissionKey, pcPublicKey);
+        var pcPublicKey = GetPCPublicKey();
+        var encryptedSubmissionKey = await AsymmetricEncryptAsync(submissionKey, pcPublicKey);
 
-        var encryptedPaper = await EncryptionUtils.SymmetricEncryptAsync(paperBytes, submissionKey, null);
-        var encryptedSubmissionRandomness = await EncryptionUtils.SymmetricEncryptAsync(
+        var encryptedPaper = await SymmetricEncryptAsync(paperBytes, submissionKey, null);
+        var encryptedSubmissionRandomness = await SymmetricEncryptAsync(
             submissionRandomness.ToByteArray(),
             submissionKey,
             null
         );
-        var encryptedReviewRandomness = await EncryptionUtils.SymmetricEncryptAsync(
+        var encryptedReviewRandomness = await SymmetricEncryptAsync(
             reviewRandomness.ToByteArray(),
             submissionKey,
             null
@@ -95,8 +95,8 @@ public class SubmissionService : ISubmissionService
         await memoryStream.WriteAsync(encryptedSubmissionKey);
         var bytesToBeSigned = memoryStream.ToArray();
 
-        var (submissionPrivateKey, submissionPublicKey) = await KeyUtils.GenerateKeyPairAsync();
-        var submissionSignature = await KeyUtils.CalculateSignatureAsync(bytesToBeSigned, submissionPrivateKey);
+        var (submissionPrivateKey, submissionPublicKey) = await GenerateKeyPairAsync();
+        var submissionSignature = await CalculateSignatureAsync(bytesToBeSigned, submissionPrivateKey);
 
         var submissionMessage = new SubmissionMessage(
             encryptedPaper,
@@ -120,7 +120,7 @@ public class SubmissionService : ISubmissionService
     {
         var idBytes = _sessionService.UserId!.Value.ToByteArray(true);
 
-        var identityRandomness = DataUtils.GenerateBigInteger();
+        var identityRandomness = GenerateBigInteger();
         var submissionCommitment = Commitment.Create(paperBytes, submissionRandomness);
         var identityCommitment = Commitment.Create(idBytes, identityRandomness);
 
@@ -132,7 +132,7 @@ public class SubmissionService : ISubmissionService
         await memoryStream.WriteAsync(identityCommitmentBytes);
         var bytesToBeSigned = memoryStream.ToArray();
 
-        var commitmentsSignature = await KeyUtils.CalculateSignatureAsync(bytesToBeSigned, submissionPrivateKey);
+        var commitmentsSignature = await CalculateSignatureAsync(bytesToBeSigned, submissionPrivateKey);
         var commitmentsMessage = new SubmissionIdentityCommitmentsMessage(
             submissionCommitmentBytes,
             identityCommitmentBytes,

@@ -1,6 +1,5 @@
 using System.Security.Cryptography;
 using System.Text;
-using Apachi.Shared.Crypto;
 using Apachi.Shared.Data;
 using Apachi.Shared.Data.Messages;
 using Apachi.UserApp.Data;
@@ -38,7 +37,7 @@ public class ReviewService : IReviewService
         );
 
         var sharedKey = await _sessionService.SymmetricDecryptAsync(reviewer.EncryptedSharedKey);
-        var pcPublicKey = KeyUtils.GetPCPublicKey();
+        var pcPublicKey = GetPCPublicKey();
 
         await using var logDbContext = _logDbContextFactory();
         var submissionIds = await logDbContext.Entries.Select(entry => entry.SubmissionId).Distinct().ToListAsync();
@@ -86,7 +85,7 @@ public class ReviewService : IReviewService
         );
 
         var sharedKey = await _sessionService.SymmetricDecryptAsync(reviewer.EncryptedSharedKey);
-        var pcPublicKey = KeyUtils.GetPCPublicKey();
+        var pcPublicKey = GetPCPublicKey();
 
         await using var logDbContext = _logDbContextFactory();
         var submissionIds = await logDbContext.Entries.Select(entry => entry.SubmissionId).Distinct().ToListAsync();
@@ -146,7 +145,7 @@ public class ReviewService : IReviewService
 
                 foreach (var encrypted in data)
                 {
-                    var decrypted = await EncryptionUtils.SymmetricDecryptAsync(encrypted, sharedKey, null);
+                    var decrypted = await SymmetricDecryptAsync(encrypted, sharedKey, null);
                     await memoryStream.WriteAsync(decrypted);
                 }
             }
@@ -158,7 +157,7 @@ public class ReviewService : IReviewService
 
             var bytesToVerify = memoryStream.ToArray();
             var signature = signatureSelector(shareEntry.Message);
-            var isSignatureValid = await KeyUtils.VerifySignatureAsync(bytesToVerify, signature, pcPublicKey);
+            var isSignatureValid = await VerifySignatureAsync(bytesToVerify, signature, pcPublicKey);
 
             if (isSignatureValid)
             {
@@ -177,17 +176,13 @@ public class ReviewService : IReviewService
         );
 
         var sharedKey = await _sessionService.SymmetricDecryptAsync(reviewer.EncryptedSharedKey);
-        var pcPublicKey = KeyUtils.GetPCPublicKey();
+        var pcPublicKey = GetPCPublicKey();
 
         await using var logDbContext = _logDbContextFactory();
         var shareEntry = await logDbContext.GetEntryAsync<PaperReviewerShareMessage>(logEntryId);
-        var paperBytes = await EncryptionUtils.SymmetricDecryptAsync(
-            shareEntry.Message.EncryptedPaper,
-            sharedKey,
-            null
-        );
+        var paperBytes = await SymmetricDecryptAsync(shareEntry.Message.EncryptedPaper, sharedKey, null);
 
-        await KeyUtils.ThrowOnInvalidSignatureAsync(paperBytes, shareEntry.Message.PaperSignature, pcPublicKey);
+        await ThrowOnInvalidSignatureAsync(paperBytes, shareEntry.Message.PaperSignature, pcPublicKey);
 
         await File.WriteAllBytesAsync(paperFilePath, paperBytes);
     }
@@ -201,27 +196,23 @@ public class ReviewService : IReviewService
 
         var privateKey = await _sessionService.SymmetricDecryptAsync(reviewer.EncryptedPrivateKey);
         var sharedKey = await _sessionService.SymmetricDecryptAsync(reviewer.EncryptedSharedKey);
-        var pcPublicKey = KeyUtils.GetPCPublicKey();
+        var pcPublicKey = GetPCPublicKey();
 
         await using var logDbContext = _logDbContextFactory();
         var shareEntry = await logDbContext.GetEntryAsync<PaperReviewerShareMessage>(logEntryId);
-        var paperBytes = await EncryptionUtils.SymmetricDecryptAsync(
-            shareEntry.Message.EncryptedPaper,
-            sharedKey,
-            null
-        );
+        var paperBytes = await SymmetricDecryptAsync(shareEntry.Message.EncryptedPaper, sharedKey, null);
 
-        await KeyUtils.ThrowOnInvalidSignatureAsync(paperBytes, shareEntry.Message.PaperSignature, pcPublicKey);
+        await ThrowOnInvalidSignatureAsync(paperBytes, shareEntry.Message.PaperSignature, pcPublicKey);
 
         var bidBytes = new byte[] { (byte)(wantsToReview ? 1 : 0) };
-        var encryptedPaper = await EncryptionUtils.SymmetricEncryptAsync(paperBytes, sharedKey, null);
-        var encryptedBid = await EncryptionUtils.SymmetricEncryptAsync(bidBytes, sharedKey, null);
+        var encryptedPaper = await SymmetricEncryptAsync(paperBytes, sharedKey, null);
+        var encryptedBid = await SymmetricEncryptAsync(bidBytes, sharedKey, null);
 
         await using var memoryStream = new MemoryStream();
         await memoryStream.WriteAsync(paperBytes);
         await memoryStream.WriteAsync(bidBytes);
         var bytesToSign = memoryStream.ToArray();
-        var signature = await KeyUtils.CalculateSignatureAsync(bytesToSign, privateKey);
+        var signature = await CalculateSignatureAsync(bytesToSign, privateKey);
 
         var bidMessage = new BidMessage(encryptedPaper, encryptedBid, signature);
         logDbContext.AddMessage(shareEntry.SubmissionId, bidMessage);
@@ -244,15 +235,11 @@ public class ReviewService : IReviewService
             shareEntry.SubmissionId
         );
 
-        var paperBytes = await EncryptionUtils.SymmetricDecryptAsync(
-            shareEntry.Message.EncryptedPaper,
-            sharedKey,
-            null
-        );
+        var paperBytes = await SymmetricDecryptAsync(shareEntry.Message.EncryptedPaper, sharedKey, null);
 
         var reviewBytes = Encoding.UTF8.GetBytes(review);
-        var encryptedReview = await EncryptionUtils.SymmetricEncryptAsync(reviewBytes, sharedKey, null);
-        var reviewSignature = await KeyUtils.CalculateSignatureAsync(reviewBytes, privateKey);
+        var encryptedReview = await SymmetricEncryptAsync(reviewBytes, sharedKey, null);
+        var reviewSignature = await CalculateSignatureAsync(reviewBytes, privateKey);
         var reviewMessage = new ReviewMessage(encryptedReview, reviewSignature);
 
         await using var memoryStream = new MemoryStream();
@@ -260,7 +247,7 @@ public class ReviewService : IReviewService
         await memoryStream.WriteAsync(matchingMessage.ReviewNonce);
         var bytesToSign = memoryStream.ToArray();
 
-        var signature = await KeyUtils.CalculateSignatureAsync(bytesToSign, privateKey);
+        var signature = await CalculateSignatureAsync(bytesToSign, privateKey);
         var signatureMessage = new ReviewCommitmentNonceSignatureMessage(signature);
 
         logDbContext.AddMessage(shareEntry.SubmissionId, reviewMessage);

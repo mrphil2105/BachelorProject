@@ -1,4 +1,3 @@
-using Apachi.Shared.Crypto;
 using Org.BouncyCastle.Math;
 
 namespace Apachi.UnitTests.Shared.CryptoTests;
@@ -20,7 +19,7 @@ public class DataUtilsTests
 
         for (int i = 0; i < integers.Length; i++)
         {
-            integers[i] = DataUtils.GenerateBigInteger();
+            integers[i] = GenerateBigInteger();
         }
 
         return integers;
@@ -29,7 +28,7 @@ public class DataUtilsTests
     [Fact]
     public void SerializeBigIntegers_ShouldReturnSerializedIntegers_WhenCalled()
     {
-        byte[] actual = DataUtils.SerializeBigIntegers(_bigIntegers);
+        byte[] actual = SerializeBigIntegers(_bigIntegers);
 
         actual.Should().NotBeNull();
     }
@@ -37,8 +36,8 @@ public class DataUtilsTests
     [Fact]
     public void DeserializeBigIntegers_ShouldReturnDeserializedIntegers_WhenCalled()
     {
-        byte[] serialized = DataUtils.SerializeBigIntegers(_bigIntegers);
-        List<BigInteger> actual = DataUtils.DeserializeBigIntegers(serialized);
+        byte[] serialized = SerializeBigIntegers(_bigIntegers);
+        List<BigInteger> actual = DeserializeBigIntegers(serialized);
 
         actual.Should().NotBeNull();
     }
@@ -48,7 +47,7 @@ public class DataUtilsTests
     {
         BigInteger[] integers = GenerateBigIntegerList(byte.MaxValue + 1);
 
-        Action action = () => DataUtils.SerializeBigIntegers(integers);
+        Action action = () => SerializeBigIntegers(integers);
 
         action.Should().Throw<ArgumentException>();
     }

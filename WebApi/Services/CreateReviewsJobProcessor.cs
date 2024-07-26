@@ -1,4 +1,3 @@
-using Apachi.Shared.Crypto;
 using Apachi.WebApi.Data;
 using Microsoft.EntityFrameworkCore;
 
@@ -17,7 +16,7 @@ public class CreateReviewsJobProcessor : IJobProcessor
 
     public async Task<string?> ProcessJobAsync(Job job, CancellationToken stoppingToken)
     {
-        var programCommitteePrivateKey = KeyUtils.GetPCPrivateKey();
+        var programCommitteePrivateKey = GetPCPrivateKey();
         var submissionId = Guid.Parse(job.Payload!);
         var paperBytes = await GetPaperAsync(submissionId);
 
@@ -36,10 +35,7 @@ public class CreateReviewsJobProcessor : IJobProcessor
                 continue;
             }
 
-            var sharedKey = await EncryptionUtils.AsymmetricDecryptAsync(
-                reviewer.EncryptedSharedKey,
-                programCommitteePrivateKey
-            );
+            var sharedKey = await AsymmetricDecryptAsync(reviewer.EncryptedSharedKey, programCommitteePrivateKey);
             await SaveEncryptedPaperAsync(submissionId, reviewer.Id, paperBytes, sharedKey);
 
             var review = new Review { ReviewerId = reviewer.Id, SubmissionId = submissionId };
@@ -69,6 +65,6 @@ public class CreateReviewsJobProcessor : IJobProcessor
         Directory.CreateDirectory(submissionDirectoryPath);
 
         await using var fileStream = File.Create(encryptedPaperFilePath);
-        await EncryptionUtils.SymmetricEncryptAsync(paperBytes, fileStream, sharedKey, null);
+        await SymmetricEncryptAsync(paperBytes, fileStream, sharedKey, null);
     }
 }

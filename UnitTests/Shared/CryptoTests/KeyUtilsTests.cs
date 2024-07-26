@@ -1,4 +1,3 @@
-using Apachi.Shared.Crypto;
 using AutoFixture;
 
 namespace Apachi.UnitTests.Shared.CryptoTests;
@@ -9,7 +8,7 @@ public class KeyUtilsTests : IAsyncLifetime
 
     public async Task InitializeAsync()
     {
-        _keyPair = await KeyUtils.GenerateKeyPairAsync();
+        _keyPair = await GenerateKeyPairAsync();
     }
 
     public Task DisposeAsync()
@@ -29,7 +28,7 @@ public class KeyUtilsTests : IAsyncLifetime
     [Theory]
     public void CalculateSignature_ShouldReturnSignature_WhenCalled(byte[] data)
     {
-        var actual = KeyUtils.CalculateSignatureAsync(data, _keyPair.PrivateKey);
+        var actual = CalculateSignatureAsync(data, _keyPair.PrivateKey);
         actual.Should().NotBeNull();
     }
 
@@ -37,9 +36,9 @@ public class KeyUtilsTests : IAsyncLifetime
     [Theory]
     public async void VerifySignature_ShouldReturnTrue_WhenCalled(byte[] data)
     {
-        var signature = await KeyUtils.CalculateSignatureAsync(data, _keyPair.PrivateKey);
-        var actual = await KeyUtils.VerifySignatureAsync(data, signature, _keyPair.PublicKey);
-        
+        var signature = await CalculateSignatureAsync(data, _keyPair.PrivateKey);
+        var actual = await VerifySignatureAsync(data, signature, _keyPair.PublicKey);
+
         actual.Should().BeTrue();
     }
 }

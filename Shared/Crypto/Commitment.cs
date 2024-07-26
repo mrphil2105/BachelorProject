@@ -17,7 +17,7 @@ public class Commitment
     static Commitment()
     {
         var hBytes = Convert.FromBase64String(HPointBase64);
-        var integers = DataUtils.DeserializeBigIntegers(hBytes);
+        var integers = DeserializeBigIntegers(hBytes);
         var xCoord = integers[0];
         var yCoord = integers[1];
 
@@ -59,13 +59,13 @@ public class Commitment
         var xCoord = normalizedPoint.AffineXCoord.ToBigInteger();
         var yCoord = normalizedPoint.AffineYCoord.ToBigInteger();
 
-        var commitmentBytes = DataUtils.SerializeBigIntegers(xCoord, yCoord);
+        var commitmentBytes = SerializeBigIntegers(xCoord, yCoord);
         return commitmentBytes;
     }
 
     public static Commitment FromBytes(byte[] bytes, string curveName = Constants.DefaultCurveName)
     {
-        var integers = DataUtils.DeserializeBigIntegers(bytes);
+        var integers = DeserializeBigIntegers(bytes);
         var xCoord = integers[0];
         var yCoord = integers[1];
 

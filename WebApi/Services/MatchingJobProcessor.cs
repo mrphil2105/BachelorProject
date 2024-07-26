@@ -1,5 +1,4 @@
 using Apachi.Shared;
-using Apachi.Shared.Crypto;
 using Apachi.WebApi.Data;
 using Microsoft.EntityFrameworkCore;
 
@@ -18,7 +17,7 @@ public class MatchingJobProcessor : IJobProcessor
 
     public async Task<string?> ProcessJobAsync(Job job, CancellationToken stoppingToken)
     {
-        var programCommitteePrivateKey = KeyUtils.GetPCPrivateKey();
+        var programCommitteePrivateKey = GetPCPrivateKey();
         var submissionId = Guid.Parse(job.Payload!);
         var paperBytes = await GetPaperAsync(submissionId);
 
@@ -32,15 +31,11 @@ public class MatchingJobProcessor : IJobProcessor
 
         await foreach (var review in reviews)
         {
-            var sharedKey = await EncryptionUtils.AsymmetricDecryptAsync(
+            var sharedKey = await AsymmetricDecryptAsync(
                 review.Reviewer.EncryptedSharedKey,
                 programCommitteePrivateKey
             );
-            var encryptedReviewRandomness = await EncryptionUtils.SymmetricEncryptAsync(
-                submission!.ReviewRandomness,
-                sharedKey,
-                null
-            );
+            var encryptedReviewRandomness = await SymmetricEncryptAsync(submission!.ReviewRandomness, sharedKey, null);
             review.EncryptedReviewRandomness = encryptedReviewRandomness;
             await memoryStream.WriteAsync(review.Reviewer.ReviewerPublicKey);
         }
@@ -49,7 +44,7 @@ public class MatchingJobProcessor : IJobProcessor
         await memoryStream.WriteAsync(submission.ReviewNonce);
 
         var bytesToBeSigned = memoryStream.ToArray();
-        var matchingSignature = await KeyUtils.CalculateSignatureAsync(bytesToBeSigned, programCommitteePrivateKey);
+        var matchingSignature = await CalculateSignatureAsync(bytesToBeSigned, programCommitteePrivateKey);
 
         submission.MatchingSignature = matchingSignature;
         submission.Status = SubmissionStatus.Reviewing;

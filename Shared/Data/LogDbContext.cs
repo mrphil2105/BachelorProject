@@ -1,4 +1,3 @@
-using Apachi.Shared.Crypto;
 using Apachi.Shared.Data.Messages;
 using Microsoft.EntityFrameworkCore;
 
@@ -96,14 +95,14 @@ public class LogDbContext : DbContext
         where TMessage : IMessage
     {
         var values = typeof(TMessage).GetProperties().Select(property => (byte[])property.GetValue(message)!).ToList();
-        var serialized = DataUtils.SerializeByteArrays(values);
+        var serialized = SerializeByteArrays(values);
         return serialized;
     }
 
     public static TMessage DeserializeMessage<TMessage>(byte[] serialized)
         where TMessage : IMessage
     {
-        var values = DataUtils.DeserializeByteArrays(serialized).ToArray();
+        var values = DeserializeByteArrays(serialized).ToArray();
         var message = (TMessage)Activator.CreateInstance(typeof(TMessage), (object[])values)!;
         return message;
     }

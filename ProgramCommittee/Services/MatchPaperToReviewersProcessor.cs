@@ -20,11 +20,11 @@ public class MatchPaperToReviewersProcessor : IJobProcessor
     public async Task ProcessJobAsync(Job job, CancellationToken cancellationToken)
     {
         var reviewCommitment = await CreateReviewCommitmentAsync(job.SubmissionId);
-        var reviewNonce = DataUtils.GenerateBigInteger().ToByteArray();
+        var reviewNonce = GenerateBigInteger().ToByteArray();
 
         var bidMessages = await _logDbContext.GetMessagesAsync<BidMessage>(job.SubmissionId);
         var reviewers = await _logDbContext.Reviewers.ToListAsync();
-        var pcPrivateKey = KeyUtils.GetPCPrivateKey();
+        var pcPrivateKey = GetPCPrivateKey();
 
         var reviewerPublicKeys = new List<byte[]>();
 
@@ -47,14 +47,14 @@ public class MatchPaperToReviewersProcessor : IJobProcessor
 
         await memoryStream.WriteAsync(reviewNonce);
         var bytesToBeSigned = memoryStream.ToArray();
-        var matchingSignature = await KeyUtils.CalculateSignatureAsync(bytesToBeSigned, pcPrivateKey);
+        var matchingSignature = await CalculateSignatureAsync(bytesToBeSigned, pcPrivateKey);
 
         // TODO: Add proof that the paper submission commitment and paper review commitment hides the same paper.
         var submissionReviewProof = Array.Empty<byte>();
 
         var matchingMessage = new PaperReviewersMatchingMessage(
             reviewCommitment,
-            DataUtils.SerializeByteArrays(reviewerPublicKeys),
+            SerializeByteArrays(reviewerPublicKeys),
             reviewNonce,
             matchingSignature,
             submissionReviewProof
@@ -67,18 +67,11 @@ public class MatchPaperToReviewersProcessor : IJobProcessor
     {
         var submissionMessage = await _logDbContext.GetMessageAsync<SubmissionMessage>(submissionId);
 
-        var pcPrivateKey = KeyUtils.GetPCPrivateKey();
-        var submissionKey = await EncryptionUtils.AsymmetricDecryptAsync(
-            submissionMessage.EncryptedSubmissionKey,
-            pcPrivateKey
-        );
+        var pcPrivateKey = GetPCPrivateKey();
+        var submissionKey = await AsymmetricDecryptAsync(submissionMessage.EncryptedSubmissionKey, pcPrivateKey);
 
-        var paperBytes = await EncryptionUtils.SymmetricDecryptAsync(
-            submissionMessage.EncryptedPaper,
-            submissionKey,
-            null
-        );
-        var reviewRandomnessBytes = await EncryptionUtils.SymmetricDecryptAsync(
+        var paperBytes = await SymmetricDecryptAsync(submissionMessage.EncryptedPaper, submissionKey, null);
+        var reviewRandomnessBytes = await SymmetricDecryptAsync(
             submissionMessage.EncryptedReviewRandomness,
             submissionKey,
             null
@@ -99,14 +92,14 @@ public class MatchPaperToReviewersProcessor : IJobProcessor
         // Decrypt each and check the signature to find out if the message is from the current reviewer.
         foreach (var reviewer in reviewers)
         {
-            var sharedKey = await EncryptionUtils.AsymmetricDecryptAsync(reviewer.EncryptedSharedKey, pcPrivateKey);
+            var sharedKey = await AsymmetricDecryptAsync(reviewer.EncryptedSharedKey, pcPrivateKey);
             byte[] paperBytes;
             byte[] bidBytes;
 
             try
             {
-                paperBytes = await EncryptionUtils.SymmetricDecryptAsync(bidMessage.EncryptedPaper, sharedKey, null);
-                bidBytes = await EncryptionUtils.SymmetricDecryptAsync(bidMessage.EncryptedBid, sharedKey, null);
+                paperBytes = await SymmetricDecryptAsync(bidMessage.EncryptedPaper, sharedKey, null);
+                bidBytes = await SymmetricDecryptAsync(bidMessage.EncryptedBid, sharedKey, null);
             }
             catch (CryptographicException)
             {
@@ -119,11 +112,7 @@ public class MatchPaperToReviewersProcessor : IJobProcessor
             await memoryStream.WriteAsync(bidBytes);
             var bytesToVerify = memoryStream.ToArray();
 
-            var isSignatureValid = await KeyUtils.VerifySignatureAsync(
-                bytesToVerify,
-                bidMessage.Signature,
-                reviewer.PublicKey
-            );
+            var isSignatureValid = await VerifySignatureAsync(bytesToVerify, bidMessage.Signature, reviewer.PublicKey);
 
             if (!isSignatureValid)
             {

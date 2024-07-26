@@ -1,7 +1,6 @@
 using System.Security.Cryptography;
 using System.Text;
 using Apachi.Shared;
-using Apachi.Shared.Crypto;
 using Apachi.Shared.Dtos;
 using Apachi.WebApi.Data;
 using Microsoft.AspNetCore.Mvc;
@@ -59,7 +58,7 @@ public class ReviewController : ControllerBase
     [HttpPost]
     public async Task<ResultDto> CreateBid([FromBody] EncryptedSignedDto encryptedSignedDto)
     {
-        var programCommitteePrivateKey = KeyUtils.GetPCPrivateKey();
+        var programCommitteePrivateKey = GetPCPrivateKey();
         var reviewer = await _dbContext.Reviewers.FirstOrDefaultAsync(reviewer =>
             reviewer.Id == encryptedSignedDto.Identifier
         );
@@ -69,10 +68,7 @@ public class ReviewController : ControllerBase
             return new ResultDto(false, "The reviewer was not found.");
         }
 
-        var sharedKey = await EncryptionUtils.AsymmetricDecryptAsync(
-            reviewer.EncryptedSharedKey,
-            programCommitteePrivateKey
-        );
+        var sharedKey = await AsymmetricDecryptAsync(reviewer.EncryptedSharedKey, programCommitteePrivateKey);
         var bidDto = await encryptedSignedDto.ToDtoAsync<BidDto>(sharedKey, reviewer.ReviewerPublicKey);
 
         var submission = await _dbContext.Submissions.FirstOrDefaultAsync(submission =>
@@ -118,7 +114,7 @@ public class ReviewController : ControllerBase
     [HttpPost]
     public async Task<ResultDto> CreateAssessment([FromBody] AssessmentDto assessmentDto)
     {
-        var programCommitteePrivateKey = KeyUtils.GetPCPrivateKey();
+        var programCommitteePrivateKey = GetPCPrivateKey();
         var review = await _dbContext
             .Reviews.Include(review => review.Reviewer)
             .Include(review => review.Submission)
@@ -136,17 +132,10 @@ public class ReviewController : ControllerBase
             return new ResultDto(false, "The review must be in the pending state.");
         }
 
-        var sharedKey = await EncryptionUtils.AsymmetricDecryptAsync(
-            review.Reviewer.EncryptedSharedKey,
-            programCommitteePrivateKey
-        );
+        var sharedKey = await AsymmetricDecryptAsync(review.Reviewer.EncryptedSharedKey, programCommitteePrivateKey);
 
-        var assessmentBytes = await EncryptionUtils.SymmetricDecryptAsync(
-            assessmentDto.EncryptedAssessment,
-            sharedKey,
-            null
-        );
-        var isSignatureValid = await KeyUtils.VerifySignatureAsync(
+        var assessmentBytes = await SymmetricDecryptAsync(assessmentDto.EncryptedAssessment, sharedKey, null);
+        var isSignatureValid = await VerifySignatureAsync(
             assessmentBytes,
             assessmentDto.AssessmentSignature,
             review.Reviewer.ReviewerPublicKey
@@ -157,7 +146,7 @@ public class ReviewController : ControllerBase
             throw new CryptographicException("The received assessment signature is invalid.");
         }
 
-        isSignatureValid = await KeyUtils.VerifySignatureAsync(
+        isSignatureValid = await VerifySignatureAsync(
             review.Submission.ReviewCommitment,
             assessmentDto.ReviewCommitmentSignature,
             review.Reviewer.ReviewerPublicKey
@@ -168,7 +157,7 @@ public class ReviewController : ControllerBase
             throw new CryptographicException("The received review commitment signature is invalid.");
         }
 
-        isSignatureValid = await KeyUtils.VerifySignatureAsync(
+        isSignatureValid = await VerifySignatureAsync(
             review.Submission.ReviewNonce,
             assessmentDto.ReviewNonceSignature,
             review.Reviewer.ReviewerPublicKey

@@ -1,5 +1,4 @@
 using System.Security.Cryptography;
-using Apachi.Shared.Crypto;
 using Apachi.Shared.Data;
 using Apachi.UserApp.Data;
 using Apachi.ViewModels.Services;
@@ -132,11 +131,11 @@ public class SessionService : ISessionService
     )
     {
         var sharedKey = RandomNumberGenerator.GetBytes(32);
-        var pcPublicKey = KeyUtils.GetPCPublicKey();
-        var pcEncryptedSharedKey = await EncryptionUtils.AsymmetricEncryptAsync(sharedKey, pcPublicKey);
+        var pcPublicKey = GetPCPublicKey();
+        var pcEncryptedSharedKey = await AsymmetricEncryptAsync(sharedKey, pcPublicKey);
 
-        var (reviewerPrivateKey, reviewerPublicKey) = await KeyUtils.GenerateKeyPairAsync();
-        var sharedKeySignature = await KeyUtils.CalculateSignatureAsync(pcEncryptedSharedKey, reviewerPrivateKey);
+        var (reviewerPrivateKey, reviewerPublicKey) = await GenerateKeyPairAsync();
+        var sharedKeySignature = await CalculateSignatureAsync(pcEncryptedSharedKey, reviewerPrivateKey);
 
         await using var logDbContext = _logDbContextFactory();
         var logReviewer = new LogReviewer
@@ -148,8 +147,8 @@ public class SessionService : ISessionService
         logDbContext.Reviewers.Add(logReviewer);
         await logDbContext.SaveChangesAsync();
 
-        var encryptedPrivateKey = await EncryptionUtils.SymmetricEncryptAsync(reviewerPrivateKey, aesKey, hmacKey);
-        var encryptedSharedKey = await EncryptionUtils.SymmetricEncryptAsync(sharedKey, aesKey, hmacKey);
+        var encryptedPrivateKey = await SymmetricEncryptAsync(reviewerPrivateKey, aesKey, hmacKey);
+        var encryptedSharedKey = await SymmetricEncryptAsync(sharedKey, aesKey, hmacKey);
 
         var appReviewer = new AppReviewer
         {

@@ -1,6 +1,5 @@
 using System.Security.Cryptography;
 using Apachi.Shared;
-using Apachi.Shared.Crypto;
 using Apachi.Shared.Dtos;
 using Apachi.WebApi.Data;
 using Microsoft.AspNetCore.Mvc;
@@ -26,13 +25,10 @@ public class ReviewerController : ControllerBase
     [HttpPost]
     public async Task<ReviewerRegisteredDto> Register([FromBody] ReviewerRegisterDto registerDto)
     {
-        var programCommitteePublicKey = KeyUtils.GetPCPublicKey();
+        var programCommitteePublicKey = GetPCPublicKey();
         var sharedKey = RandomNumberGenerator.GetBytes(32);
 
-        var programCommitteeEncryptedSharedKey = await EncryptionUtils.AsymmetricEncryptAsync(
-            sharedKey,
-            programCommitteePublicKey
-        );
+        var programCommitteeEncryptedSharedKey = await AsymmetricEncryptAsync(sharedKey, programCommitteePublicKey);
         var reviewer = new Reviewer
         {
             ReviewerPublicKey = registerDto.ReviewerPublicKey,
@@ -42,10 +38,7 @@ public class ReviewerController : ControllerBase
         _dbContext.Reviewers.Add(reviewer);
         await _dbContext.SaveChangesAsync();
 
-        var reviewerEncryptedSharedKey = await EncryptionUtils.AsymmetricEncryptAsync(
-            sharedKey,
-            registerDto.ReviewerPublicKey
-        );
+        var reviewerEncryptedSharedKey = await AsymmetricEncryptAsync(sharedKey, registerDto.ReviewerPublicKey);
         var registeredDto = new ReviewerRegisteredDto(reviewer.Id, reviewerEncryptedSharedKey);
 
         _logger.LogInformation("Reviewer registered new account with id: {Id}", reviewer.Id);

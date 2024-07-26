@@ -31,27 +31,24 @@ public class SubmissionController : ControllerBase
     {
         await ThrowIfInvalidSubmissionSignatureAsync(submitDto);
 
-        var programCommitteePrivateKey = KeyUtils.GetPCPrivateKey();
-        var submissionKey = await EncryptionUtils.AsymmetricDecryptAsync(
-            submitDto.EncryptedSubmissionKey,
-            programCommitteePrivateKey
-        );
+        var programCommitteePrivateKey = GetPCPrivateKey();
+        var submissionKey = await AsymmetricDecryptAsync(submitDto.EncryptedSubmissionKey, programCommitteePrivateKey);
 
         var submissionId = Guid.NewGuid();
         var paperBytes = await SavePaperAsync(submitDto.EncryptedPaper, submissionKey, submissionId);
-        var submissionRandomnessBytes = await EncryptionUtils.SymmetricDecryptAsync(
+        var submissionRandomnessBytes = await SymmetricDecryptAsync(
             submitDto.EncryptedSubmissionRandomness,
             submissionKey,
             null
         );
-        var reviewRandomnessBytes = await EncryptionUtils.SymmetricDecryptAsync(
+        var reviewRandomnessBytes = await SymmetricDecryptAsync(
             submitDto.EncryptedReviewRandomness,
             submissionKey,
             null
         );
 
-        var paperSignature = await KeyUtils.CalculateSignatureAsync(paperBytes, programCommitteePrivateKey);
-        var reviewRandomnessSignature = await KeyUtils.CalculateSignatureAsync(
+        var paperSignature = await CalculateSignatureAsync(paperBytes, programCommitteePrivateKey);
+        var reviewRandomnessSignature = await CalculateSignatureAsync(
             reviewRandomnessBytes,
             programCommitteePrivateKey
         );
@@ -82,7 +79,7 @@ public class SubmissionController : ControllerBase
         _dbContext.Submissions.Add(submission);
         await _dbContext.SaveChangesAsync();
 
-        var submissionCommitmentSignature = await KeyUtils.CalculateSignatureAsync(
+        var submissionCommitmentSignature = await CalculateSignatureAsync(
             submitDto.SubmissionCommitment,
             programCommitteePrivateKey
         );
@@ -103,7 +100,7 @@ public class SubmissionController : ControllerBase
         await memoryStream.WriteAsync(submitDto.IdentityCommitment);
         var bytesToVerified = memoryStream.ToArray();
 
-        var isValid = await KeyUtils.VerifySignatureAsync(
+        var isValid = await VerifySignatureAsync(
             bytesToVerified,
             submitDto.SubmissionSignature,
             submitDto.SubmissionPublicKey
@@ -121,7 +118,7 @@ public class SubmissionController : ControllerBase
         var paperFilePath = Path.Combine(submissionsDirectoryPath, submissionId.ToString());
         Directory.CreateDirectory(submissionsDirectoryPath);
 
-        var paperBytes = await EncryptionUtils.SymmetricDecryptAsync(encryptedPaper, submissionKey, null);
+        var paperBytes = await SymmetricDecryptAsync(encryptedPaper, submissionKey, null);
         await System.IO.File.WriteAllBytesAsync(paperFilePath, paperBytes);
         return paperBytes;
     }

@@ -1,11 +1,10 @@
-using Apachi.Shared.Crypto;
 using Apachi.WebApi.Data;
 using Apachi.WebApi.Services;
 using Microsoft.EntityFrameworkCore;
 
 if (args.Length > 0 && args[0] == "--generate-keypair")
 {
-    var (publicKey, privateKey) = await KeyUtils.GenerateKeyPairAsync();
+    var (publicKey, privateKey) = await GenerateKeyPairAsync();
     var publicKeyBase64 = Convert.ToBase64String(publicKey);
     var privateKeyBase64 = Convert.ToBase64String(privateKey);
     Console.WriteLine("Public Key: {0}", publicKeyBase64);
