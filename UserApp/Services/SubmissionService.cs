@@ -47,8 +47,10 @@ public class SubmissionService : ISubmissionService
         logDbContext.AddMessage(submissionId, commitmentsMessage);
         await logDbContext.SaveChangesAsync();
 
-        var encryptedSubmissionPrivateKey = await _sessionService.SymmetricEncryptAsync(submissionPrivateKey);
-        var encryptedIdentityRandomness = await _sessionService.SymmetricEncryptAsync(identityRandomness.ToByteArray());
+        var encryptedSubmissionPrivateKey = await _sessionService.SymmetricEncryptAndMacAsync(submissionPrivateKey);
+        var encryptedIdentityRandomness = await _sessionService.SymmetricEncryptAndMacAsync(
+            identityRandomness.ToByteArray()
+        );
 
         await using var appDbContext = _appDbContextFactory();
         var submission = new Submission
@@ -76,17 +78,12 @@ public class SubmissionService : ISubmissionService
         var pcPublicKey = GetPCPublicKey();
         var encryptedSubmissionKey = await AsymmetricEncryptAsync(submissionKey, pcPublicKey);
 
-        var encryptedPaper = await SymmetricEncryptAsync(paperBytes, submissionKey, null);
+        var encryptedPaper = await SymmetricEncryptAsync(paperBytes, submissionKey);
         var encryptedSubmissionRandomness = await SymmetricEncryptAsync(
             submissionRandomness.ToByteArray(),
-            submissionKey,
-            null
+            submissionKey
         );
-        var encryptedReviewRandomness = await SymmetricEncryptAsync(
-            reviewRandomness.ToByteArray(),
-            submissionKey,
-            null
-        );
+        var encryptedReviewRandomness = await SymmetricEncryptAsync(reviewRandomness.ToByteArray(), submissionKey);
 
         await using var memoryStream = new MemoryStream();
         await memoryStream.WriteAsync(encryptedPaper);

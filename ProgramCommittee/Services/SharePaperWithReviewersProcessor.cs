@@ -21,7 +21,7 @@ public class SharePaperWithReviewersProcessor : IJobProcessor
         var pcPrivateKey = GetPCPrivateKey();
         var submissionKey = await AsymmetricDecryptAsync(submissionMessage.EncryptedSubmissionKey, pcPrivateKey);
 
-        var paperBytes = await SymmetricDecryptAsync(submissionMessage.EncryptedPaper, submissionKey, null);
+        var paperBytes = await SymmetricDecryptAsync(submissionMessage.EncryptedPaper, submissionKey);
         var paperSignature = await CalculateSignatureAsync(paperBytes, pcPrivateKey);
 
         var reviewers = await _logDbContext.Reviewers.ToListAsync();
@@ -29,7 +29,7 @@ public class SharePaperWithReviewersProcessor : IJobProcessor
         foreach (var reviewer in reviewers)
         {
             var sharedKey = await AsymmetricDecryptAsync(reviewer.EncryptedSharedKey, pcPrivateKey);
-            var encryptedPaper = await SymmetricEncryptAsync(paperBytes, sharedKey, null);
+            var encryptedPaper = await SymmetricEncryptAsync(paperBytes, sharedKey);
 
             var shareMessage = new PaperReviewerShareMessage(encryptedPaper, paperSignature);
             _logDbContext.AddMessage(job.SubmissionId, shareMessage);

@@ -70,11 +70,10 @@ public class MatchPaperToReviewersProcessor : IJobProcessor
         var pcPrivateKey = GetPCPrivateKey();
         var submissionKey = await AsymmetricDecryptAsync(submissionMessage.EncryptedSubmissionKey, pcPrivateKey);
 
-        var paperBytes = await SymmetricDecryptAsync(submissionMessage.EncryptedPaper, submissionKey, null);
+        var paperBytes = await SymmetricDecryptAsync(submissionMessage.EncryptedPaper, submissionKey);
         var reviewRandomnessBytes = await SymmetricDecryptAsync(
             submissionMessage.EncryptedReviewRandomness,
-            submissionKey,
-            null
+            submissionKey
         );
 
         var reviewRandomness = new BigInteger(reviewRandomnessBytes);
@@ -98,8 +97,8 @@ public class MatchPaperToReviewersProcessor : IJobProcessor
 
             try
             {
-                paperBytes = await SymmetricDecryptAsync(bidMessage.EncryptedPaper, sharedKey, null);
-                bidBytes = await SymmetricDecryptAsync(bidMessage.EncryptedBid, sharedKey, null);
+                paperBytes = await SymmetricDecryptAsync(bidMessage.EncryptedPaper, sharedKey);
+                bidBytes = await SymmetricDecryptAsync(bidMessage.EncryptedBid, sharedKey);
             }
             catch (CryptographicException)
             {

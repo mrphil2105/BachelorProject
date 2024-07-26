@@ -21,12 +21,8 @@ public class ShareReviewRandomnessWithReviewersProcessor : IJobProcessor
         var pcPrivateKey = GetPCPrivateKey();
         var submissionKey = await AsymmetricDecryptAsync(submissionMessage.EncryptedSubmissionKey, pcPrivateKey);
 
-        var paperBytes = await SymmetricDecryptAsync(submissionMessage.EncryptedPaper, submissionKey, null);
-        var reviewRandomness = await SymmetricDecryptAsync(
-            submissionMessage.EncryptedReviewRandomness,
-            submissionKey,
-            null
-        );
+        var paperBytes = await SymmetricDecryptAsync(submissionMessage.EncryptedPaper, submissionKey);
+        var reviewRandomness = await SymmetricDecryptAsync(submissionMessage.EncryptedReviewRandomness, submissionKey);
 
         await using var memoryStream = new MemoryStream();
         await memoryStream.WriteAsync(paperBytes);
@@ -43,8 +39,8 @@ public class ShareReviewRandomnessWithReviewersProcessor : IJobProcessor
         foreach (var reviewer in reviewers)
         {
             var sharedKey = await AsymmetricDecryptAsync(reviewer.EncryptedSharedKey, pcPrivateKey);
-            var encryptedPaper = await SymmetricEncryptAsync(paperBytes, sharedKey, null);
-            var encryptedReviewRandomness = await SymmetricEncryptAsync(reviewRandomness, sharedKey, null);
+            var encryptedPaper = await SymmetricEncryptAsync(paperBytes, sharedKey);
+            var encryptedReviewRandomness = await SymmetricEncryptAsync(reviewRandomness, sharedKey);
 
             var shareMessage = new ReviewRandomnessReviewerShareMessage(
                 encryptedPaper,

@@ -147,8 +147,8 @@ public class SessionService : ISessionService
         logDbContext.Reviewers.Add(logReviewer);
         await logDbContext.SaveChangesAsync();
 
-        var encryptedPrivateKey = await SymmetricEncryptAsync(reviewerPrivateKey, aesKey, hmacKey);
-        var encryptedSharedKey = await SymmetricEncryptAsync(sharedKey, aesKey, hmacKey);
+        var encryptedPrivateKey = await SymmetricEncryptAndMacAsync(reviewerPrivateKey, aesKey, hmacKey);
+        var encryptedSharedKey = await SymmetricEncryptAndMacAsync(sharedKey, aesKey, hmacKey);
 
         var appReviewer = new AppReviewer
         {

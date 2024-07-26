@@ -13,14 +13,14 @@ public record EncryptedSignedDto(byte[] EncryptedData, byte[] Signature, Guid Id
     )
     {
         var dtoBytes = JsonSerializer.SerializeToUtf8Bytes(dto);
-        var encryptedData = await SymmetricEncryptAsync(dtoBytes, aesKey, null);
+        var encryptedData = await SymmetricEncryptAsync(dtoBytes, aesKey);
         var signature = await CalculateSignatureAsync(dtoBytes, privateKey);
         return new EncryptedSignedDto(encryptedData, signature, identifier);
     }
 
     public async Task<TDto> ToDtoAsync<TDto>(byte[] aesKey, byte[] publicKey)
     {
-        var dtoBytes = await SymmetricDecryptAsync(EncryptedData, aesKey, null);
+        var dtoBytes = await SymmetricDecryptAsync(EncryptedData, aesKey);
         var isSignatureValid = await VerifySignatureAsync(dtoBytes, Signature, publicKey);
 
         if (!isSignatureValid)

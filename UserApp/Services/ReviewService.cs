@@ -36,7 +36,7 @@ public class ReviewService : IReviewService
             reviewer.Id == _sessionService.UserId!.Value
         );
 
-        var sharedKey = await _sessionService.SymmetricDecryptAsync(reviewer.EncryptedSharedKey);
+        var sharedKey = await _sessionService.SymmetricDecryptAndVerifyAsync(reviewer.EncryptedSharedKey);
         var pcPublicKey = GetPCPublicKey();
 
         await using var logDbContext = _logDbContextFactory();
@@ -84,7 +84,7 @@ public class ReviewService : IReviewService
             reviewer.Id == _sessionService.UserId!.Value
         );
 
-        var sharedKey = await _sessionService.SymmetricDecryptAsync(reviewer.EncryptedSharedKey);
+        var sharedKey = await _sessionService.SymmetricDecryptAndVerifyAsync(reviewer.EncryptedSharedKey);
         var pcPublicKey = GetPCPublicKey();
 
         await using var logDbContext = _logDbContextFactory();
@@ -145,7 +145,7 @@ public class ReviewService : IReviewService
 
                 foreach (var encrypted in data)
                 {
-                    var decrypted = await SymmetricDecryptAsync(encrypted, sharedKey, null);
+                    var decrypted = await SymmetricDecryptAsync(encrypted, sharedKey);
                     await memoryStream.WriteAsync(decrypted);
                 }
             }
@@ -175,12 +175,12 @@ public class ReviewService : IReviewService
             reviewer.Id == _sessionService.UserId!.Value
         );
 
-        var sharedKey = await _sessionService.SymmetricDecryptAsync(reviewer.EncryptedSharedKey);
+        var sharedKey = await _sessionService.SymmetricDecryptAndVerifyAsync(reviewer.EncryptedSharedKey);
         var pcPublicKey = GetPCPublicKey();
 
         await using var logDbContext = _logDbContextFactory();
         var shareEntry = await logDbContext.GetEntryAsync<PaperReviewerShareMessage>(logEntryId);
-        var paperBytes = await SymmetricDecryptAsync(shareEntry.Message.EncryptedPaper, sharedKey, null);
+        var paperBytes = await SymmetricDecryptAsync(shareEntry.Message.EncryptedPaper, sharedKey);
 
         await ThrowOnInvalidSignatureAsync(paperBytes, shareEntry.Message.PaperSignature, pcPublicKey);
 
@@ -194,19 +194,19 @@ public class ReviewService : IReviewService
             reviewer.Id == _sessionService.UserId!.Value
         );
 
-        var privateKey = await _sessionService.SymmetricDecryptAsync(reviewer.EncryptedPrivateKey);
-        var sharedKey = await _sessionService.SymmetricDecryptAsync(reviewer.EncryptedSharedKey);
+        var privateKey = await _sessionService.SymmetricDecryptAndVerifyAsync(reviewer.EncryptedPrivateKey);
+        var sharedKey = await _sessionService.SymmetricDecryptAndVerifyAsync(reviewer.EncryptedSharedKey);
         var pcPublicKey = GetPCPublicKey();
 
         await using var logDbContext = _logDbContextFactory();
         var shareEntry = await logDbContext.GetEntryAsync<PaperReviewerShareMessage>(logEntryId);
-        var paperBytes = await SymmetricDecryptAsync(shareEntry.Message.EncryptedPaper, sharedKey, null);
+        var paperBytes = await SymmetricDecryptAsync(shareEntry.Message.EncryptedPaper, sharedKey);
 
         await ThrowOnInvalidSignatureAsync(paperBytes, shareEntry.Message.PaperSignature, pcPublicKey);
 
         var bidBytes = new byte[] { (byte)(wantsToReview ? 1 : 0) };
-        var encryptedPaper = await SymmetricEncryptAsync(paperBytes, sharedKey, null);
-        var encryptedBid = await SymmetricEncryptAsync(bidBytes, sharedKey, null);
+        var encryptedPaper = await SymmetricEncryptAsync(paperBytes, sharedKey);
+        var encryptedBid = await SymmetricEncryptAsync(bidBytes, sharedKey);
 
         await using var memoryStream = new MemoryStream();
         await memoryStream.WriteAsync(paperBytes);
@@ -226,8 +226,8 @@ public class ReviewService : IReviewService
             reviewer.Id == _sessionService.UserId!.Value
         );
 
-        var privateKey = await _sessionService.SymmetricDecryptAsync(reviewer.EncryptedPrivateKey);
-        var sharedKey = await _sessionService.SymmetricDecryptAsync(reviewer.EncryptedSharedKey);
+        var privateKey = await _sessionService.SymmetricDecryptAndVerifyAsync(reviewer.EncryptedPrivateKey);
+        var sharedKey = await _sessionService.SymmetricDecryptAndVerifyAsync(reviewer.EncryptedSharedKey);
 
         await using var logDbContext = _logDbContextFactory();
         var shareEntry = await logDbContext.GetEntryAsync<ReviewRandomnessReviewerShareMessage>(logEntryId);
@@ -235,10 +235,10 @@ public class ReviewService : IReviewService
             shareEntry.SubmissionId
         );
 
-        var paperBytes = await SymmetricDecryptAsync(shareEntry.Message.EncryptedPaper, sharedKey, null);
+        var paperBytes = await SymmetricDecryptAsync(shareEntry.Message.EncryptedPaper, sharedKey);
 
         var reviewBytes = Encoding.UTF8.GetBytes(review);
-        var encryptedReview = await SymmetricEncryptAsync(reviewBytes, sharedKey, null);
+        var encryptedReview = await SymmetricEncryptAsync(reviewBytes, sharedKey);
         var reviewSignature = await CalculateSignatureAsync(reviewBytes, privateKey);
         var reviewMessage = new ReviewMessage(encryptedReview, reviewSignature);
 
@@ -269,7 +269,7 @@ public class ReviewService : IReviewService
         }
 
         var assessmentBytes = Encoding.UTF8.GetBytes(assessment);
-        var encryptedAssessment = await _sessionService.SymmetricEncryptAsync(assessmentBytes);
+        var encryptedAssessment = await _sessionService.SymmetricEncryptAndMacAsync(assessmentBytes);
 
         review.EncryptedSavedAssessment = encryptedAssessment;
         await dbContext.SaveChangesAsync();
@@ -293,7 +293,7 @@ public class ReviewService : IReviewService
             return null;
         }
 
-        var assessmentBytes = await _sessionService.SymmetricDecryptAsync(review.EncryptedSavedAssessment);
+        var assessmentBytes = await _sessionService.SymmetricDecryptAndVerifyAsync(review.EncryptedSavedAssessment);
         var assessment = Encoding.UTF8.GetString(assessmentBytes);
         return assessment;
     }
