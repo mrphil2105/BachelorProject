@@ -160,4 +160,68 @@ public static class DataUtils
 
         return byteArrays;
     }
+
+    public static byte[] DeserializeOneByteArray(byte[] serialized)
+    {
+        var byteArrays = DeserializeByteArrays(serialized);
+
+        if (byteArrays.Count == 0)
+        {
+            throw new ArgumentException("Serialized data must contain at least one byte array.");
+        }
+
+        return byteArrays[0];
+    }
+
+    public static (byte[] First, byte[] Second) DeserializeTwoByteArrays(byte[] serialized)
+    {
+        var byteArrays = DeserializeByteArrays(serialized);
+
+        if (byteArrays.Count < 2)
+        {
+            throw new ArgumentException("Serialized data must contain at least two byte arrays.");
+        }
+
+        return (byteArrays[0], byteArrays[1]);
+    }
+
+    public static (byte[] First, byte[] Second, byte[] Third) DeserializeThreeByteArrays(byte[] serialized)
+    {
+        var byteArrays = DeserializeByteArrays(serialized);
+
+        if (byteArrays.Count < 3)
+        {
+            throw new ArgumentException("Serialized data must contain at least three byte arrays.");
+        }
+
+        return (byteArrays[0], byteArrays[1], byteArrays[2]);
+    }
+
+    public static (byte[] First, byte[] Second, byte[] Third, byte[] Fourth) DeserializeFourByteArrays(
+        byte[] serialized
+    )
+    {
+        var byteArrays = DeserializeByteArrays(serialized);
+
+        if (byteArrays.Count < 4)
+        {
+            throw new ArgumentException("Serialized data must contain at least four byte arrays.");
+        }
+
+        return (byteArrays[0], byteArrays[1], byteArrays[2], byteArrays[3]);
+    }
+
+    public static (byte[] First, byte[] Second, byte[] Third, byte[] Fourth, byte[] Fifth) DeserializeFiveByteArrays(
+        byte[] serialized
+    )
+    {
+        var byteArrays = DeserializeByteArrays(serialized);
+
+        if (byteArrays.Count < 5)
+        {
+            throw new ArgumentException("Serialized data must contain at least five byte arrays.");
+        }
+
+        return (byteArrays[0], byteArrays[1], byteArrays[2], byteArrays[3], byteArrays[4]);
+    }
 }
