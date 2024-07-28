@@ -1,6 +1,6 @@
 using System.Reflection;
 
-namespace Apachi.Shared.Data.Messages;
+namespace Apachi.Shared.Messages;
 
 public static class MessageUtils
 {
@@ -24,7 +24,7 @@ public static class MessageUtils
 
             if (messageType == null)
             {
-                continue;
+                throw new TypeLoadException($"Message type for protocol step {step} was not found.");
             }
 
             stepMessageTypes.Add(step, messageType);
@@ -48,6 +48,16 @@ public static class MessageUtils
         where TMessage : IMessage
     {
         if (_messageTypeSteps.TryGetValue(typeof(TMessage), out var step))
+        {
+            return step;
+        }
+
+        throw new ArgumentException("Invalid message type.");
+    }
+
+    public static ProtocolStep ProtocolStepForMessageType(Type messageType)
+    {
+        if (_messageTypeSteps.TryGetValue(messageType, out var step))
         {
             return step;
         }

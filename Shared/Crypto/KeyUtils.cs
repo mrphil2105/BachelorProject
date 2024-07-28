@@ -30,7 +30,7 @@ public static class KeyUtils
         return isValid;
     }
 
-    public static async Task ThrowOnInvalidSignatureAsync(byte[] data, byte[] signature, byte[] publicKey)
+    public static async Task ThrowIfInvalidSignatureAsync(byte[] data, byte[] signature, byte[] publicKey)
     {
         var isSignatureValid = await VerifySignatureAsync(data, signature, publicKey);
 
