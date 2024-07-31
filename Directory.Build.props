@@ -5,4 +5,9 @@
     <Nullable>enable</Nullable>
     <Deterministic>true</Deterministic>
   </PropertyGroup>
+  <ItemGroup>
+    <Using Include="Apachi.Shared.Crypto.DataUtils" Static="True" />
+    <Using Include="Apachi.Shared.Crypto.EncryptionUtils" Static="True" />
+    <Using Include="Apachi.Shared.Crypto.KeyUtils" Static="True" />
+  </ItemGroup>
 </Project>

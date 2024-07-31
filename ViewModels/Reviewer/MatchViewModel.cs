@@ -1,18 +1,18 @@
-using Apachi.Shared.Dtos;
+using Apachi.ViewModels.Models;
 using Apachi.ViewModels.Services;
 
 namespace Apachi.ViewModels.Reviewer;
 
-public class MatchViewModel : Conductor<MatchableSubmissionDto>.Collection.AllActive, IMenuPageViewModel
+public class MatchViewModel : Conductor<MatchableSubmissionModel>.Collection.AllActive, IMenuPageViewModel
 {
     private readonly IViewService _viewService;
-    private readonly IReviewService _reviewService;
+    private readonly IMatchingService _matchingService;
     private bool _isLoading;
 
-    public MatchViewModel(IViewService viewService, IReviewService reviewService)
+    public MatchViewModel(IViewService viewService, IMatchingService matchingService)
     {
         _viewService = viewService;
-        _reviewService = reviewService;
+        _matchingService = matchingService;
     }
 
     public string PageName => "Match";
@@ -25,7 +25,7 @@ public class MatchViewModel : Conductor<MatchableSubmissionDto>.Collection.AllAc
         set => Set(ref _isLoading, value);
     }
 
-    public async Task DownloadPaper(MatchableSubmissionDto matchableSubmissionDto)
+    public async Task DownloadPaper(MatchableSubmissionModel model)
     {
         var paperFilePath = await _viewService.ShowSaveFileDialogAsync(this);
 
@@ -34,29 +34,25 @@ public class MatchViewModel : Conductor<MatchableSubmissionDto>.Collection.AllAc
             return;
         }
 
-        await _reviewService.DownloadPaperAsync(
-            matchableSubmissionDto.SubmissionId,
-            matchableSubmissionDto.PaperSignature,
-            paperFilePath
-        );
+        await _matchingService.DownloadPaperAsync(model.LogEntryId, paperFilePath);
     }
 
-    public Task BidReview(MatchableSubmissionDto matchableSubmissionDto)
+    public Task BidReview(MatchableSubmissionModel model)
     {
-        return SendBidAsync(matchableSubmissionDto, true);
+        return SendBidAsync(model, true);
     }
 
-    public Task BidAbstain(MatchableSubmissionDto matchableSubmissionDto)
+    public Task BidAbstain(MatchableSubmissionModel model)
     {
-        return SendBidAsync(matchableSubmissionDto, false);
+        return SendBidAsync(model, false);
     }
 
-    private async Task SendBidAsync(MatchableSubmissionDto matchableSubmissionDto, bool wantsToReview)
+    private async Task SendBidAsync(MatchableSubmissionModel model, bool wantsToReview)
     {
         try
         {
-            await _reviewService.SendBidAsync(matchableSubmissionDto.SubmissionId, wantsToReview);
-            Items.Remove(matchableSubmissionDto);
+            await _matchingService.SendBidAsync(model.LogEntryId, wantsToReview);
+            Items.Remove(model);
             await _viewService.ShowMessageBoxAsync(
                 this,
                 "The bid has been successfully sent!",
@@ -77,12 +73,12 @@ public class MatchViewModel : Conductor<MatchableSubmissionDto>.Collection.AllAc
 
     protected override async Task OnInitializeAsync(CancellationToken cancellationToken)
     {
-        List<MatchableSubmissionDto> matchableSubmissionDtos;
+        List<MatchableSubmissionModel> models;
 
         try
         {
             IsLoading = true;
-            matchableSubmissionDtos = await _reviewService.GetMatchableSubmissionsAsync();
+            models = await _matchingService.GetMatchableSubmissionsAsync();
         }
         catch (HttpRequestException exception)
         {
@@ -97,7 +93,7 @@ public class MatchViewModel : Conductor<MatchableSubmissionDto>.Collection.AllAc
         }
 
         Items.Clear();
-        Items.AddRange(matchableSubmissionDtos);
+        Items.AddRange(models);
         IsLoading = false;
     }
 }

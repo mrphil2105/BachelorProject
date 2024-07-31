@@ -4,12 +4,12 @@ namespace Apachi.Shared.Crypto;
 
 public static class KeyUtils
 {
-    public static async Task<(byte[] PublicKey, byte[] PrivateKey)> GenerateKeyPairAsync()
+    public static async Task<(byte[] PrivateKey, byte[] PublicKey)> GenerateKeyPairAsync()
     {
         using var rsa = await Task.Run(() => RSA.Create(Constants.DefaultRSAKeySize));
-        var publicKey = rsa.ExportRSAPublicKey();
         var privateKey = rsa.ExportRSAPrivateKey();
-        return (publicKey, privateKey);
+        var publicKey = rsa.ExportRSAPublicKey();
+        return (privateKey, publicKey);
     }
 
     public static async Task<byte[]> CalculateSignatureAsync(byte[] data, byte[] privateKey)
@@ -30,29 +30,27 @@ public static class KeyUtils
         return isValid;
     }
 
-    public static byte[] GetProgramCommitteePublicKey()
+    public static async Task ThrowIfInvalidSignatureAsync(byte[] data, byte[] signature, byte[] publicKey)
     {
-        var publicKeyBase64 = Environment.GetEnvironmentVariable("APACHI_PC_PUBLIC_KEY");
+        var isSignatureValid = await VerifySignatureAsync(data, signature, publicKey);
 
-        if (publicKeyBase64 == null)
+        if (!isSignatureValid)
         {
-            throw new InvalidOperationException("Enviroment variable APACHI_PC_PUBLIC_KEY must be set.");
+            throw new CryptographicException("The signature is invalid.");
         }
-
-        var publicKey = Convert.FromBase64String(publicKeyBase64);
-        return publicKey;
     }
 
-    public static byte[] GetProgramCommitteePrivateKey()
+    public static byte[] GetPCPrivateKey()
     {
-        var privateKeyBase64 = Environment.GetEnvironmentVariable("APACHI_PC_PRIVATE_KEY");
-
-        if (privateKeyBase64 == null)
-        {
-            throw new InvalidOperationException("Enviroment variable APACHI_PC_PRIVATE_KEY must be set.");
-        }
-
+        var privateKeyBase64 = EnvironmentVariable.GetValue(EnvironmentVariable.PCPrivateKey);
         var privateKey = Convert.FromBase64String(privateKeyBase64);
         return privateKey;
+    }
+
+    public static byte[] GetPCPublicKey()
+    {
+        var publicKeyBase64 = EnvironmentVariable.GetValue(EnvironmentVariable.PCPublicKey);
+        var publicKey = Convert.FromBase64String(publicKeyBase64);
+        return publicKey;
     }
 }

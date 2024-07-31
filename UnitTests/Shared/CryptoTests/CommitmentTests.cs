@@ -9,7 +9,7 @@ public class CommitmentTests
 
     public CommitmentTests()
     {
-        _randomness = DataUtils.GenerateBigInteger();
+        _randomness = GenerateBigInteger();
     }
 
     [AutoData]

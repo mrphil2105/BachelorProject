@@ -1,0 +1,37 @@
+<UserControl
+    x:Class="Apachi.UserApp.Views.Reviewer.ReviewListView"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:c="using:Apachi.UserApp.Converters"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:e="https://github.com/mrphil2105/MvvmElegance"
+    xmlns:m="using:Apachi.ViewModels.Models"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:vm="using:Apachi.ViewModels.Reviewer"
+    x:DataType="vm:ReviewListViewModel"
+    mc:Ignorable="d">
+    <StackPanel>
+        <TextBlock FontSize="24" Text="Reviewable Submissions" />
+        <ScrollViewer>
+            <ItemsControl ItemsSource="{Binding Items}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate DataType="{x:Type m:ReviewableSubmissionModel}">
+                        <StackPanel>
+                            <TextBlock Text="{Binding CreatedDate, Converter={x:Static c:CustomConverters.DateTime}}" />
+                            <StackPanel Orientation="Horizontal">
+                                <Button
+                                    Command="{e:Action DownloadPaper}"
+                                    CommandParameter="{Binding}"
+                                    Content="Download" />
+                                <Button
+                                    Command="{e:Action Review}"
+                                    CommandParameter="{Binding}"
+                                    Content="Review" />
+                            </StackPanel>
+                        </StackPanel>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ScrollViewer>
+    </StackPanel>
+</UserControl>

@@ -1,5 +1,4 @@
-using Apachi.Shared;
-using Apachi.Shared.Dtos;
+using Apachi.ViewModels.Models;
 using Apachi.ViewModels.Services;
 using Apachi.ViewModels.Validation;
 
@@ -10,9 +9,10 @@ public class ReviewAssessmentViewModel : Screen
     private readonly IViewService _viewService;
     private readonly IReviewService _reviewService;
 
-    private ReviewableSubmissionDto? _reviewableSubmissionDto;
-    private string _assessment = string.Empty;
+    private ReviewableSubmissionModel? _reviewableSubmissionDto;
+    private string _review = string.Empty;
     private bool _isDirty;
+    private bool _hasSubmitted;
 
     public ReviewAssessmentViewModel(IViewService viewService, IReviewService reviewService)
     {
@@ -21,24 +21,18 @@ public class ReviewAssessmentViewModel : Screen
         Validator = new ValidationAdapter<ReviewAssessmentViewModel>(new ReviewAssessmentViewModelValidator());
     }
 
-    public ReviewableSubmissionDto? ReviewableSubmissionDto
+    public ReviewableSubmissionModel? ReviewableSubmissionModel
     {
         get => _reviewableSubmissionDto;
-        set
-        {
-            Set(ref _reviewableSubmissionDto, value);
-            RaisePropertyChanged(nameof(CanEdit));
-        }
+        set => Set(ref _reviewableSubmissionDto, value);
     }
 
-    public bool CanEdit => ReviewableSubmissionDto?.ReviewStatus == ReviewStatus.Pending;
-
-    public string Assessment
+    public string Review
     {
-        get => _assessment;
+        get => _review;
         set
         {
-            Set(ref _assessment, value);
+            Set(ref _review, value);
             IsDirty = true;
         }
     }
@@ -49,18 +43,13 @@ public class ReviewAssessmentViewModel : Screen
         set => Set(ref _isDirty, value);
     }
 
-    public async Task SaveAssessment()
+    public bool HasSubmitted
     {
-        if (!IsDirty)
-        {
-            return;
-        }
-
-        await _reviewService.SaveAssessmentAsync(ReviewableSubmissionDto!.SubmissionId, Assessment);
-        IsDirty = false;
+        get => _hasSubmitted;
+        set => Set(ref _hasSubmitted, value);
     }
 
-    public async Task SubmitAssessment()
+    public async Task SubmitReview()
     {
         var isValid = await ValidateAsync();
 
@@ -71,13 +60,13 @@ public class ReviewAssessmentViewModel : Screen
 
         try
         {
-            await SaveAssessment();
-            await _reviewService.SendAssessmentAsync(ReviewableSubmissionDto!, Assessment);
-            ReviewableSubmissionDto = ReviewableSubmissionDto! with { ReviewStatus = ReviewStatus.Discussing };
+            await _reviewService.SendReviewAsync(ReviewableSubmissionModel!.LogEntryId, Review);
+            IsDirty = false;
+            HasSubmitted = true;
             await _viewService.ShowMessageBoxAsync(
                 this,
-                "The assessment has been successfully sent!",
-                "Assessment Successful",
+                "The review has been successfully sent!",
+                "Review Successful",
                 kind: MessageBoxKind.Information
             );
         }
@@ -85,8 +74,8 @@ public class ReviewAssessmentViewModel : Screen
         {
             await _viewService.ShowMessageBoxAsync(
                 this,
-                $"Unable to send assessment: {exception.Message}",
-                "Assessment Failure",
+                $"Unable to send review: {exception.Message}",
+                "Review Failure",
                 kind: MessageBoxKind.Error
             );
         }
@@ -95,13 +84,6 @@ public class ReviewAssessmentViewModel : Screen
     public Task Back()
     {
         return ((ReviewViewModel)Parent!).GoToList();
-    }
-
-    protected override async Task OnInitializeAsync(CancellationToken cancellationToken)
-    {
-        var assessment = await _reviewService.LoadAssessmentAsync(ReviewableSubmissionDto!.SubmissionId);
-        Assessment = assessment ?? string.Empty;
-        IsDirty = false;
     }
 
     public override async Task<bool> CanCloseAsync(CancellationToken cancellationToken = default)
@@ -113,8 +95,8 @@ public class ReviewAssessmentViewModel : Screen
 
         var result = await _viewService.ShowMessageBoxAsync(
             this,
-            "You have unsaved changes in your assessment. Are you sure you want to close?",
-            "Unsaved Changes",
+            "You have not submitted your review. Are you sure you want to close?",
+            "Unsubmitted Review",
             MessageBoxButton.YesNo,
             MessageBoxKind.Question
         );

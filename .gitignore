@@ -401,6 +401,9 @@ FodyWeavers.xsd
 # Neovim
 run.toml
 
+# EditorConfig
+.editorconfig
+
 # SQLite
 App.db
 App.db-shm
@@ -410,3 +413,9 @@ App.db-wal
 papers/
 submissions/
 reviews/
+
+# Scripts
+run.sh
+
+# Logs
+Log.txt

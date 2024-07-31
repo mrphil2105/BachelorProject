@@ -1,0 +1,18 @@
+<Application
+    x:Class="Apachi.UserApp.App"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:e="https://github.com/mrphil2105/MvvmElegance"
+    xmlns:local="using:Apachi.UserApp"
+    RequestedThemeVariant="Default">
+    <Application.Resources>
+        <e:ApplicationLoader>
+            <e:ApplicationLoader.Bootstrapper>
+                <local:Bootstrapper />
+            </e:ApplicationLoader.Bootstrapper>
+        </e:ApplicationLoader>
+    </Application.Resources>
+    <Application.Styles>
+        <FluentTheme />
+    </Application.Styles>
+</Application>

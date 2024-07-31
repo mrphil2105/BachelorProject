@@ -1,0 +1,41 @@
+<UserControl
+    x:Class="Apachi.UserApp.Views.MenuView"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:e="https://github.com/mrphil2105/MvvmElegance"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:vm="using:Apachi.ViewModels"
+    x:DataType="vm:MenuViewModel"
+    mc:Ignorable="d">
+    <DockPanel>
+        <DockPanel Background="#222" DockPanel.Dock="Left">
+            <DockPanel.Styles>
+                <Style Selector="Button">
+                    <Setter Property="Width" Value="120" />
+                    <Setter Property="Padding" Value="15,20" />
+                    <Setter Property="CornerRadius" Value="0" />
+                    <Setter Property="BorderThickness" Value="0,0,0,1" />
+                    <Setter Property="BorderBrush" Value="Gray" />
+                    <Setter Property="HorizontalContentAlignment" Value="Center" />
+                </Style>
+            </DockPanel.Styles>
+            <Button
+                BorderThickness="0"
+                Command="{e:Action Logout}"
+                Content="Logout"
+                DockPanel.Dock="Bottom" />
+            <ItemsControl ItemsSource="{Binding Items}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate DataType="{x:Type vm:IMenuPageViewModel}">
+                        <Button
+                            Command="{e:Action GoToMenuPage}"
+                            CommandParameter="{Binding}"
+                            Content="{Binding PageName}" />
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </DockPanel>
+        <ContentControl e:View.Model="{Binding ActiveItem}" />
+    </DockPanel>
+</UserControl>
