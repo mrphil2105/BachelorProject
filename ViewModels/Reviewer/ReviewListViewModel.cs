@@ -7,14 +7,12 @@ public class ReviewListViewModel : Conductor<ReviewableSubmissionModel>.Collecti
 {
     private readonly IViewService _viewService;
     private readonly IReviewService _reviewService;
-    private readonly IReviewerService _reviewerService;
     private bool _isLoading;
 
-    public ReviewListViewModel(IViewService viewService, IReviewService reviewService, IReviewerService reviewerService)
+    public ReviewListViewModel(IViewService viewService, IReviewService reviewService)
     {
         _viewService = viewService;
         _reviewService = reviewService;
-        _reviewerService = reviewerService;
     }
 
     public bool IsLoading
@@ -32,7 +30,7 @@ public class ReviewListViewModel : Conductor<ReviewableSubmissionModel>.Collecti
             return;
         }
 
-        await _reviewService.DownloadPaperAsync(model.SubmissionId, paperFilePath);
+        await _reviewService.DownloadPaperAsync(model.LogEntryId, paperFilePath);
     }
 
     public Task Review(ReviewableSubmissionModel model)

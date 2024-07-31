@@ -16,19 +16,13 @@ public class SessionService : ISessionService
 
     private readonly Func<AppDbContext> _appDbContextFactory;
     private readonly Func<LogDbContext> _logDbContextFactory;
-    private readonly IApiService _apiService;
 
     private User? _user;
 
-    public SessionService(
-        Func<AppDbContext> appDbContextFactory,
-        Func<LogDbContext> logDbContextFactory,
-        IApiService apiService
-    )
+    public SessionService(Func<AppDbContext> appDbContextFactory, Func<LogDbContext> logDbContextFactory)
     {
         _appDbContextFactory = appDbContextFactory;
         _logDbContextFactory = logDbContextFactory;
-        _apiService = apiService;
     }
 
     public bool IsLoggedIn => _user != null && AesKey != null && HmacKey != null;

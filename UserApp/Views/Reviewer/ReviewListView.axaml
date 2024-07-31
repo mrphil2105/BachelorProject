@@ -17,7 +17,6 @@
                 <ItemsControl.ItemTemplate>
                     <DataTemplate DataType="{x:Type m:ReviewableSubmissionModel}">
                         <StackPanel>
-                            <TextBlock Text="{Binding SubmissionId}" />
                             <TextBlock Text="{Binding CreatedDate, Converter={x:Static c:CustomConverters.DateTime}}" />
                             <StackPanel Orientation="Horizontal">
                                 <Button

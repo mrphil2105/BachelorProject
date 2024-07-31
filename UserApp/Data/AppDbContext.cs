@@ -13,7 +13,7 @@ public class AppDbContext : DbContext
 
     public DbSet<Submission> Submissions => Set<Submission>();
 
-    public DbSet<Review> Reviews => Set<Review>();
+    public DbSet<LogEvent> LogEvents => Set<LogEvent>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

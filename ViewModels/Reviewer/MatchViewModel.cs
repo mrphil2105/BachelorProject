@@ -6,13 +6,13 @@ namespace Apachi.ViewModels.Reviewer;
 public class MatchViewModel : Conductor<MatchableSubmissionModel>.Collection.AllActive, IMenuPageViewModel
 {
     private readonly IViewService _viewService;
-    private readonly IReviewService _reviewService;
+    private readonly IMatchingService _matchingService;
     private bool _isLoading;
 
-    public MatchViewModel(IViewService viewService, IReviewService reviewService)
+    public MatchViewModel(IViewService viewService, IMatchingService matchingService)
     {
         _viewService = viewService;
-        _reviewService = reviewService;
+        _matchingService = matchingService;
     }
 
     public string PageName => "Match";
@@ -34,7 +34,7 @@ public class MatchViewModel : Conductor<MatchableSubmissionModel>.Collection.All
             return;
         }
 
-        await _reviewService.DownloadPaperAsync(model.LogEntryId, paperFilePath);
+        await _matchingService.DownloadPaperAsync(model.LogEntryId, paperFilePath);
     }
 
     public Task BidReview(MatchableSubmissionModel model)
@@ -51,7 +51,7 @@ public class MatchViewModel : Conductor<MatchableSubmissionModel>.Collection.All
     {
         try
         {
-            await _reviewService.SendBidAsync(model.LogEntryId, wantsToReview);
+            await _matchingService.SendBidAsync(model.LogEntryId, wantsToReview);
             Items.Remove(model);
             await _viewService.ShowMessageBoxAsync(
                 this,
@@ -78,7 +78,7 @@ public class MatchViewModel : Conductor<MatchableSubmissionModel>.Collection.All
         try
         {
             IsLoading = true;
-            models = await _reviewService.GetMatchableSubmissionsAsync();
+            models = await _matchingService.GetMatchableSubmissionsAsync();
         }
         catch (HttpRequestException exception)
         {

@@ -1,4 +1,3 @@
-using Apachi.Shared;
 using Apachi.ViewModels.Models;
 using Apachi.ViewModels.Services;
 using Apachi.ViewModels.Validation;
@@ -13,6 +12,7 @@ public class ReviewAssessmentViewModel : Screen
     private ReviewableSubmissionModel? _reviewableSubmissionDto;
     private string _review = string.Empty;
     private bool _isDirty;
+    private bool _hasSubmitted;
 
     public ReviewAssessmentViewModel(IViewService viewService, IReviewService reviewService)
     {
@@ -43,6 +43,12 @@ public class ReviewAssessmentViewModel : Screen
         set => Set(ref _isDirty, value);
     }
 
+    public bool HasSubmitted
+    {
+        get => _hasSubmitted;
+        set => Set(ref _hasSubmitted, value);
+    }
+
     public async Task SubmitReview()
     {
         var isValid = await ValidateAsync();
@@ -56,6 +62,7 @@ public class ReviewAssessmentViewModel : Screen
         {
             await _reviewService.SendReviewAsync(ReviewableSubmissionModel!.LogEntryId, Review);
             IsDirty = false;
+            HasSubmitted = true;
             await _viewService.ShowMessageBoxAsync(
                 this,
                 "The review has been successfully sent!",

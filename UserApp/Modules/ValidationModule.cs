@@ -9,6 +9,6 @@ public class ValidationModule : Module
     {
         builder
             .RegisterAssemblyTypes(typeof(MainViewModel).Assembly)
-            .Where(t => t.Namespace?.EndsWith("Validation") ?? false);
+            .Where(type => type.Namespace?.EndsWith("Validation") ?? false);
     }
 }

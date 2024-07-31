@@ -11,9 +11,9 @@ public class ViewModule : Module
     {
         builder
             .RegisterAssemblyTypes(typeof(MainViewModel).Assembly)
-            .Where(t => t.Name.EndsWith("ViewModel"))
+            .Where(type => type.Name.EndsWith("ViewModel"))
             .AsSelf()
             .AsImplementedInterfaces();
-        builder.RegisterAssemblyTypes(Assembly.GetExecutingAssembly()).Where(t => t.Name.EndsWith("View"));
+        builder.RegisterAssemblyTypes(Assembly.GetExecutingAssembly()).Where(type => type.Name.EndsWith("View"));
     }
 }

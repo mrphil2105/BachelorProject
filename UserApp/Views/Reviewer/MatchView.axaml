@@ -17,10 +17,6 @@
                 <ItemsControl.ItemTemplate>
                     <DataTemplate DataType="{x:Type m:MatchableSubmissionModel}">
                         <StackPanel>
-                            <TextBlock
-                                FontSize="16"
-                                FontWeight="Medium"
-                                Text="{Binding SubmissionId}" />
                             <TextBlock Text="{Binding CreatedDate, Converter={x:Static c:CustomConverters.DateTime}}" />
                             <StackPanel Orientation="Horizontal">
                                 <Button

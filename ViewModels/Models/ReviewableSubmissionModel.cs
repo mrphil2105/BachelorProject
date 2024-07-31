@@ -1,3 +1,3 @@
 namespace Apachi.ViewModels.Models;
 
-public record ReviewableSubmissionModel(Guid LogEntryId, Guid SubmissionId, DateTime CreatedDate);
+public record ReviewableSubmissionModel(Guid LogEntryId, DateTime CreatedDate);

@@ -19,11 +19,10 @@
             <ContentControl.ContentTemplate>
                 <DataTemplate DataType="{x:Type m:ReviewableSubmissionModel}">
                     <StackPanel>
-                        <TextBlock FontSize="16" TextWrapping="Wrap">
-                            <Run Text="Write your review" />
-                            <Run FontWeight="Medium" Text="{Binding SubmissionId}" />
-                            <Run Text="below:" />
-                        </TextBlock>
+                        <TextBlock
+                            FontSize="16"
+                            Text="Write your review below:"
+                            TextWrapping="Wrap" />
                     </StackPanel>
                 </DataTemplate>
             </ContentControl.ContentTemplate>
@@ -31,13 +30,20 @@
         <TextBox
             Height="150"
             AcceptsReturn="True"
+            IsReadOnly="{Binding HasSubmitted}"
             Text="{Binding Review}"
             TextWrapping="Wrap"
             Watermark="Review" />
         <Button
             HorizontalAlignment="Right"
             Command="{e:Action SubmitReview}"
-            Content="Submit"
-            IsEnabled="{Binding !HasErrors}" />
+            Content="Submit">
+            <Button.IsEnabled>
+                <MultiBinding Converter="{x:Static BoolConverters.And}">
+                    <Binding Path="!HasErrors" />
+                    <Binding Path="!HasSubmitted" />
+                </MultiBinding>
+            </Button.IsEnabled>
+        </Button>
     </StackPanel>
 </UserControl>

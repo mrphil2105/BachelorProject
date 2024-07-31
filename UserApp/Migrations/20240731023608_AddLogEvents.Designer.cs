@@ -3,6 +3,7 @@ using System;
 using Apachi.UserApp.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Apachi.UserApp.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240731023608_AddLogEvents")]
+    partial class AddLogEvents
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "8.0.7");
@@ -30,15 +33,10 @@ namespace Apachi.UserApp.Migrations
                         .IsRequired()
                         .HasColumnType("BLOB");
 
-                    b.Property<Guid>("ReviewerId")
-                        .HasColumnType("TEXT");
-
                     b.Property<int>("Step")
                         .HasColumnType("INTEGER");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("ReviewerId");
 
                     b.ToTable("LogEvents");
                 });
@@ -125,17 +123,6 @@ namespace Apachi.UserApp.Migrations
                         .IsUnique();
 
                     b.ToTable("Submitters");
-                });
-
-            modelBuilder.Entity("Apachi.UserApp.Data.LogEvent", b =>
-                {
-                    b.HasOne("Apachi.UserApp.Data.Reviewer", "Reviewer")
-                        .WithMany()
-                        .HasForeignKey("ReviewerId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Reviewer");
                 });
 
             modelBuilder.Entity("Apachi.UserApp.Data.Submission", b =>

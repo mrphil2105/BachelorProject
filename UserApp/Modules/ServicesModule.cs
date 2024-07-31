@@ -12,7 +12,7 @@ public class ServicesModule : Module
     {
         builder
             .RegisterAssemblyTypes(Assembly.GetExecutingAssembly())
-            .Where(t => t.IsInNamespaceOf<SubmissionService>())
+            .Where(type => type.IsInNamespaceOf<SubmissionService>())
             .AsImplementedInterfaces();
         builder.RegisterType<SessionService>().As<ISessionService>().SingleInstance();
     }
