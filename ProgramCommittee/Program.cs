@@ -19,15 +19,11 @@ public class Program
         var container = containerBuilder.Build();
 
         await PrepareAsync(container);
-
-        var jobScheduler = container.Resolve<JobScheduler>();
-        var jobRunner = container.Resolve<JobRunner>();
+        var calculatorRunner = container.Resolve<CalculatorRunner>();
 
         try
         {
-            var jobSchedulerTask = jobScheduler.ExecuteAsync(_cancellationSource.Token);
-            var jobRunnerTask = jobRunner.ExecuteAsync(_cancellationSource.Token);
-            await Task.WhenAll(jobSchedulerTask, jobRunnerTask);
+            await calculatorRunner.ExecuteAsync(_cancellationSource.Token);
         }
         catch (OperationCanceledException) { }
     }
@@ -38,23 +34,6 @@ public class Program
         using (var dbContext = lifetimeScope.Resolve<AppDbContext>())
         {
             await dbContext.Database.MigrateAsync();
-
-            foreach (var jobType in Enum.GetValues<JobType>())
-            {
-                await EnsureJobScheduleAsync(jobType, dbContext);
-            }
-        }
-    }
-
-    private static async Task EnsureJobScheduleAsync(JobType jobType, AppDbContext dbContext)
-    {
-        var scheduleExists = await dbContext.JobSchedules.AnyAsync(schedule => schedule.JobType == jobType);
-
-        if (!scheduleExists)
-        {
-            var jobSchedule = new JobSchedule { JobType = jobType, Interval = TimeSpan.FromSeconds(30) };
-            dbContext.JobSchedules.Add(jobSchedule);
-            await dbContext.SaveChangesAsync();
         }
     }
 
