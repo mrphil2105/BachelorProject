@@ -12,7 +12,7 @@ public class Commitment
 
     public static readonly ECPoint HPoint;
 
-    private readonly ECPoint _point;
+    public ECPoint Point { get; }
 
     static Commitment()
     {
@@ -27,7 +27,7 @@ public class Commitment
 
     private Commitment(ECPoint point)
     {
-        _point = point;
+        Point = point;
     }
 
     public static Commitment Create(byte[] value, BigInteger randomness, string curveName = Constants.DefaultCurveName)
@@ -50,12 +50,12 @@ public class Commitment
 
         var parameters = NistNamedCurves.GetByName(curveName);
         var otherPoint = parameters.G.Multiply(hashInteger).Add(HPoint.Multiply(randomness));
-        return _point.Equals(otherPoint);
+        return Point.Equals(otherPoint);
     }
 
     public byte[] ToBytes()
     {
-        var normalizedPoint = _point.Normalize();
+        var normalizedPoint = Point.Normalize();
         var xCoord = normalizedPoint.AffineXCoord.ToBigInteger();
         var yCoord = normalizedPoint.AffineYCoord.ToBigInteger();
 
