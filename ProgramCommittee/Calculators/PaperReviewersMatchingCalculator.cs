@@ -22,6 +22,9 @@ public class PaperReviewersMatchingCalculator : ICalculator
 
     public async Task CalculateAsync(CancellationToken cancellationToken)
     {
+        var bidEntries = await _logDbContext.Entries.Where(entry => entry.Step == ProtocolStep.Bid).ToListAsync();
+        var reviewers = await _logDbContext.Reviewers.ToListAsync();
+
         var publicKeyEntries = await _logDbContext
             .Entries.Where(entry => entry.Step == ProtocolStep.SubmissionCommitmentsAndPublicKey)
             .ToListAsync();
@@ -54,15 +57,20 @@ public class PaperReviewersMatchingCalculator : ICalculator
                 continue;
             }
 
-            var bidEntries = _logDbContext.Entries.Where(entry => entry.Step == ProtocolStep.Bid);
-            var reviewers = await _logDbContext.Reviewers.ToListAsync();
-
             var bidCount = 0;
             var reviewerPublicKeys = new List<byte[]>();
 
             foreach (var bidEntry in bidEntries)
             {
                 var (bidMessage, reviewer) = await DeserializeBidMessageAsync(bidEntry, reviewers);
+                var bidPaperHash = SHA256.HashData(bidMessage.Paper);
+
+                if (!bidPaperHash.SequenceEqual(paperHash))
+                {
+                    // The bid is not for the current paper.
+                    continue;
+                }
+
                 bidCount++;
 
                 if (bidMessage.Bid[0] == 0)
