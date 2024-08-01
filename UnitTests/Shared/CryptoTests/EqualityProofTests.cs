@@ -1,36 +1,32 @@
 using Apachi.Shared.Crypto;
 using Org.BouncyCastle.Asn1.Nist;
-using Org.BouncyCastle.Crypto.Parameters;
 using Org.BouncyCastle.Math;
-using Org.BouncyCastle.Math.EC;
+
 
 namespace Apachi.UnitTests.Shared.CryptoTests;
 
 public class EqualityProofTests
 {
-    private readonly BigInteger _privateKey;
-    private readonly ECPoint _g;
-    private readonly ECPoint _h;
+    private readonly byte[] _privateKey;
 
     public EqualityProofTests()
     {
-        _privateKey = DataUtils.GenerateBigInteger();
-        var curveParams = NistNamedCurves.GetByName(Constants.DefaultCurveName);
-        var parameters = new ECDomainParameters(curveParams.Curve, curveParams.G, curveParams.N, curveParams.H);
-        _g = parameters.G;
-        _h = parameters.Curve.CreatePoint(parameters.G.XCoord.ToBigInteger(), 
-            parameters.G.YCoord.ToBigInteger()).Multiply(new BigInteger("2"));
+        _privateKey = GenerateBigInteger().ToByteArray();
     }
     
     [Fact]
     public void NIZKProof_Verify_ShouldReturnTrue_WhenProofIsValid()
     {
-        var y = _g.Multiply(_privateKey);
-        var z = _h.Multiply(_privateKey);
+        var parameters = NistNamedCurves.GetByName(Constants.DefaultCurveName);
         
-        var proof = EqualityProof.Create(_g, _h, _privateKey);
+        var x = new BigInteger(_privateKey);
         
-        bool actual = proof.Verify(_g, _h, y, z);
+        var y = parameters.G.Multiply(x);
+        var z = Commitment.HPoint.Multiply(x);
+        
+        var proof = EqualityProof.Create(_privateKey);
+        
+        bool actual = proof.Verify(y, z);
         
         actual.Should().BeTrue();
     }
@@ -38,13 +34,17 @@ public class EqualityProofTests
     [Fact]
     public void NIZKProof_Verify_ShouldReturnFalse_WhenProofIsInvalid()
     {
-        var y = _g.Multiply(_privateKey);
-        var z = _h.Multiply(_privateKey);
-
-        var invalidPrivateKey = DataUtils.GenerateBigInteger();
-        var proof = EqualityProof.Create(_g, _h, invalidPrivateKey);
+        var parameters = NistNamedCurves.GetByName(Constants.DefaultCurveName);
         
-        bool actual = proof.Verify(_g, _h, y, z);
+        var x = new BigInteger(_privateKey);
+        
+        var y = parameters.G.Multiply(x);
+        var z = Commitment.HPoint.Multiply(x);
+
+        var invalidPrivateKey = GenerateBigInteger().ToByteArray();
+        var proof = EqualityProof.Create(invalidPrivateKey);
+        
+        bool actual = proof.Verify(y, z);
         
         actual.Should().BeFalse();
     }
@@ -52,14 +52,18 @@ public class EqualityProofTests
     [Fact]
     public void NIZKProof_FromBytesToBytes_ShouldReturnTrue_WhenProofIsValid()
     {
-        var proof = EqualityProof.Create(_g, _h, _privateKey);
+        var parameters = NistNamedCurves.GetByName(Constants.DefaultCurveName);
+        
+        var x = new BigInteger(_privateKey);
+        
+        var proof = EqualityProof.Create(_privateKey);
         byte[] serialized = proof.ToBytes();
         
         EqualityProof deserialized = EqualityProof.FromBytes(serialized);
         
-        var y = _g.Multiply(_privateKey);
-        var z = _h.Multiply(_privateKey);
-        bool actual = deserialized.Verify(_g, _h, y, z);
+        var y = parameters.G.Multiply(x);
+        var z = Commitment.HPoint.Multiply(x);
+        bool actual = deserialized.Verify(y, z);
         
         actual.Should().BeTrue();
     }
@@ -67,14 +71,18 @@ public class EqualityProofTests
     [Fact]
     public void NIZKProof_FromBytesToBytes_ShouldReturnFalse_WhenProofIsInvalid()
     {
-        var proof = EqualityProof.Create(_g, _h, _privateKey);
+        var parameters = NistNamedCurves.GetByName(Constants.DefaultCurveName);
+        
+        var x = new BigInteger(_privateKey);
+        
+        var proof = EqualityProof.Create(_privateKey);
         byte[] serialized = proof.ToBytes();
         
         EqualityProof deserialized = EqualityProof.FromBytes(serialized);
         
-        var y = _g.Multiply(_privateKey);
-        var z = _h.Multiply(DataUtils.GenerateBigInteger());
-        bool actual = deserialized.Verify(_g, _h, y, z);
+        var y = parameters.G.Multiply(x);
+        var z = Commitment.HPoint.Multiply(GenerateBigInteger());
+        bool actual = deserialized.Verify(y, z);
 
         actual.Should().BeFalse();
     }
