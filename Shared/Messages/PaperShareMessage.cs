@@ -1,7 +1,7 @@
 namespace Apachi.Shared.Messages;
 
 // 4: {|{|P|}K_PC^-1|}K_PCR
-public class PaperReviewerShareMessage : IMessage
+public class PaperShareMessage : IMessage
 {
     public required byte[] Paper { get; init; }
 
@@ -15,7 +15,7 @@ public class PaperReviewerShareMessage : IMessage
         return encryptedPaperAndSignature;
     }
 
-    public static async Task<PaperReviewerShareMessage> DeserializeAsync(byte[] data, byte[] sharedKey)
+    public static async Task<PaperShareMessage> DeserializeAsync(byte[] data, byte[] sharedKey)
     {
         var paperAndSignature = await SymmetricDecryptAsync(data, sharedKey);
         var (paper, signature) = DeserializeTwoByteArrays(paperAndSignature);
@@ -23,7 +23,7 @@ public class PaperReviewerShareMessage : IMessage
         var pcPublicKey = GetPCPublicKey();
         await ThrowIfInvalidSignatureAsync(paper, signature, pcPublicKey);
 
-        var message = new PaperReviewerShareMessage { Paper = paper };
+        var message = new PaperShareMessage { Paper = paper };
         return message;
     }
 }

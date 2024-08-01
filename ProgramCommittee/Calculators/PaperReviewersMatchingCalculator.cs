@@ -45,7 +45,7 @@ public class PaperReviewersMatchingCalculator : ICalculator
             }
 
             var reviewerCount = await _appDbContext.LogEvents.CountAsync(@event =>
-                @event.Step == ProtocolStep.PaperReviewerShare && @event.Identifier == paperHash
+                @event.Step == ProtocolStep.PaperShare && @event.Identifier == paperHash
             );
 
             if (reviewerCount == 0)

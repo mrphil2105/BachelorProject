@@ -39,16 +39,16 @@ public class MatchingService : IMatchingService
 
         await using var logDbContext = _logDbContextFactory();
         var shareEntries = logDbContext
-            .Entries.Where(entry => entry.Step == ProtocolStep.PaperReviewerShare)
+            .Entries.Where(entry => entry.Step == ProtocolStep.PaperShare)
             .AsAsyncEnumerable();
 
         await foreach (var shareEntry in shareEntries)
         {
-            PaperReviewerShareMessage shareMessage;
+            PaperShareMessage shareMessage;
 
             try
             {
-                shareMessage = await PaperReviewerShareMessage.DeserializeAsync(shareEntry.Data, sharedKey);
+                shareMessage = await PaperShareMessage.DeserializeAsync(shareEntry.Data, sharedKey);
             }
             catch (CryptographicException)
             {
@@ -84,7 +84,7 @@ public class MatchingService : IMatchingService
 
         await using var logDbContext = _logDbContextFactory();
         var shareEntry = await logDbContext.Entries.FirstAsync(entry => entry.Id == logEntryId);
-        var shareMessage = await PaperReviewerShareMessage.DeserializeAsync(shareEntry.Data, sharedKey);
+        var shareMessage = await PaperShareMessage.DeserializeAsync(shareEntry.Data, sharedKey);
 
         await File.WriteAllBytesAsync(paperFilePath, shareMessage.Paper);
     }
@@ -101,7 +101,7 @@ public class MatchingService : IMatchingService
 
         await using var logDbContext = _logDbContextFactory();
         var shareEntry = await logDbContext.Entries.SingleAsync(entry => entry.Id == logEntryId);
-        var shareMessage = await PaperReviewerShareMessage.DeserializeAsync(shareEntry.Data, sharedKey);
+        var shareMessage = await PaperShareMessage.DeserializeAsync(shareEntry.Data, sharedKey);
 
         var bidMessage = new BidMessage
         {

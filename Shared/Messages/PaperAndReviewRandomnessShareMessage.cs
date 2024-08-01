@@ -1,7 +1,7 @@
 namespace Apachi.Shared.Messages;
 
 // 7: {|{|P;r_r|}K_PC^-1|}K_PCR
-public class PaperAndReviewRandomnessReviewerShareMessage : IMessage
+public class PaperAndReviewRandomnessShareMessage : IMessage
 {
     public required byte[] Paper { get; init; }
 
@@ -22,10 +22,7 @@ public class PaperAndReviewRandomnessReviewerShareMessage : IMessage
         return encryptedPaperAndRandomnessAndSignature;
     }
 
-    public static async Task<PaperAndReviewRandomnessReviewerShareMessage> DeserializeAsync(
-        byte[] data,
-        byte[] sharedKey
-    )
+    public static async Task<PaperAndReviewRandomnessShareMessage> DeserializeAsync(byte[] data, byte[] sharedKey)
     {
         var paperAndRandomnessAndSignature = await SymmetricDecryptAsync(data, sharedKey);
         var (paperAndRandomness, signature) = DeserializeTwoByteArrays(paperAndRandomnessAndSignature);
@@ -34,11 +31,7 @@ public class PaperAndReviewRandomnessReviewerShareMessage : IMessage
         await ThrowIfInvalidSignatureAsync(paperAndRandomness, signature, pcPublicKey);
 
         var (paper, reviewRandomness) = DeserializeTwoByteArrays(paperAndRandomness);
-        var message = new PaperAndReviewRandomnessReviewerShareMessage
-        {
-            Paper = paper,
-            ReviewRandomness = reviewRandomness
-        };
+        var message = new PaperAndReviewRandomnessShareMessage { Paper = paper, ReviewRandomness = reviewRandomness };
         return message;
     }
 }
