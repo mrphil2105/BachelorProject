@@ -10,7 +10,7 @@ public class Commitment
 {
     private const string HPointBase64 =
         "AkJCAYmEWsv4dBo49yya0gRk9+xnUGRRzrSP3oIz30Vrc/dy6tu0lSuxbT4wG0HvyORvpl3jRt4NDCUw9uQstM94XmsYAQCQfxnUJ0Pb9VQ7ZOyW3lai/wfwvjSKN/zvlhUdbPnCvKl1yo4nzbsC0rnepFGQeeh1INu6cXabklrzMzuqd2y4";
-    private static readonly ECPoint HPoint;
+    public static ECPoint HPoint { get; }
 
     private readonly ECPoint _point;
 
