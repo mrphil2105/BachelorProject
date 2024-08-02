@@ -10,5 +10,6 @@ public enum ProtocolStep
     PaperReviewersMatching = 6,
     PaperAndReviewRandomnessShare = 7,
     Review = 8,
-    ReviewCommitmentAndNonceSignature = 9
+    ReviewCommitmentAndNonceSignature = 9,
+    GroupKeyAndGradeRandomnessShare = 10
 }
