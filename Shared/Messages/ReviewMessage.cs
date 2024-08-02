@@ -1,27 +1,31 @@
 namespace Apachi.Shared.Messages;
 
-// 8: {|{|W|}K_R^-1|}K_PCR
+// 8: {|{|P;W|}K_R^-1|}K_PCR
 public class ReviewMessage : IMessage
 {
+    public required byte[] Paper { get; init; }
+
     public required byte[] Review { get; init; }
 
     public async Task<byte[]> SerializeAsync(byte[] reviewerPrivateKey, byte[] sharedKey)
     {
-        var signature = await CalculateSignatureAsync(Review, reviewerPrivateKey);
+        var paperAndReview = SerializeByteArrays(Paper, Review);
+        var signature = await CalculateSignatureAsync(paperAndReview, reviewerPrivateKey);
 
-        var reviewAndSignature = SerializeByteArrays(Review, signature);
-        var encryptedReviewAndSignature = await SymmetricEncryptAsync(reviewAndSignature, sharedKey);
-        return encryptedReviewAndSignature;
+        var paperAndReviewAndSignature = SerializeByteArrays(paperAndReview, signature);
+        var encryptedPaperAndReviewAndSignature = await SymmetricEncryptAsync(paperAndReviewAndSignature, sharedKey);
+        return encryptedPaperAndReviewAndSignature;
     }
 
     public static async Task<ReviewMessage> DeserializeAsync(byte[] data, byte[] sharedKey, byte[] reviewerPublicKey)
     {
-        var reviewAndSignature = await SymmetricDecryptAsync(data, sharedKey);
-        var (review, signature) = DeserializeTwoByteArrays(reviewAndSignature);
+        var paperAndReviewAndSignature = await SymmetricDecryptAsync(data, sharedKey);
+        var (paperAndReview, signature) = DeserializeTwoByteArrays(paperAndReviewAndSignature);
 
-        await ThrowIfInvalidSignatureAsync(review, signature, reviewerPublicKey);
+        await ThrowIfInvalidSignatureAsync(paperAndReview, signature, reviewerPublicKey);
+        var (paper, review) = DeserializeTwoByteArrays(paperAndReview);
 
-        var message = new ReviewMessage { Review = review };
+        var message = new ReviewMessage { Paper = paper, Review = review };
         return message;
     }
 }

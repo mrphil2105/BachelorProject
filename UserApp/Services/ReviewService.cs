@@ -107,7 +107,7 @@ public class ReviewService : IReviewService
         var shareMessage = await PaperAndReviewRandomnessShareMessage.DeserializeAsync(shareEntry.Data, sharedKey);
         var matchingMessage = await FindMatchingMessageAsync(shareMessage, logDbContext);
 
-        var reviewMessage = new ReviewMessage { Review = Encoding.UTF8.GetBytes(review) };
+        var reviewMessage = new ReviewMessage { Paper = shareMessage.Paper, Review = Encoding.UTF8.GetBytes(review) };
         var signatureMessage = new ReviewCommitmentAndNonceSignatureMessage
         {
             ReviewCommitment = matchingMessage.ReviewCommitment,
