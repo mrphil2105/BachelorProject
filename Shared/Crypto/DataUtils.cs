@@ -7,7 +7,7 @@ namespace Apachi.Shared.Crypto;
 
 public static class DataUtils
 {
-    private const int MaxByteArrayLength = 1024 * 1024; // 1 MiB
+    private const int MaxByteArrayLength = 50 * 1024 * 1024; // 50 MiB
 
     public static BigInteger GenerateBigInteger(string curveName = Constants.DefaultCurveName)
     {
