@@ -15,7 +15,7 @@
             <Button Command="{e:Action Back}" Content="Back" />
             <TextBlock FontSize="24" Text="Review Submission" />
         </StackPanel>
-        <ContentControl Content="{Binding ReviewableSubmissionModel}">
+        <ContentControl Content="{Binding Model}">
             <ContentControl.ContentTemplate>
                 <DataTemplate DataType="{x:Type m:ReviewableSubmissionModel}">
                     <StackPanel>

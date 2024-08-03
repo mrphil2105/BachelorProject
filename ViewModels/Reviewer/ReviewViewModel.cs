@@ -24,7 +24,7 @@ public class ReviewViewModel : Conductor<Screen>, IMenuPageViewModel
 
     public Task GoToReview(ReviewableSubmissionModel model)
     {
-        _assessmentViewModel.ReviewableSubmissionModel = model;
+        _assessmentViewModel.Model = model;
         return ActivateItemAsync(_assessmentViewModel);
     }
 
