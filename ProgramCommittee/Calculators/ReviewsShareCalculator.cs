@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Security.Cryptography;
 using Apachi.ProgramCommittee.Data;
 using Apachi.Shared;
@@ -78,6 +79,12 @@ public class ReviewsShareCalculator : ICalculator
                 groupKey ??= await FindGroupKeyAsync(reviewer, paperHash);
             }
 
+            (reviews, reviewSignatures) = await ReorderReviewsAsync(
+                reviews,
+                reviewSignatures,
+                matchingMessage.ReviewerPublicKeys
+            );
+
             var shareMessage = new ReviewsShareMessage { Reviews = reviews };
             var shareEntry = new LogEntry
             {
@@ -92,6 +99,37 @@ public class ReviewsShareCalculator : ICalculator
 
         await _logDbContext.SaveChangesAsync();
         await _appDbContext.SaveChangesAsync();
+    }
+
+    private async Task<(List<byte[]>, List<byte[]>)> ReorderReviewsAsync(
+        List<byte[]> reviews,
+        List<byte[]> reviewSignatures,
+        List<byte[]> reviewerPublicKeys
+    )
+    {
+        Debug.Assert(reviews.Count == reviewSignatures.Count);
+        Debug.Assert(reviews.Count == reviewerPublicKeys.Count);
+        Debug.Assert(reviewSignatures.Count == reviewerPublicKeys.Count);
+
+        var orderedReviews = new List<byte[]>();
+        var orderedReviewSignatures = new List<byte[]>();
+
+        foreach (var reviewerPublicKey in reviewerPublicKeys)
+        {
+            for (var i = 0; i < reviews.Count; i++)
+            {
+                var isSignatureValid = await VerifySignatureAsync(reviews[i], reviewSignatures[i], reviewerPublicKey);
+
+                if (isSignatureValid)
+                {
+                    orderedReviews.Add(reviews[i]);
+                    orderedReviewSignatures.Add(reviewSignatures[i]);
+                    break;
+                }
+            }
+        }
+
+        return (orderedReviews, orderedReviewSignatures);
     }
 
     private async Task<SubmissionCreationMessage> DeserializeCreationMessageAsync(LogEntry creationEntry)
