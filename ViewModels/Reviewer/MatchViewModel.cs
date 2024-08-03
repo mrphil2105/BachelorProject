@@ -17,6 +17,8 @@ public class MatchViewModel : Conductor<MatchableSubmissionModel>.Collection.All
 
     public string PageName => "Match";
 
+    public int PageNumber => 1;
+
     public bool IsReviewer => true;
 
     public bool IsLoading

@@ -19,6 +19,8 @@ public class SubmitViewModel : Screen, IMenuPageViewModel
 
     public string PageName => "Submit";
 
+    public int PageNumber => 1;
+
     public bool IsReviewer => false;
 
     public string PaperFilePath

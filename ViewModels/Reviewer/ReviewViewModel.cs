@@ -15,6 +15,8 @@ public class ReviewViewModel : Conductor<Screen>, IMenuPageViewModel
 
     public string PageName => "Review";
 
+    public int PageNumber => 2;
+
     public bool IsReviewer => true;
 
     public Task GoToList()
