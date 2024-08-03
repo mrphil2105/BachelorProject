@@ -9,28 +9,25 @@ public class PaperAndReviewRandomnessShareMessage : IMessage
 
     public async Task<byte[]> SerializeAsync(byte[] sharedKey)
     {
-        var paperAndRandomness = SerializeByteArrays(Paper, ReviewRandomness);
+        var paper_Randomness = SerializeByteArrays(Paper, ReviewRandomness);
 
         var pcPrivateKey = GetPCPrivateKey();
-        var signature = await CalculateSignatureAsync(paperAndRandomness, pcPrivateKey);
+        var signature = await CalculateSignatureAsync(paper_Randomness, pcPrivateKey);
 
-        var paperAndRandomnessAndSignature = SerializeByteArrays(paperAndRandomness, signature);
-        var encryptedPaperAndRandomnessAndSignature = await SymmetricEncryptAsync(
-            paperAndRandomnessAndSignature,
-            sharedKey
-        );
-        return encryptedPaperAndRandomnessAndSignature;
+        var paper_Randomness_Signature = SerializeByteArrays(paper_Randomness, signature);
+        var encrypted = await SymmetricEncryptAsync(paper_Randomness_Signature, sharedKey);
+        return encrypted;
     }
 
     public static async Task<PaperAndReviewRandomnessShareMessage> DeserializeAsync(byte[] data, byte[] sharedKey)
     {
-        var paperAndRandomnessAndSignature = await SymmetricDecryptAsync(data, sharedKey);
-        var (paperAndRandomness, signature) = DeserializeTwoByteArrays(paperAndRandomnessAndSignature);
+        var paper_Randomness_Signature = await SymmetricDecryptAsync(data, sharedKey);
+        var (paper_Randomness, signature) = DeserializeTwoByteArrays(paper_Randomness_Signature);
 
         var pcPublicKey = GetPCPublicKey();
-        await ThrowIfInvalidSignatureAsync(paperAndRandomness, signature, pcPublicKey);
+        await ThrowIfInvalidSignatureAsync(paper_Randomness, signature, pcPublicKey);
 
-        var (paper, reviewRandomness) = DeserializeTwoByteArrays(paperAndRandomness);
+        var (paper, reviewRandomness) = DeserializeTwoByteArrays(paper_Randomness);
         var message = new PaperAndReviewRandomnessShareMessage { Paper = paper, ReviewRandomness = reviewRandomness };
         return message;
     }

@@ -13,13 +13,13 @@ public class SubmissionCreationMessage : IMessage
 
     public async Task<byte[]> SerializeAsync(byte[] submissionPrivateKey)
     {
-        var paperAndRandomnesses = SerializeByteArrays(Paper, SubmissionRandomness, ReviewRandomness);
-        var encryptedPaperAndRandomnesses = await SymmetricEncryptAsync(paperAndRandomnesses, SubmissionKey);
+        var paper_Randomnesses = SerializeByteArrays(Paper, SubmissionRandomness, ReviewRandomness);
+        var encryptedPaper_Randomnesses = await SymmetricEncryptAsync(paper_Randomnesses, SubmissionKey);
 
         var pcPublicKey = GetPCPublicKey();
         var encryptedSubmissionKey = await AsymmetricEncryptAsync(SubmissionKey, pcPublicKey);
 
-        var bytesToSign = SerializeByteArrays(encryptedPaperAndRandomnesses, encryptedSubmissionKey);
+        var bytesToSign = SerializeByteArrays(encryptedPaper_Randomnesses, encryptedSubmissionKey);
         var signature = await CalculateSignatureAsync(bytesToSign, submissionPrivateKey);
 
         var serialized = SerializeByteArrays(bytesToSign, signature);
@@ -31,13 +31,13 @@ public class SubmissionCreationMessage : IMessage
         var (bytesToVerify, signature) = DeserializeTwoByteArrays(data);
 
         await ThrowIfInvalidSignatureAsync(bytesToVerify, signature, submissionPublicKey);
-        var (encryptedPaperAndRandomnesses, encryptedSubmissionKey) = DeserializeTwoByteArrays(bytesToVerify);
+        var (encryptedPaper_Randomnesses, encryptedSubmissionKey) = DeserializeTwoByteArrays(bytesToVerify);
 
         var pcPrivateKey = GetPCPrivateKey();
         var submissionKey = await AsymmetricDecryptAsync(encryptedSubmissionKey, pcPrivateKey);
 
-        var paperAndRandomnesses = await SymmetricDecryptAsync(encryptedPaperAndRandomnesses, submissionKey);
-        var (paper, submissionRandomness, reviewRandomness) = DeserializeThreeByteArrays(paperAndRandomnesses);
+        var paper_Randomnesses = await SymmetricDecryptAsync(encryptedPaper_Randomnesses, submissionKey);
+        var (paper, submissionRandomness, reviewRandomness) = DeserializeThreeByteArrays(paper_Randomnesses);
 
         var message = new SubmissionCreationMessage
         {

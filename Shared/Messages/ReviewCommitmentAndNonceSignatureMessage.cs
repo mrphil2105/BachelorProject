@@ -9,10 +9,10 @@ public class ReviewCommitmentAndNonceSignatureMessage : IMessage
 
     public async Task<byte[]> SerializeAsync(byte[] reviewerPrivateKey)
     {
-        var reviewCommitmentAndNonce = SerializeByteArrays(ReviewCommitment, ReviewNonce);
-        var signature = await CalculateSignatureAsync(reviewCommitmentAndNonce, reviewerPrivateKey);
+        var reviewCommitment_Nonce = SerializeByteArrays(ReviewCommitment, ReviewNonce);
+        var signature = await CalculateSignatureAsync(reviewCommitment_Nonce, reviewerPrivateKey);
 
-        var serialized = SerializeByteArrays(reviewCommitmentAndNonce, signature);
+        var serialized = SerializeByteArrays(reviewCommitment_Nonce, signature);
         return serialized;
     }
 
@@ -21,10 +21,10 @@ public class ReviewCommitmentAndNonceSignatureMessage : IMessage
         byte[] reviewerPublicKey
     )
     {
-        var (reviewCommitmentAndNonce, signature) = DeserializeTwoByteArrays(data);
-        await ThrowIfInvalidSignatureAsync(reviewCommitmentAndNonce, signature, reviewerPublicKey);
+        var (reviewCommitment_Nonce, signature) = DeserializeTwoByteArrays(data);
+        await ThrowIfInvalidSignatureAsync(reviewCommitment_Nonce, signature, reviewerPublicKey);
 
-        var (reviewCommitment, reviewNonce) = DeserializeTwoByteArrays(reviewCommitmentAndNonce);
+        var (reviewCommitment, reviewNonce) = DeserializeTwoByteArrays(reviewCommitment_Nonce);
         var message = new ReviewCommitmentAndNonceSignatureMessage
         {
             ReviewCommitment = reviewCommitment,

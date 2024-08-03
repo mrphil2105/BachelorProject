@@ -9,21 +9,21 @@ public class ReviewMessage : IMessage
 
     public async Task<byte[]> SerializeAsync(byte[] reviewerPrivateKey, byte[] sharedKey)
     {
-        var paperAndReview = SerializeByteArrays(Paper, Review);
-        var signature = await CalculateSignatureAsync(paperAndReview, reviewerPrivateKey);
+        var paper_Review = SerializeByteArrays(Paper, Review);
+        var signature = await CalculateSignatureAsync(paper_Review, reviewerPrivateKey);
 
-        var paperAndReviewAndSignature = SerializeByteArrays(paperAndReview, signature);
-        var encryptedPaperAndReviewAndSignature = await SymmetricEncryptAsync(paperAndReviewAndSignature, sharedKey);
-        return encryptedPaperAndReviewAndSignature;
+        var paper_Review_Signature = SerializeByteArrays(paper_Review, signature);
+        var encrypted = await SymmetricEncryptAsync(paper_Review_Signature, sharedKey);
+        return encrypted;
     }
 
     public static async Task<ReviewMessage> DeserializeAsync(byte[] data, byte[] sharedKey, byte[] reviewerPublicKey)
     {
-        var paperAndReviewAndSignature = await SymmetricDecryptAsync(data, sharedKey);
-        var (paperAndReview, signature) = DeserializeTwoByteArrays(paperAndReviewAndSignature);
+        var paper_Review_Signature = await SymmetricDecryptAsync(data, sharedKey);
+        var (paper_Review, signature) = DeserializeTwoByteArrays(paper_Review_Signature);
 
-        await ThrowIfInvalidSignatureAsync(paperAndReview, signature, reviewerPublicKey);
-        var (paper, review) = DeserializeTwoByteArrays(paperAndReview);
+        await ThrowIfInvalidSignatureAsync(paper_Review, signature, reviewerPublicKey);
+        var (paper, review) = DeserializeTwoByteArrays(paper_Review);
 
         var message = new ReviewMessage { Paper = paper, Review = review };
         return message;
@@ -31,8 +31,8 @@ public class ReviewMessage : IMessage
 
     public static async Task<byte[]> DeserializeSignatureAsync(byte[] data, byte[] sharedKey)
     {
-        var paperAndReviewAndSignature = await SymmetricDecryptAsync(data, sharedKey);
-        var (_, signature) = DeserializeTwoByteArrays(paperAndReviewAndSignature);
+        var paper_Review_Signature = await SymmetricDecryptAsync(data, sharedKey);
+        var (_, signature) = DeserializeTwoByteArrays(paper_Review_Signature);
         return signature;
     }
 }

@@ -9,17 +9,14 @@ public class ReviewsShareMessage : IMessage
     {
         var serializedReviews = SerializeByteArrays(Reviews);
         var serializedSignatures = SerializeByteArrays(signatures);
-        var reviewsAndSignatures = SerializeByteArrays(serializedReviews, serializedSignatures);
+        var reviews_Signatures = SerializeByteArrays(serializedReviews, serializedSignatures);
 
         var pcPrivateKey = GetPCPrivateKey();
-        var signature = await CalculateSignatureAsync(reviewsAndSignatures, pcPrivateKey);
+        var signature = await CalculateSignatureAsync(reviews_Signatures, pcPrivateKey);
 
-        var reviewsAndSignaturesAndSignature = SerializeByteArrays(reviewsAndSignatures, signature);
-        var encryptedReviewsAndSignaturesAndSignature = await SymmetricEncryptAsync(
-            reviewsAndSignaturesAndSignature,
-            groupKey
-        );
-        return encryptedReviewsAndSignaturesAndSignature;
+        var reviews_Signatures_Signature = SerializeByteArrays(reviews_Signatures, signature);
+        var encrypted = await SymmetricEncryptAsync(reviews_Signatures_Signature, groupKey);
+        return encrypted;
     }
 
     public static async Task<ReviewsShareMessage> DeserializeAsync(
@@ -28,13 +25,13 @@ public class ReviewsShareMessage : IMessage
         IEnumerable<byte[]> reviewerPublicKeys
     )
     {
-        var reviewsAndSignaturesAndSignature = await SymmetricDecryptAsync(data, groupKey);
-        var (reviewsAndSignatures, signature) = DeserializeTwoByteArrays(reviewsAndSignaturesAndSignature);
+        var reviews_Signatures_Signature = await SymmetricDecryptAsync(data, groupKey);
+        var (reviews_Signatures, signature) = DeserializeTwoByteArrays(reviews_Signatures_Signature);
 
         var pcPublicKey = GetPCPublicKey();
-        await ThrowIfInvalidSignatureAsync(reviewsAndSignatures, signature, pcPublicKey);
+        await ThrowIfInvalidSignatureAsync(reviews_Signatures, signature, pcPublicKey);
 
-        var (serializedReviews, serializedSignatures) = DeserializeTwoByteArrays(reviewsAndSignatures);
+        var (serializedReviews, serializedSignatures) = DeserializeTwoByteArrays(reviews_Signatures);
         var reviews = DeserializeByteArrays(serializedReviews);
         var signatures = DeserializeByteArrays(serializedSignatures);
 

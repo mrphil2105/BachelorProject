@@ -11,30 +11,25 @@ public class GroupKeyAndGradeRandomnessShareMessage : IMessage
 
     public async Task<byte[]> SerializeAsync(byte[] sharedKey)
     {
-        var paperAndGroupKeyAndRandomness = SerializeByteArrays(Paper, GroupKey, GradeRandomness);
+        var paper_GroupKey_Randomness = SerializeByteArrays(Paper, GroupKey, GradeRandomness);
 
         var pcPrivateKey = GetPCPrivateKey();
-        var signature = await CalculateSignatureAsync(paperAndGroupKeyAndRandomness, pcPrivateKey);
+        var signature = await CalculateSignatureAsync(paper_GroupKey_Randomness, pcPrivateKey);
 
-        var paperAndGroupKeyAndRandomnessAndSignature = SerializeByteArrays(paperAndGroupKeyAndRandomness, signature);
-        var encryptedPaperAndGroupKeyAndRandomnessAndSignature = await SymmetricEncryptAsync(
-            paperAndGroupKeyAndRandomnessAndSignature,
-            sharedKey
-        );
-        return encryptedPaperAndGroupKeyAndRandomnessAndSignature;
+        var paper_GroupKey_Randomness_Signature = SerializeByteArrays(paper_GroupKey_Randomness, signature);
+        var encrypted = await SymmetricEncryptAsync(paper_GroupKey_Randomness_Signature, sharedKey);
+        return encrypted;
     }
 
     public static async Task<GroupKeyAndGradeRandomnessShareMessage> DeserializeAsync(byte[] data, byte[] sharedKey)
     {
-        var paperAndGroupKeyAndRandomnessAndSignature = await SymmetricDecryptAsync(data, sharedKey);
-        var (paperAndGroupKeyAndRandomness, signature) = DeserializeTwoByteArrays(
-            paperAndGroupKeyAndRandomnessAndSignature
-        );
+        var paper_GroupKey_Randomness_Signature = await SymmetricDecryptAsync(data, sharedKey);
+        var (paper_GroupKey_Randomness, signature) = DeserializeTwoByteArrays(paper_GroupKey_Randomness_Signature);
 
         var pcPublicKey = GetPCPublicKey();
-        await ThrowIfInvalidSignatureAsync(paperAndGroupKeyAndRandomness, signature, pcPublicKey);
+        await ThrowIfInvalidSignatureAsync(paper_GroupKey_Randomness, signature, pcPublicKey);
 
-        var (paper, groupKey, gradeRandomness) = DeserializeThreeByteArrays(paperAndGroupKeyAndRandomness);
+        var (paper, groupKey, gradeRandomness) = DeserializeThreeByteArrays(paper_GroupKey_Randomness);
         var message = new GroupKeyAndGradeRandomnessShareMessage
         {
             Paper = paper,

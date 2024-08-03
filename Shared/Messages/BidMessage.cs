@@ -9,21 +9,21 @@ public class BidMessage : IMessage
 
     public async Task<byte[]> SerializeAsync(byte[] reviewerPrivateKey, byte[] sharedKey)
     {
-        var paperAndBid = SerializeByteArrays(Paper, Bid);
-        var signature = await CalculateSignatureAsync(paperAndBid, reviewerPrivateKey);
+        var paper_Bid = SerializeByteArrays(Paper, Bid);
+        var signature = await CalculateSignatureAsync(paper_Bid, reviewerPrivateKey);
 
-        var paperAndBidAndSignature = SerializeByteArrays(paperAndBid, signature);
-        var encryptedPaperAndBidAndSignature = await SymmetricEncryptAsync(paperAndBidAndSignature, sharedKey);
-        return encryptedPaperAndBidAndSignature;
+        var paper_Bid_Signature = SerializeByteArrays(paper_Bid, signature);
+        var encrypted = await SymmetricEncryptAsync(paper_Bid_Signature, sharedKey);
+        return encrypted;
     }
 
     public static async Task<BidMessage> DeserializeAsync(byte[] data, byte[] sharedKey, byte[] reviewerPublicKey)
     {
-        var paperAndBidAndSignature = await SymmetricDecryptAsync(data, sharedKey);
-        var (paperAndBid, signature) = DeserializeTwoByteArrays(paperAndBidAndSignature);
+        var paper_Bid_Signature = await SymmetricDecryptAsync(data, sharedKey);
+        var (paper_Bid, signature) = DeserializeTwoByteArrays(paper_Bid_Signature);
 
-        await ThrowIfInvalidSignatureAsync(paperAndBid, signature, reviewerPublicKey);
-        var (paper, bid) = DeserializeTwoByteArrays(paperAndBid);
+        await ThrowIfInvalidSignatureAsync(paper_Bid, signature, reviewerPublicKey);
+        var (paper, bid) = DeserializeTwoByteArrays(paper_Bid);
 
         var message = new BidMessage { Paper = paper, Bid = bid };
         return message;
