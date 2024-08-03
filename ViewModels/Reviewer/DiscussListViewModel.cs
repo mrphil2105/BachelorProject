@@ -3,16 +3,16 @@ using Apachi.ViewModels.Services;
 
 namespace Apachi.ViewModels.Reviewer;
 
-public class ReviewListViewModel : Conductor<ReviewableSubmissionModel>.Collection.AllActive
+public class DiscussListViewModel : Conductor<DiscussableSubmissionModel>.Collection.AllActive
 {
     private readonly IViewService _viewService;
-    private readonly IReviewService _reviewService;
+    private readonly IDiscussionService _discussionService;
     private bool _isLoading;
 
-    public ReviewListViewModel(IViewService viewService, IReviewService reviewService)
+    public DiscussListViewModel(IViewService viewService, IDiscussionService discussionService)
     {
         _viewService = viewService;
-        _reviewService = reviewService;
+        _discussionService = discussionService;
     }
 
     public bool IsLoading
@@ -21,7 +21,7 @@ public class ReviewListViewModel : Conductor<ReviewableSubmissionModel>.Collecti
         set => Set(ref _isLoading, value);
     }
 
-    public async Task DownloadPaper(ReviewableSubmissionModel model)
+    public async Task DownloadPaper(DiscussableSubmissionModel model)
     {
         var paperFilePath = await _viewService.ShowSaveFileDialogAsync(this);
 
@@ -30,22 +30,32 @@ public class ReviewListViewModel : Conductor<ReviewableSubmissionModel>.Collecti
             return;
         }
 
-        await _reviewService.DownloadPaperAsync(model.LogEntryId, paperFilePath);
+        try
+        {
+            await _discussionService.DownloadPaperAsync(model.PaperHash, paperFilePath);
+        }
+        catch (Exception exception)
+        {
+            await _viewService.ShowMessageBoxAsync(
+                this,
+                $"Unable to download paper: {exception.Message}",
+                "Download Failure",
+                kind: MessageBoxKind.Error
+            );
+        }
     }
 
-    public Task Review(ReviewableSubmissionModel model)
+    public Task Reviews(DiscussableSubmissionModel model)
     {
-        return ((ReviewViewModel)Parent!).GoToReview(model);
+        return ((DiscussViewModel)Parent!).GoToReviews(model);
     }
 
     protected override async Task OnInitializeAsync(CancellationToken cancellationToken)
     {
-        List<ReviewableSubmissionModel> models;
-
         try
         {
             IsLoading = true;
-            models = await _reviewService.GetReviewableSubmissionsAsync();
+            var models = await _discussionService.GetDiscussableSubmissionsAsync();
             Items.Clear();
             Items.AddRange(models);
         }

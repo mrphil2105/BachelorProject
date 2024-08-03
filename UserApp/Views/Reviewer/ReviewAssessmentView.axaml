@@ -19,10 +19,7 @@
             <ContentControl.ContentTemplate>
                 <DataTemplate DataType="{x:Type m:ReviewableSubmissionModel}">
                     <StackPanel>
-                        <TextBlock
-                            FontSize="16"
-                            Text="Write your review below:"
-                            TextWrapping="Wrap" />
+                        <TextBlock FontSize="16" Text="Write your review below:" />
                     </StackPanel>
                 </DataTemplate>
             </ContentControl.ContentTemplate>

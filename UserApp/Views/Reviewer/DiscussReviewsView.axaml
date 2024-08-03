@@ -1,0 +1,31 @@
+<UserControl
+    x:Class="Apachi.UserApp.Views.Reviewer.DiscussReviewsView"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:c="using:Apachi.UserApp.Converters"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:e="https://github.com/mrphil2105/MvvmElegance"
+    xmlns:m="using:Apachi.ViewModels.Models"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:vm="using:Apachi.ViewModels.Reviewer"
+    x:DataType="vm:DiscussReviewsViewModel"
+    mc:Ignorable="d">
+    <StackPanel>
+        <StackPanel Orientation="Horizontal">
+            <Button Command="{e:Action Back}" Content="Back" />
+            <TextBlock FontSize="24" Text="Paper Reviews" />
+        </StackPanel>
+        <ScrollViewer>
+            <ItemsControl ItemsSource="{Binding Model.Reviews}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate DataType="{x:Type m:DiscussReviewModel}">
+                        <StackPanel Margin="0,8">
+                            <TextBlock FontWeight="Medium" Text="{Binding PublicKeyHash}" />
+                            <TextBlock Text="{Binding Review}" TextWrapping="Wrap" />
+                        </StackPanel>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ScrollViewer>
+    </StackPanel>
+</UserControl>

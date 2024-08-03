@@ -37,7 +37,6 @@ public class ReviewService : IReviewService
         var reviewer = await appDbContext.Reviewers.FirstAsync(reviewer =>
             reviewer.Id == _sessionService.UserId!.Value
         );
-
         var sharedKey = await _sessionService.SymmetricDecryptAndVerifyAsync(reviewer.EncryptedSharedKey);
 
         await using var logDbContext = _logDbContextFactory();
