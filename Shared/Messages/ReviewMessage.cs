@@ -28,4 +28,11 @@ public class ReviewMessage : IMessage
         var message = new ReviewMessage { Paper = paper, Review = review };
         return message;
     }
+
+    public static async Task<byte[]> DeserializeSignatureAsync(byte[] data, byte[] sharedKey)
+    {
+        var paperAndReviewAndSignature = await SymmetricDecryptAsync(data, sharedKey);
+        var (_, signature) = DeserializeTwoByteArrays(paperAndReviewAndSignature);
+        return signature;
+    }
 }
