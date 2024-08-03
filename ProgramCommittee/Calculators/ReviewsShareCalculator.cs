@@ -71,9 +71,9 @@ public class ReviewsShareCalculator : ICalculator
             foreach (var reviewer in reviewers)
             {
                 var sharedKey = await AsymmetricDecryptAsync(reviewer.EncryptedSharedKey, pcPrivateKey);
-                var (review, reviewSignature) = await FindReviewAsync(reviewer, paperHash);
-                reviews.Add(review);
-                reviewSignatures.Add(reviewSignature);
+                var reviewMessage = await FindReviewMessageAsync(reviewer, paperHash);
+                reviews.Add(reviewMessage.Review);
+                reviewSignatures.Add(reviewMessage.ReviewSignature);
 
                 groupKey ??= await FindGroupKeyAsync(reviewer, paperHash);
             }
@@ -149,7 +149,7 @@ public class ReviewsShareCalculator : ICalculator
         );
     }
 
-    private async Task<(byte[] Review, byte[] ReviewSignature)> FindReviewAsync(Reviewer reviewer, byte[] paperHash)
+    private async Task<ReviewMessage> FindReviewMessageAsync(Reviewer reviewer, byte[] paperHash)
     {
         var pcPrivateKey = GetPCPrivateKey();
         var reviewEntries = _logDbContext.Entries.Where(entry => entry.Step == ProtocolStep.Review).AsAsyncEnumerable();
@@ -175,8 +175,7 @@ public class ReviewsShareCalculator : ICalculator
                 continue;
             }
 
-            var reviewSignature = await ReviewMessage.DeserializeSignatureAsync(reviewEntry.Data, sharedKey);
-            return (reviewMessage.Review, reviewSignature);
+            return reviewMessage;
         }
 
         throw new InvalidOperationException($"A matching {ProtocolStep.Review} entry for the reviewer was not found.");
