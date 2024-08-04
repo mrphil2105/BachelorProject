@@ -13,13 +13,13 @@ public class SetMemberProof
     private readonly BigInteger _b;
     
     // G_a = (g, g_L)
-    private readonly HashSet<(BigInteger g, BigInteger g_r)>? _gradesSet; 
+    private readonly List<(BigInteger g, BigInteger g_r)>? _gradesList; 
     
-    private SetMemberProof(HashSet<(BigInteger g, BigInteger g_r)> gradesSet)
+    private SetMemberProof(List<(BigInteger g, BigInteger g_r)> gradesList)
     {
-        _gradesSet = gradesSet;
+        _gradesList = gradesList;
         _a = BigInteger.Zero;
-        _b = new BigInteger(gradesSet.Count.ToString()).Add(BigInteger.One);
+        _b = new BigInteger(gradesList.Count.ToString()).Add(BigInteger.One);
         
     }
 
@@ -40,12 +40,11 @@ public class SetMemberProof
         return inRange;
     }
 
-    public static SetMemberProof Create(HashSet<(BigInteger g, BigInteger g_r)> gradesList)
+    public static SetMemberProof Create(List<(BigInteger g, BigInteger g_r)> gradesList)
     {   
         return new SetMemberProof(gradesList);
     }
     
-    // 
     private (bool, BigInteger) IsPositive (BigInteger x)
     {
         var parameters = NistNamedCurves.GetByName(Constants.DefaultCurveName);
@@ -96,10 +95,11 @@ public class SetMemberProof
         return p1.Equals(p2);
     }
     
+    
     /* -- DOESN'T WORK --
     public byte[] ToBytes()
     {
-        var serializedGradesSet = _gradesSet!.SelectMany(grade =>
+        var serializedGradesSet = _gradesList!.SelectMany(grade =>
         {
             var serializedG = DataUtils.SerializeBigIntegers(grade.g);
             var serializedGr = DataUtils.SerializeBigIntegers(grade.g_r);
@@ -110,20 +110,21 @@ public class SetMemberProof
     }
     */
 
-    /* -- DOESN'T WORK --
+    
+    /* -- DOESN'T WORK -- 
     public static SetMemberProof FromBytes(byte[] bytes)
     {
         var serializedGradesSet = DataUtils.DeserializeByteArrays(bytes);
-        var gradesSet = new HashSet<(BigInteger g, BigInteger g_r)>();
+        var gradesList = new List<(BigInteger g, BigInteger g_r)>();
         
         for (var i = 0; i < serializedGradesSet.Count; i += 2)
         {
             var g = new BigInteger(serializedGradesSet[i]);
             var gR = new BigInteger(serializedGradesSet[i + 1]);
-            gradesSet.Add((g, gR));
+            gradesList.Add((g, gR));
         }
 
-        return new SetMemberProof(gradesSet);
+        return new SetMemberProof(gradesList);
     }
     */
 
