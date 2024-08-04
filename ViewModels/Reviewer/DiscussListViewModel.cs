@@ -62,7 +62,6 @@ public class DiscussListViewModel : Conductor<DiscussableSubmissionModel>.Collec
         catch (Exception exception)
         {
             await _viewService.ShowMessageBoxAsync(
-                this,
                 $"Unable to retrieve submissions: {exception.Message}",
                 "Retrieval Failure",
                 kind: MessageBoxKind.Error

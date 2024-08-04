@@ -85,7 +85,6 @@ public class MatchViewModel : Conductor<MatchableSubmissionModel>.Collection.All
         catch (HttpRequestException exception)
         {
             await _viewService.ShowMessageBoxAsync(
-                this,
                 $"Unable to retrieve submissions: {exception.Message}",
                 "Retrieval Failure",
                 kind: MessageBoxKind.Error

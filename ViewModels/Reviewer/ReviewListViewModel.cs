@@ -52,7 +52,6 @@ public class ReviewListViewModel : Conductor<ReviewableSubmissionModel>.Collecti
         catch (Exception exception)
         {
             await _viewService.ShowMessageBoxAsync(
-                this,
                 $"Unable to retrieve submissions: {exception.Message}",
                 "Retrieval Failure",
                 kind: MessageBoxKind.Error
