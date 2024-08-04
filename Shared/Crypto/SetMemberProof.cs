@@ -1,7 +1,5 @@
-using System.Security.Cryptography;
 using Org.BouncyCastle.Asn1.Nist;
 using Org.BouncyCastle.Math;
-using Org.BouncyCastle.Math.EC;
 
 
 namespace Apachi.Shared.Crypto;
@@ -11,19 +9,21 @@ namespace Apachi.Shared.Crypto;
 
 public class SetMemberProof
 {
-    private static readonly BigInteger[] Grades =
-    {
-        BigInteger.Two,
-        BigInteger.Four,
-        new("7"),
-        BigInteger.Ten, 
-        new("12")
-    };
+    private readonly BigInteger _a;
+    private readonly BigInteger _b;
     
-    private readonly BigInteger _a = BigInteger.Zero;
-    private readonly BigInteger _b = new(Grades.Length.ToString());
+    // G_a = (g, g_L)
+    private readonly HashSet<(BigInteger g, BigInteger g_r)>? _gradesSet; 
+    
+    private SetMemberProof(HashSet<(BigInteger g, BigInteger g_r)> gradesSet)
+    {
+        _gradesSet = gradesSet;
+        _a = BigInteger.Zero;
+        _b = new BigInteger(gradesSet.Count.ToString()).Add(BigInteger.One);
+        
+    }
 
-    // x = the grade
+    // x = the index of the element in the set
     public bool Verify(BigInteger x)
     {
         var xPlusOne = x.Add(BigInteger.One);
@@ -35,15 +35,18 @@ public class SetMemberProof
             return false;
         }
         
-        return IsInRange(xPlusOne, positiveCheck.Item2);
+        var inRange = IsInRange(xPlusOne, positiveCheck.Item2);
+
+        return inRange;
     }
 
-    public static SetMemberProof Create()
-    {
-        return new SetMemberProof();
+    public static SetMemberProof Create(HashSet<(BigInteger g, BigInteger g_r)> gradesList)
+    {   
+        return new SetMemberProof(gradesList);
     }
     
-    private (bool, BigInteger) IsPositive (BigInteger nv)
+    // 
+    private (bool, BigInteger) IsPositive (BigInteger x)
     {
         var parameters = NistNamedCurves.GetByName(Constants.DefaultCurveName);
         
@@ -53,67 +56,78 @@ public class SetMemberProof
         var r3 = DataUtils.GenerateBigInteger();
         
         var totalR = r0.Add(r1).Add(r2).Add(r3);
-
-        var n = new BigInteger(1, nv.ToByteArray()).Mod(parameters.N);
         
-        var (x0, x1, x2, x3) = LipmaaDecomp(nv);
+        var (x0, x1, x2, x3) = LipmaaDecomp(x);
         if (x0.Equals(BigInteger.Zero) && x1.Equals(BigInteger.Zero) && x2.Equals(BigInteger.Zero) && x3.Equals(BigInteger.Zero))
         {
             return (false, BigInteger.Zero);
         }
-
-        // x0.multiply(x0)
-        // r0
         
-        // use commitment class? 
         var c0 = parameters.G.Multiply(x0.Multiply(x0)).Add(Commitment.HPoint.Multiply(r0));
         var c1 = parameters.G.Multiply(x1.Multiply(x1)).Add(Commitment.HPoint.Multiply(r1));
         var c2 = parameters.G.Multiply(x2.Multiply(x2)).Add(Commitment.HPoint.Multiply(r2));
         var c3 = parameters.G.Multiply(x3.Multiply(x3)).Add(Commitment.HPoint.Multiply(r3));
 
-        // c
-        var combinedCommitment = c0.Add(c1).Add(c2).Add(c3);
+        // c = c0 + c1 + c2 + c3
+        var c = c0.Add(c1).Add(c2).Add(c3);
         
-        // val
-        var expected = parameters.G.Multiply(n).Add(Commitment.HPoint.Multiply(totalR));
-
-        return !combinedCommitment.Equals(expected) ? (false, totalR) : (true, totalR);
+        // expected = x.G + r.H
+        var expected = parameters.G.Multiply(x).Add(Commitment.HPoint.Multiply(totalR));
+        
+        return !c.Equals(expected) ? (false, totalR) : (true, totalR);
     }
     
-    private bool IsInRange (BigInteger xv, BigInteger r)
+    private bool IsInRange (BigInteger x, BigInteger r)
     {
         var parameters = NistNamedCurves.GetByName(Constants.DefaultCurveName);
         
-        // to commitment class
-        var c1 = parameters.G.Multiply(_b.Subtract(xv)).Add(Commitment.HPoint.Multiply(r.Negate()));
-        var c2 = parameters.G.Multiply(xv.Subtract(_a)).Add(Commitment.HPoint.Multiply(r));
+        // c1 = (b − x).G − r.H
+        var c1 = parameters.G.Multiply(_b.Subtract(x)).Add(Commitment.HPoint.Multiply(r.Negate()));
         
+        // c2 = (x − a).G + r.H
+        var c2 = parameters.G.Multiply(x.Subtract(_a)).Add(Commitment.HPoint.Multiply(r));
+        
+        // p1 = b.G - c1
         var p1 = parameters.G.Multiply(_b).Subtract(c1);
+        
+        // p2 = a.G + c2
         var p2 = c2.Add(parameters.G.Multiply(_a));
         
         return p1.Equals(p2);
     }
-
-
-    /*
+    
+    /* -- DOESN'T WORK --
     public byte[] ToBytes()
     {
-        return DataUtils.SerializeBigIntegers(_a, _b);
-    }
+        var serializedGradesSet = _gradesSet!.SelectMany(grade =>
+        {
+            var serializedG = DataUtils.SerializeBigIntegers(grade.g);
+            var serializedGr = DataUtils.SerializeBigIntegers(grade.g_r);
+            return serializedG.Concat(serializedGr).ToArray();
+        }).ToArray();
 
-    
-    public static SetMemberProof FromBytes(byte[] bytes)
-    {
-        var integers = DataUtils.DeserializeBigIntegers(bytes);
-        var a = new BigInteger(integers[0].ToString());
-        var b = new BigInteger(integers[1]);
-
-        var proof = new SetMemberProof(a, b);
-        return proof;
+        return DataUtils.SerializeByteArrays(serializedGradesSet);
     }
     */
 
-    public static (BigInteger, BigInteger, BigInteger, BigInteger) LipmaaDecomp(BigInteger x)
+    /* -- DOESN'T WORK --
+    public static SetMemberProof FromBytes(byte[] bytes)
+    {
+        var serializedGradesSet = DataUtils.DeserializeByteArrays(bytes);
+        var gradesSet = new HashSet<(BigInteger g, BigInteger g_r)>();
+        
+        for (var i = 0; i < serializedGradesSet.Count; i += 2)
+        {
+            var g = new BigInteger(serializedGradesSet[i]);
+            var gR = new BigInteger(serializedGradesSet[i + 1]);
+            gradesSet.Add((g, gR));
+        }
+
+        return new SetMemberProof(gradesSet);
+    }
+    */
+
+    private static (BigInteger, BigInteger, BigInteger, BigInteger) LipmaaDecomp(BigInteger x)
     {
         BigInteger upperBound1 = new BigInteger("100000");
         BigInteger upperBound2 = new BigInteger("1000");
