@@ -50,6 +50,11 @@ public class DiscussListViewModel : Conductor<DiscussableSubmissionModel>.Collec
         return ((DiscussViewModel)Parent!).GoToReviews(model);
     }
 
+    public Task Discuss(DiscussableSubmissionModel model)
+    {
+        return ((DiscussViewModel)Parent!).GoToMessages(model);
+    }
+
     protected override async Task OnInitializeAsync(CancellationToken cancellationToken)
     {
         try

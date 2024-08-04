@@ -7,4 +7,8 @@ public interface IDiscussionService
     Task<List<DiscussableSubmissionModel>> GetDiscussableSubmissionsAsync();
 
     Task DownloadPaperAsync(byte[] paperHash, string paperFilePath);
+
+    Task SendMessageAsync(byte[] paperHash, string message);
+
+    Task<List<DiscussMessageModel>> GetMessagesAsync(byte[] paperHash);
 }

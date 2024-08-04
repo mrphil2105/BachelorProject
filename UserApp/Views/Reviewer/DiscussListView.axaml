@@ -27,6 +27,10 @@
                                     Command="{e:Action Reviews}"
                                     CommandParameter="{Binding}"
                                     Content="Reviews" />
+                                <Button
+                                    Command="{e:Action Discuss}"
+                                    CommandParameter="{Binding}"
+                                    Content="Discuss" />
                             </StackPanel>
                         </StackPanel>
                     </DataTemplate>
