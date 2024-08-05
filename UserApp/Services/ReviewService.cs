@@ -3,6 +3,7 @@ using System.Text;
 using Apachi.Shared;
 using Apachi.Shared.Crypto;
 using Apachi.Shared.Data;
+using Apachi.Shared.Factories;
 using Apachi.Shared.Messages;
 using Apachi.UserApp.Data;
 using Apachi.ViewModels.Models;
@@ -17,16 +18,19 @@ public class ReviewService : IReviewService
     private readonly ISessionService _sessionService;
     private readonly Func<AppDbContext> _appDbContextFactory;
     private readonly Func<LogDbContext> _logDbContextFactory;
+    private readonly Func<MessageFactory> _messageFactoryFactory;
 
     public ReviewService(
         ISessionService sessionService,
         Func<AppDbContext> appDbContextFactory,
-        Func<LogDbContext> logDbContextFactory
+        Func<LogDbContext> logDbContextFactory,
+        Func<MessageFactory> messageFactoryFactory
     )
     {
         _sessionService = sessionService;
         _appDbContextFactory = appDbContextFactory;
         _logDbContextFactory = logDbContextFactory;
+        _messageFactoryFactory = messageFactoryFactory;
     }
 
     public async Task<List<ReviewableSubmissionModel>> GetReviewableSubmissionsAsync()
@@ -40,24 +44,24 @@ public class ReviewService : IReviewService
         var sharedKey = await _sessionService.SymmetricDecryptAndVerifyAsync(reviewer.EncryptedSharedKey);
 
         await using var logDbContext = _logDbContextFactory();
-        var shareEntries = logDbContext
+        var paperEntries = logDbContext
             .Entries.Where(entry => entry.Step == ProtocolStep.PaperAndReviewRandomnessShare)
             .AsAsyncEnumerable();
 
-        await foreach (var shareEntry in shareEntries)
+        await foreach (var paperEntry in paperEntries)
         {
-            PaperAndReviewRandomnessShareMessage shareMessage;
+            PaperAndReviewRandomnessShareMessage paperMessage;
 
             try
             {
-                shareMessage = await PaperAndReviewRandomnessShareMessage.DeserializeAsync(shareEntry.Data, sharedKey);
+                paperMessage = await PaperAndReviewRandomnessShareMessage.DeserializeAsync(paperEntry.Data, sharedKey);
             }
             catch (CryptographicException)
             {
                 continue;
             }
 
-            var paperHash = await Task.Run(() => SHA256.HashData(shareMessage.Paper));
+            var paperHash = await Task.Run(() => SHA256.HashData(paperMessage.Paper));
             var hasReview = await appDbContext.LogEvents.AnyAsync(@event =>
                 @event.Step == ProtocolStep.Review
                 && @event.Identifier == paperHash
@@ -69,7 +73,7 @@ public class ReviewService : IReviewService
                 continue;
             }
 
-            var model = new ReviewableSubmissionModel(shareEntry.Id, shareEntry.CreatedDate);
+            var model = new ReviewableSubmissionModel(paperEntry.Id, paperEntry.CreatedDate);
             models.Add(model);
         }
 
@@ -85,10 +89,10 @@ public class ReviewService : IReviewService
         var sharedKey = await _sessionService.SymmetricDecryptAndVerifyAsync(reviewer.EncryptedSharedKey);
 
         await using var logDbContext = _logDbContextFactory();
-        var shareEntry = await logDbContext.Entries.FirstAsync(entry => entry.Id == logEntryId);
-        var shareMessage = await PaperAndReviewRandomnessShareMessage.DeserializeAsync(shareEntry.Data, sharedKey);
+        var paperEntry = await logDbContext.Entries.FirstAsync(entry => entry.Id == logEntryId);
+        var paperMessage = await PaperAndReviewRandomnessShareMessage.DeserializeAsync(paperEntry.Data, sharedKey);
 
-        await File.WriteAllBytesAsync(paperFilePath, shareMessage.Paper);
+        await File.WriteAllBytesAsync(paperFilePath, paperMessage.Paper);
     }
 
     public async Task SendReviewAsync(Guid logEntryId, string review)
@@ -102,11 +106,16 @@ public class ReviewService : IReviewService
         var sharedKey = await _sessionService.SymmetricDecryptAndVerifyAsync(reviewer.EncryptedSharedKey);
 
         await using var logDbContext = _logDbContextFactory();
-        var shareEntry = await logDbContext.Entries.SingleAsync(entry => entry.Id == logEntryId);
-        var shareMessage = await PaperAndReviewRandomnessShareMessage.DeserializeAsync(shareEntry.Data, sharedKey);
-        var matchingMessage = await FindMatchingMessageAsync(shareMessage, logDbContext);
+        await using var messageFactory = _messageFactoryFactory();
 
-        var reviewMessage = new ReviewMessage { Paper = shareMessage.Paper, Review = Encoding.UTF8.GetBytes(review) };
+        var paperEntry = await logDbContext.Entries.SingleAsync(entry => entry.Id == logEntryId);
+        var paperMessage = await PaperAndReviewRandomnessShareMessage.DeserializeAsync(paperEntry.Data, sharedKey);
+
+        var reviewRandomness = new BigInteger(paperMessage.ReviewRandomness);
+        var reviewCommitment = Commitment.Create(paperMessage.Paper, reviewRandomness);
+        var matchingMessage = await messageFactory.GetMatchingMessageByCommitmentAsync(reviewCommitment.ToBytes());
+
+        var reviewMessage = new ReviewMessage { Paper = paperMessage.Paper, Review = Encoding.UTF8.GetBytes(review) };
         var signatureMessage = new ReviewCommitmentAndNonceSignatureMessage
         {
             ReviewCommitment = matchingMessage.ReviewCommitment,
@@ -126,7 +135,7 @@ public class ReviewService : IReviewService
         logDbContext.Entries.Add(reviewEntry);
         logDbContext.Entries.Add(signatureEntry);
 
-        var paperHash = await Task.Run(() => SHA256.HashData(shareMessage.Paper));
+        var paperHash = await Task.Run(() => SHA256.HashData(paperMessage.Paper));
         var logEvent = new LogEvent
         {
             Step = reviewEntry.Step,
@@ -137,34 +146,5 @@ public class ReviewService : IReviewService
 
         await logDbContext.SaveChangesAsync();
         await appDbContext.SaveChangesAsync();
-    }
-
-    private async Task<PaperReviewersMatchingMessage> FindMatchingMessageAsync(
-        PaperAndReviewRandomnessShareMessage shareMessage,
-        LogDbContext logDbContext
-    )
-    {
-        var reviewRandomness = new BigInteger(shareMessage.ReviewRandomness);
-        var reviewCommitment = Commitment.Create(shareMessage.Paper, reviewRandomness);
-        var reviewCommitmentBytes = reviewCommitment.ToBytes();
-
-        var matchingEntries = logDbContext
-            .Entries.Where(entry => entry.Step == ProtocolStep.PaperReviewersMatching)
-            .AsAsyncEnumerable();
-
-        await foreach (var matchingEntry in matchingEntries)
-        {
-            var matchingMessage = await PaperReviewersMatchingMessage.DeserializeAsync(matchingEntry.Data);
-
-            if (matchingMessage.ReviewCommitment.SequenceEqual(reviewCommitmentBytes))
-            {
-                return matchingMessage;
-            }
-        }
-
-        throw new InvalidOperationException(
-            $"A matching {ProtocolStep.PaperReviewersMatching} entry for the "
-                + $"{ProtocolStep.PaperAndReviewRandomnessShare} entry was not found."
-        );
     }
 }

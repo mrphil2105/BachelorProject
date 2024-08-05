@@ -2,6 +2,7 @@ using System.Security.Cryptography;
 using Apachi.ProgramCommittee.Data;
 using Apachi.Shared;
 using Apachi.Shared.Data;
+using Apachi.Shared.Factories;
 using Apachi.Shared.Messages;
 using Microsoft.EntityFrameworkCore;
 
@@ -11,27 +12,21 @@ public class PaperShareCalculator : ICalculator
 {
     private readonly AppDbContext _appDbContext;
     private readonly LogDbContext _logDbContext;
+    private readonly MessageFactory _messageFactory;
 
-    public PaperShareCalculator(AppDbContext appDbContext, LogDbContext logDbContext)
+    public PaperShareCalculator(AppDbContext appDbContext, LogDbContext logDbContext, MessageFactory messageFactory)
     {
         _appDbContext = appDbContext;
         _logDbContext = logDbContext;
+        _messageFactory = messageFactory;
     }
 
     public async Task CalculateAsync(CancellationToken cancellationToken)
     {
-        var publicKeyEntries = await _logDbContext
-            .Entries.Where(entry => entry.Step == ProtocolStep.SubmissionCommitmentsAndPublicKey)
-            .ToListAsync();
-        var creationEntryIds = await _logDbContext
-            .Entries.Where(entry => entry.Step == ProtocolStep.SubmissionCreation)
-            .Select(entry => entry.Id)
-            .ToListAsync();
+        var creationMessages = _messageFactory.GetCreationMessagesAsync();
 
-        foreach (var creationEntryId in creationEntryIds)
+        await foreach (var creationMessage in creationMessages)
         {
-            var creationEntry = await _logDbContext.Entries.SingleAsync(entry => entry.Id == creationEntryId);
-            var creationMessage = await DeserializeCreationMessageAsync(creationEntry, publicKeyEntries);
             var paperHash = SHA256.HashData(creationMessage.Paper);
             var hasExisting = await _appDbContext.LogEvents.AnyAsync(@event =>
                 @event.Step == ProtocolStep.PaperShare && @event.Identifier == paperHash
@@ -57,46 +52,20 @@ public class PaperShareCalculator : ICalculator
             foreach (var reviewer in reviewers)
             {
                 var sharedKey = await AsymmetricDecryptAsync(reviewer.EncryptedSharedKey, pcPrivateKey);
-                var shareMessage = new PaperShareMessage { Paper = creationMessage.Paper };
-                var shareEntry = new LogEntry
+                var paperMessage = new PaperShareMessage { Paper = creationMessage.Paper };
+                var paperEntry = new LogEntry
                 {
                     Step = ProtocolStep.PaperShare,
-                    Data = await shareMessage.SerializeAsync(sharedKey)
+                    Data = await paperMessage.SerializeAsync(sharedKey)
                 };
-                _logDbContext.Entries.Add(shareEntry);
+                _logDbContext.Entries.Add(paperEntry);
 
-                var logEvent = new LogEvent { Step = shareEntry.Step, Identifier = paperHash };
+                var logEvent = new LogEvent { Step = paperEntry.Step, Identifier = paperHash };
                 _appDbContext.LogEvents.Add(logEvent);
             }
         }
 
         await _logDbContext.SaveChangesAsync();
         await _appDbContext.SaveChangesAsync();
-    }
-
-    private async Task<SubmissionCreationMessage> DeserializeCreationMessageAsync(
-        LogEntry creationEntry,
-        List<LogEntry> publicKeyEntries
-    )
-    {
-        foreach (var publicKeyEntry in publicKeyEntries)
-        {
-            var publicKeyMessage = await SubmissionCommitmentsAndPublicKeyMessage.DeserializeAsync(publicKeyEntry.Data);
-
-            try
-            {
-                var creationMessage = await SubmissionCreationMessage.DeserializeAsync(
-                    creationEntry.Data,
-                    publicKeyMessage.SubmissionPublicKey
-                );
-                return creationMessage;
-            }
-            catch (CryptographicException) { }
-        }
-
-        throw new InvalidOperationException(
-            $"A matching {ProtocolStep.SubmissionCommitmentsAndPublicKey} entry "
-                + $"for the {ProtocolStep.SubmissionCreation} entry was not found."
-        );
     }
 }

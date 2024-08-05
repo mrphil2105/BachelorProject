@@ -41,12 +41,13 @@ public class DiscussionService : IDiscussionService
         );
         var sharedKey = await _sessionService.SymmetricDecryptAndVerifyAsync(reviewer.EncryptedSharedKey);
 
-        await using var messageFactory = _messageFactoryFactory();
         await using var logDbContext = _logDbContextFactory();
-        var groupKeyMessages = messageFactory.GetGroupKeyAndRandomnessMessagesAsync(sharedKey);
+        await using var messageFactory = _messageFactoryFactory();
+
         var reviewsEntries = await logDbContext
             .Entries.Where(entry => entry.Step == ProtocolStep.ReviewsShare)
             .ToListAsync();
+        var groupKeyMessages = messageFactory.GetGroupKeyAndRandomnessMessagesAsync(sharedKey);
 
         await foreach (var groupKeyMessage in groupKeyMessages)
         {
@@ -73,6 +74,9 @@ public class DiscussionService : IDiscussionService
 
                 for (var i = 0; i < reviewsMessage.Reviews.Count; i++)
                 {
+                    // TODO: Use the hash array directly in the model and create an IValueConverter that displays longer
+                    // hexes and another that displays short hexes. The former can be used for paper hashes and latter
+                    // for reviewer public key hashes.
                     var publicKeyHash = await Task.Run(() => SHA256.HashData(matchingMessage.ReviewerPublicKeys[i]));
                     var hashString = Convert.ToHexString(publicKeyHash).Remove(10);
                     var review = Encoding.UTF8.GetString(reviewsMessage.Reviews[i]);
@@ -179,8 +183,8 @@ public class DiscussionService : IDiscussionService
         var privateKey = await _sessionService.SymmetricDecryptAndVerifyAsync(reviewer.EncryptedPrivateKey);
         var sharedKey = await _sessionService.SymmetricDecryptAndVerifyAsync(reviewer.EncryptedSharedKey);
 
-        await using var messageFactory = _messageFactoryFactory();
         await using var logDbContext = _logDbContextFactory();
+        await using var messageFactory = _messageFactoryFactory();
 
         var groupKeyMessage = await messageFactory.GetGroupKeyAndRandomnessMessageByPaperHashAsync(
             paperHash,
@@ -221,46 +225,5 @@ public class DiscussionService : IDiscussionService
         }
 
         return messageModels;
-    }
-
-    private async Task<GroupKeyAndGradeRandomnessShareMessage> FindGroupKeyMessageAsync(
-        LogDbContext logDbContext,
-        byte[] paperHash,
-        byte[] sharedKey
-    )
-    {
-        var groupKeyEntries = await logDbContext
-            .Entries.Where(entry => entry.Step == ProtocolStep.GroupKeyAndGradeRandomnessShare)
-            .ToListAsync();
-
-        foreach (var groupKeyEntry in groupKeyEntries)
-        {
-            GroupKeyAndGradeRandomnessShareMessage groupKeyMessage;
-
-            try
-            {
-                groupKeyMessage = await GroupKeyAndGradeRandomnessShareMessage.DeserializeAsync(
-                    groupKeyEntry.Data,
-                    sharedKey
-                );
-            }
-            catch (CryptographicException)
-            {
-                continue;
-            }
-
-            var sharePaperHash = await Task.Run(() => SHA256.HashData(groupKeyMessage.Paper));
-
-            if (!sharePaperHash.SequenceEqual(paperHash))
-            {
-                continue;
-            }
-
-            return groupKeyMessage;
-        }
-
-        throw new InvalidOperationException(
-            $"A matching {ProtocolStep.GroupKeyAndGradeRandomnessShare} entry for the paper hash was not found."
-        );
     }
 }

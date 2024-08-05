@@ -38,24 +38,24 @@ public class MatchingService : IMatchingService
         var sharedKey = await _sessionService.SymmetricDecryptAndVerifyAsync(reviewer.EncryptedSharedKey);
 
         await using var logDbContext = _logDbContextFactory();
-        var shareEntries = logDbContext
+        var paperEntries = logDbContext
             .Entries.Where(entry => entry.Step == ProtocolStep.PaperShare)
             .AsAsyncEnumerable();
 
-        await foreach (var shareEntry in shareEntries)
+        await foreach (var paperEntry in paperEntries)
         {
-            PaperShareMessage shareMessage;
+            PaperShareMessage paperMessage;
 
             try
             {
-                shareMessage = await PaperShareMessage.DeserializeAsync(shareEntry.Data, sharedKey);
+                paperMessage = await PaperShareMessage.DeserializeAsync(paperEntry.Data, sharedKey);
             }
             catch (CryptographicException)
             {
                 continue;
             }
 
-            var paperHash = await Task.Run(() => SHA256.HashData(shareMessage.Paper));
+            var paperHash = await Task.Run(() => SHA256.HashData(paperMessage.Paper));
             var hasBid = await appDbContext.LogEvents.AnyAsync(@event =>
                 @event.Step == ProtocolStep.Bid
                 && @event.Identifier == paperHash
@@ -67,7 +67,7 @@ public class MatchingService : IMatchingService
                 continue;
             }
 
-            var model = new MatchableSubmissionModel(shareEntry.Id, shareEntry.CreatedDate);
+            var model = new MatchableSubmissionModel(paperEntry.Id, paperEntry.CreatedDate);
             models.Add(model);
         }
 
@@ -83,10 +83,10 @@ public class MatchingService : IMatchingService
         var sharedKey = await _sessionService.SymmetricDecryptAndVerifyAsync(reviewer.EncryptedSharedKey);
 
         await using var logDbContext = _logDbContextFactory();
-        var shareEntry = await logDbContext.Entries.FirstAsync(entry => entry.Id == logEntryId);
-        var shareMessage = await PaperShareMessage.DeserializeAsync(shareEntry.Data, sharedKey);
+        var paperEntry = await logDbContext.Entries.FirstAsync(entry => entry.Id == logEntryId);
+        var paperMessage = await PaperShareMessage.DeserializeAsync(paperEntry.Data, sharedKey);
 
-        await File.WriteAllBytesAsync(paperFilePath, shareMessage.Paper);
+        await File.WriteAllBytesAsync(paperFilePath, paperMessage.Paper);
     }
 
     public async Task SendBidAsync(Guid logEntryId, bool wantsToReview)
@@ -100,12 +100,12 @@ public class MatchingService : IMatchingService
         var sharedKey = await _sessionService.SymmetricDecryptAndVerifyAsync(reviewer.EncryptedSharedKey);
 
         await using var logDbContext = _logDbContextFactory();
-        var shareEntry = await logDbContext.Entries.SingleAsync(entry => entry.Id == logEntryId);
-        var shareMessage = await PaperShareMessage.DeserializeAsync(shareEntry.Data, sharedKey);
+        var paperEntry = await logDbContext.Entries.SingleAsync(entry => entry.Id == logEntryId);
+        var paperMessage = await PaperShareMessage.DeserializeAsync(paperEntry.Data, sharedKey);
 
         var bidMessage = new BidMessage
         {
-            Paper = shareMessage.Paper,
+            Paper = paperMessage.Paper,
             Bid = new byte[] { (byte)(wantsToReview ? 1 : 0) }
         };
         var bidEntry = new LogEntry
@@ -115,7 +115,7 @@ public class MatchingService : IMatchingService
         };
         logDbContext.Entries.Add(bidEntry);
 
-        var paperHash = await Task.Run(() => SHA256.HashData(shareMessage.Paper));
+        var paperHash = await Task.Run(() => SHA256.HashData(paperMessage.Paper));
         var logEvent = new LogEvent
         {
             Step = bidEntry.Step,

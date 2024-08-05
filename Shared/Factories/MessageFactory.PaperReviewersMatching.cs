@@ -15,27 +15,37 @@ public partial class MessageFactory
         var reviewRandomness = new BigInteger(paperMessage.ReviewRandomness);
         var reviewCommitment = Commitment.Create(paper, reviewRandomness);
 
-        var matchingMessage = await GetMatchingMessageByCommitmentAsync(reviewCommitment);
+        var matchingMessage = await GetMatchingMessageByCommitmentAsync(reviewCommitment.ToBytes());
         return matchingMessage;
     }
 
-    public async Task<PaperReviewersMatchingMessage> GetMatchingMessageByCommitmentAsync(Commitment reviewCommitment)
+    public async Task<PaperReviewersMatchingMessage> GetMatchingMessageByCommitmentAsync(byte[] reviewCommitment)
     {
-        var reviewCommitmentBytes = reviewCommitment.ToBytes();
-        var matchingEntries = await _logDbContext
-            .Entries.Where(entry => entry.Step == ProtocolStep.PaperReviewersMatching)
-            .ToListAsync();
+        var matchingMessages = GetMatchingMessagesAsync();
 
-        foreach (var matchingEntry in matchingEntries)
+        await foreach (var matchingMessage in matchingMessages)
         {
-            var matchingMessage = await PaperReviewersMatchingMessage.DeserializeAsync(matchingEntry.Data);
-
-            if (matchingMessage.ReviewCommitment.SequenceEqual(reviewCommitmentBytes))
+            if (matchingMessage.ReviewCommitment.SequenceEqual(reviewCommitment))
             {
                 return matchingMessage;
             }
         }
 
         throw new MessageCreationException(ProtocolStep.PaperReviewersMatching);
+    }
+
+    public async IAsyncEnumerable<PaperReviewersMatchingMessage> GetMatchingMessagesAsync()
+    {
+        var matchingEntryIds = await _logDbContext
+            .Entries.Where(entry => entry.Step == ProtocolStep.PaperReviewersMatching)
+            .Select(entry => entry.Id)
+            .ToListAsync();
+
+        foreach (var matchingEntryId in matchingEntryIds)
+        {
+            var matchingEntry = await _logDbContext.Entries.SingleAsync(entry => entry.Id == matchingEntryId);
+            var matchingMessage = await PaperReviewersMatchingMessage.DeserializeAsync(matchingEntry.Data);
+            yield return matchingMessage;
+        }
     }
 }
