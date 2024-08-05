@@ -11,6 +11,27 @@ public partial class MessageFactory
         byte[] sharedKey
     )
     {
+        var paperMessages = GetPaperAndRandomnessMessagesAsync(sharedKey);
+
+        await foreach (var paperMessage in paperMessages)
+        {
+            var messagePaperHash = await Task.Run(() => SHA256.HashData(paperMessage.Paper));
+
+            if (!messagePaperHash.SequenceEqual(paperHash))
+            {
+                continue;
+            }
+
+            return paperMessage;
+        }
+
+        throw new MessageCreationException(ProtocolStep.PaperAndReviewRandomnessShare);
+    }
+
+    public async IAsyncEnumerable<PaperAndReviewRandomnessShareMessage> GetPaperAndRandomnessMessagesAsync(
+        byte[] sharedKey
+    )
+    {
         var paperEntryIds = await _logDbContext
             .Entries.Where(entry => entry.Step == ProtocolStep.PaperAndReviewRandomnessShare)
             .Select(entry => entry.Id)
@@ -30,16 +51,7 @@ public partial class MessageFactory
                 continue;
             }
 
-            var messagePaperHash = await Task.Run(() => SHA256.HashData(paperMessage.Paper));
-
-            if (!messagePaperHash.SequenceEqual(paperHash))
-            {
-                continue;
-            }
-
-            return paperMessage;
+            yield return paperMessage;
         }
-
-        throw new MessageCreationException(ProtocolStep.PaperAndReviewRandomnessShare);
     }
 }

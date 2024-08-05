@@ -60,7 +60,7 @@ public class ReviewAssessmentViewModel : Screen
 
         try
         {
-            await _reviewService.SendReviewAsync(Model!.LogEntryId, Review);
+            await _reviewService.SendReviewAsync(Model!.PaperHash, Review);
             IsDirty = false;
             HasSubmitted = true;
             await _viewService.ShowMessageBoxAsync(

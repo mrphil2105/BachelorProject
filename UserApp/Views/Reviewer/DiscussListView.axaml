@@ -17,7 +17,7 @@
                 <ItemsControl.ItemTemplate>
                     <DataTemplate DataType="{x:Type m:DiscussableSubmissionModel}">
                         <StackPanel>
-                            <TextBlock Text="{Binding CreatedDate, Converter={x:Static c:CustomConverters.DateTime}}" />
+                            <TextBlock Text="{Binding PaperHash, Converter={x:Static c:CustomConverters.LongHashHex}}" />
                             <StackPanel Orientation="Horizontal">
                                 <Button
                                     Command="{e:Action DownloadPaper}"

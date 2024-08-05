@@ -37,7 +37,7 @@
                 <ItemsControl.ItemTemplate>
                     <DataTemplate DataType="{x:Type m:DiscussMessageModel}">
                         <StackPanel Margin="0,8">
-                            <TextBlock FontWeight="Medium" Text="{Binding PublicKeyHash}" />
+                            <TextBlock FontWeight="Medium" Text="{Binding PublicKeyHash, Converter={x:Static c:CustomConverters.ShortHashHex}}" />
                             <TextBlock Text="{Binding Message}" TextWrapping="Wrap" />
                         </StackPanel>
                     </DataTemplate>

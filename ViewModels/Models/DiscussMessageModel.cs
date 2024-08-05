@@ -1,3 +1,3 @@
 namespace Apachi.ViewModels.Models;
 
-public record DiscussMessageModel(string PublicKeyHash, string Message);
+public record DiscussMessageModel(byte[] PublicKeyHash, string Message);

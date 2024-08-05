@@ -86,7 +86,7 @@ public class DiscussionService : IDiscussionService
                 }
 
                 var paperHash = await Task.Run(() => SHA256.HashData(groupKeyMessage.Paper));
-                var model = new DiscussableSubmissionModel(paperHash, reviewModels, reviewsEntry.CreatedDate);
+                var model = new DiscussableSubmissionModel(paperHash, reviewModels);
                 models.Add(model);
             }
         }
@@ -217,9 +217,8 @@ public class DiscussionService : IDiscussionService
                 }
 
                 var publicKeyHash = await Task.Run(() => SHA256.HashData(reviewerPublicKey));
-                var hashString = Convert.ToHexString(publicKeyHash).Remove(10);
                 var message = Encoding.UTF8.GetString(discussionMessage.Message);
-                var messageModel = new DiscussMessageModel(hashString, message);
+                var messageModel = new DiscussMessageModel(publicKeyHash, message);
                 messageModels.Add(messageModel);
             }
         }

@@ -30,7 +30,7 @@ public class ReviewListViewModel : Conductor<ReviewableSubmissionModel>.Collecti
             return;
         }
 
-        await _reviewService.DownloadPaperAsync(model.LogEntryId, paperFilePath);
+        await _reviewService.DownloadPaperAsync(model.PaperHash, paperFilePath);
     }
 
     public Task Review(ReviewableSubmissionModel model)

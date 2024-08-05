@@ -6,7 +6,7 @@ public interface IMatchingService
 {
     Task<List<MatchableSubmissionModel>> GetMatchableSubmissionsAsync();
 
-    Task DownloadPaperAsync(Guid logEntryId, string paperFilePath);
+    Task DownloadPaperAsync(byte[] paperHash, string paperFilePath);
 
-    Task SendBidAsync(Guid logEntryId, bool wantsToReview);
+    Task SendBidAsync(byte[] paperHash, bool wantsToReview);
 }

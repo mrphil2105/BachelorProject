@@ -36,7 +36,7 @@ public class MatchViewModel : Conductor<MatchableSubmissionModel>.Collection.All
             return;
         }
 
-        await _matchingService.DownloadPaperAsync(model.LogEntryId, paperFilePath);
+        await _matchingService.DownloadPaperAsync(model.PaperHash, paperFilePath);
     }
 
     public Task BidReview(MatchableSubmissionModel model)
@@ -53,7 +53,7 @@ public class MatchViewModel : Conductor<MatchableSubmissionModel>.Collection.All
     {
         try
         {
-            await _matchingService.SendBidAsync(model.LogEntryId, wantsToReview);
+            await _matchingService.SendBidAsync(model.PaperHash, wantsToReview);
             Items.Remove(model);
             await _viewService.ShowMessageBoxAsync(
                 this,
