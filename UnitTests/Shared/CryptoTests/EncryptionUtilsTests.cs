@@ -34,7 +34,7 @@ public class EncryptionUtilsTests : IAsyncLifetime
         var iv = new byte[16];
         Buffer.BlockCopy(encrypted, 0, iv, 0, 16);
         using var aes = Aes.Create();
-        var encryptor = aes.CreateEncryptor(_aesKey, iv);
+        using var encryptor = aes.CreateEncryptor(_aesKey, iv);
         var expectedCiphertext = encryptor.TransformFinalBlock(data, 0, data.Length);
 
         var ciphertext = encrypted.Skip(16);
@@ -58,12 +58,13 @@ public class EncryptionUtilsTests : IAsyncLifetime
         var iv = new byte[16];
         Buffer.BlockCopy(encryptedAndMac, 32, iv, 0, 16);
         using var aes = Aes.Create();
-        var encryptor = aes.CreateEncryptor(_aesKey, iv);
+        using var encryptor = aes.CreateEncryptor(_aesKey, iv);
         var expectedCiphertext = encryptor.TransformFinalBlock(data, 0, data.Length);
 
         var actualHash = encryptedAndMac.Take(32).ToArray();
         var encrypted = encryptedAndMac.Skip(32).ToArray();
-        var expectedHash = new HMACSHA256(_hmacKey).ComputeHash(encrypted);
+        using var hmac = new HMACSHA256(_hmacKey);
+        var expectedHash = hmac.ComputeHash(encrypted);
 
         var ciphertext = encrypted.Skip(16);
         ciphertext.ToArray().Should().Equal(expectedCiphertext);
