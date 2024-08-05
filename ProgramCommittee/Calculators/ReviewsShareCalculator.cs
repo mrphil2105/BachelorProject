@@ -47,17 +47,16 @@ public class ReviewsShareCalculator : ICalculator
                 @event.Step == ProtocolStep.GroupKeyAndGradeRandomnessShare
                 && @event.Identifier == reviewCommitmentBytes
             );
-            PaperReviewersMatchingMessage matchingMessage;
 
-            try
+            if (shareCount == 0)
             {
-                matchingMessage = await _messageFactory.GetMatchingMessageByCommitmentAsync(reviewCommitmentBytes);
-            }
-            catch (MessageCreationException)
-            {
-                // A matching between the paper and reviewers has not been created yet.
+                // A group key has not been created yet. This could also mean a matching has not been made either.
                 continue;
             }
+
+            PaperReviewersMatchingMessage matchingMessage = await _messageFactory.GetMatchingMessageByCommitmentAsync(
+                reviewCommitmentBytes
+            );
 
             if (shareCount != matchingMessage.ReviewerPublicKeys.Count)
             {
