@@ -1,5 +1,4 @@
 using System.Security.Cryptography;
-using Org.BouncyCastle.Asn1;
 using Org.BouncyCastle.Asn1.Nist;
 using Org.BouncyCastle.Math;
 using ECPoint = Org.BouncyCastle.Math.EC.ECPoint;

@@ -9,7 +9,7 @@ public class ReviewAssessmentViewModel : Screen
     private readonly IViewService _viewService;
     private readonly IReviewService _reviewService;
 
-    private ReviewableSubmissionModel? _reviewableSubmissionDto;
+    private ReviewableSubmissionModel? _model;
     private string _review = string.Empty;
     private bool _isDirty;
     private bool _hasSubmitted;
@@ -21,10 +21,10 @@ public class ReviewAssessmentViewModel : Screen
         Validator = new ValidationAdapter<ReviewAssessmentViewModel>(new ReviewAssessmentViewModelValidator());
     }
 
-    public ReviewableSubmissionModel? ReviewableSubmissionModel
+    public ReviewableSubmissionModel? Model
     {
-        get => _reviewableSubmissionDto;
-        set => Set(ref _reviewableSubmissionDto, value);
+        get => _model;
+        set => Set(ref _model, value);
     }
 
     public string Review
@@ -49,7 +49,7 @@ public class ReviewAssessmentViewModel : Screen
         set => Set(ref _hasSubmitted, value);
     }
 
-    public async Task SubmitReview()
+    public async Task SendReview()
     {
         var isValid = await ValidateAsync();
 
@@ -60,7 +60,7 @@ public class ReviewAssessmentViewModel : Screen
 
         try
         {
-            await _reviewService.SendReviewAsync(ReviewableSubmissionModel!.LogEntryId, Review);
+            await _reviewService.SendReviewAsync(Model!.PaperHash, Review);
             IsDirty = false;
             HasSubmitted = true;
             await _viewService.ShowMessageBoxAsync(
@@ -70,7 +70,7 @@ public class ReviewAssessmentViewModel : Screen
                 kind: MessageBoxKind.Information
             );
         }
-        catch (HttpRequestException exception)
+        catch (Exception exception)
         {
             await _viewService.ShowMessageBoxAsync(
                 this,

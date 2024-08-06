@@ -6,7 +6,7 @@ public interface IReviewService
 {
     Task<List<ReviewableSubmissionModel>> GetReviewableSubmissionsAsync();
 
-    Task DownloadPaperAsync(Guid logEntryId, string paperFilePath);
+    Task DownloadPaperAsync(byte[] paperHash, string paperFilePath);
 
-    Task SendReviewAsync(Guid logEntryId, string review);
+    Task SendReviewAsync(byte[] paperHash, string review);
 }

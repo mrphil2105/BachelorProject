@@ -15,14 +15,11 @@
             <Button Command="{e:Action Back}" Content="Back" />
             <TextBlock FontSize="24" Text="Review Submission" />
         </StackPanel>
-        <ContentControl Content="{Binding ReviewableSubmissionModel}">
+        <ContentControl Content="{Binding Model}">
             <ContentControl.ContentTemplate>
                 <DataTemplate DataType="{x:Type m:ReviewableSubmissionModel}">
                     <StackPanel>
-                        <TextBlock
-                            FontSize="16"
-                            Text="Write your review below:"
-                            TextWrapping="Wrap" />
+                        <TextBlock FontSize="16" Text="Write your review below:" />
                     </StackPanel>
                 </DataTemplate>
             </ContentControl.ContentTemplate>
@@ -36,7 +33,7 @@
             Watermark="Review" />
         <Button
             HorizontalAlignment="Right"
-            Command="{e:Action SubmitReview}"
+            Command="{e:Action SendReview}"
             Content="Submit">
             <Button.IsEnabled>
                 <MultiBinding Converter="{x:Static BoolConverters.And}">

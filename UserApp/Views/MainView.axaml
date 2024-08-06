@@ -6,7 +6,7 @@
     xmlns:e="https://github.com/mrphil2105/MvvmElegance"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:vm="using:Apachi.ViewModels"
-    Title="AvaloniaApp"
+    Title="Apachi Client"
     Width="500"
     Height="400"
     MinWidth="400"

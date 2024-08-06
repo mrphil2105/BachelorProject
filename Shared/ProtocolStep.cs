@@ -5,10 +5,15 @@ public enum ProtocolStep
     SubmissionCreation = 1,
     SubmissionCommitmentsAndPublicKey = 2,
     SubmissionCommitmentSignature = 3,
-    PaperReviewerShare = 4,
+    PaperShare = 4,
     Bid = 5,
     PaperReviewersMatching = 6,
-    PaperAndReviewRandomnessReviewerShare = 7,
+    PaperAndReviewRandomnessShare = 7,
     Review = 8,
-    ReviewCommitmentAndNonceSignature = 9
+    ReviewCommitmentAndNonceSignature = 9,
+    GroupKeyAndGradeRandomnessShare = 10,
+    ReviewsShare = 11,
+    Discussion = 12,
+    GradeCommitmentsAndNonceSignature = 13,
+    Grade = 14
 }

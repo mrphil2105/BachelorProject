@@ -3,6 +3,7 @@ using Apachi.ProgramCommittee.Data;
 using Apachi.Shared;
 using Apachi.Shared.Crypto;
 using Apachi.Shared.Data;
+using Apachi.Shared.Factories;
 using Apachi.Shared.Messages;
 using Microsoft.EntityFrameworkCore;
 using Org.BouncyCastle.Math;
@@ -13,27 +14,26 @@ public class PaperReviewersMatchingCalculator : ICalculator
 {
     private readonly AppDbContext _appDbContext;
     private readonly LogDbContext _logDbContext;
+    private readonly MessageFactory _messageFactory;
 
-    public PaperReviewersMatchingCalculator(AppDbContext appDbContext, LogDbContext logDbContext)
+    public PaperReviewersMatchingCalculator(
+        AppDbContext appDbContext,
+        LogDbContext logDbContext,
+        MessageFactory messageFactory
+    )
     {
         _appDbContext = appDbContext;
         _logDbContext = logDbContext;
+        _messageFactory = messageFactory;
     }
 
     public async Task CalculateAsync(CancellationToken cancellationToken)
     {
-        var publicKeyEntries = await _logDbContext
-            .Entries.Where(entry => entry.Step == ProtocolStep.SubmissionCommitmentsAndPublicKey)
-            .ToListAsync();
-        var creationEntryIds = await _logDbContext
-            .Entries.Where(entry => entry.Step == ProtocolStep.SubmissionCreation)
-            .Select(entry => entry.Id)
-            .ToListAsync();
+        var reviewers = await _logDbContext.Reviewers.ToListAsync();
+        var creationMessages = _messageFactory.GetCreationMessagesAsync();
 
-        foreach (var creationEntryId in creationEntryIds)
+        await foreach (var creationMessage in creationMessages)
         {
-            var creationEntry = await _logDbContext.Entries.SingleAsync(entry => entry.Id == creationEntryId);
-            var creationMessage = await DeserializeCreationMessageAsync(creationEntry, publicKeyEntries);
             var paperHash = SHA256.HashData(creationMessage.Paper);
             var hasExisting = await _appDbContext.LogEvents.AnyAsync(@event =>
                 @event.Step == ProtocolStep.PaperReviewersMatching && @event.Identifier == paperHash
@@ -45,7 +45,7 @@ public class PaperReviewersMatchingCalculator : ICalculator
             }
 
             var reviewerCount = await _appDbContext.LogEvents.CountAsync(@event =>
-                @event.Step == ProtocolStep.PaperReviewerShare && @event.Identifier == paperHash
+                @event.Step == ProtocolStep.PaperShare && @event.Identifier == paperHash
             );
 
             if (reviewerCount == 0)
@@ -54,15 +54,25 @@ public class PaperReviewersMatchingCalculator : ICalculator
                 continue;
             }
 
-            var bidEntries = _logDbContext.Entries.Where(entry => entry.Step == ProtocolStep.Bid);
-            var reviewers = await _logDbContext.Reviewers.ToListAsync();
-
+            var pcPrivateKey = GetPCPrivateKey();
             var bidCount = 0;
             var reviewerPublicKeys = new List<byte[]>();
 
-            foreach (var bidEntry in bidEntries)
+            foreach (var reviewer in reviewers)
             {
-                var (bidMessage, reviewer) = await DeserializeBidMessageAsync(bidEntry, reviewers);
+                var sharedKey = await AsymmetricDecryptAsync(reviewer.EncryptedSharedKey, pcPrivateKey);
+                var bidMessage = await _messageFactory.GetBidMessageByPaperHashAsync(
+                    paperHash,
+                    sharedKey,
+                    reviewer.PublicKey
+                );
+
+                if (bidMessage == null)
+                {
+                    // Reviewer has not bid on the paper yet.
+                    continue;
+                }
+
                 bidCount++;
 
                 if (bidMessage.Bid[0] == 0)
@@ -104,52 +114,5 @@ public class PaperReviewersMatchingCalculator : ICalculator
 
         await _logDbContext.SaveChangesAsync();
         await _appDbContext.SaveChangesAsync();
-    }
-
-    private async Task<SubmissionCreationMessage> DeserializeCreationMessageAsync(
-        LogEntry creationEntry,
-        List<LogEntry> publicKeyEntries
-    )
-    {
-        foreach (var publicKeyEntry in publicKeyEntries)
-        {
-            var publicKeyMessage = await SubmissionCommitmentsAndPublicKeyMessage.DeserializeAsync(publicKeyEntry.Data);
-
-            try
-            {
-                var creationMessage = await SubmissionCreationMessage.DeserializeAsync(
-                    creationEntry.Data,
-                    publicKeyMessage.SubmissionPublicKey
-                );
-                return creationMessage;
-            }
-            catch (CryptographicException) { }
-        }
-
-        throw new InvalidOperationException(
-            $"A matching {ProtocolStep.SubmissionCommitmentsAndPublicKey} entry "
-                + $"for the {ProtocolStep.SubmissionCreation} entry was not found."
-        );
-    }
-
-    private async Task<(BidMessage BidMessage, Reviewer Reviewer)> DeserializeBidMessageAsync(
-        LogEntry bidEntry,
-        List<Reviewer> reviewers
-    )
-    {
-        var pcPrivateKey = GetPCPrivateKey();
-
-        foreach (var reviewer in reviewers)
-        {
-            try
-            {
-                var sharedKey = await AsymmetricDecryptAsync(reviewer.EncryptedSharedKey, pcPrivateKey);
-                var bidMessage = await BidMessage.DeserializeAsync(bidEntry.Data, sharedKey, reviewer.PublicKey);
-                return (bidMessage, reviewer);
-            }
-            catch (CryptographicException) { }
-        }
-
-        throw new InvalidOperationException($"A matching reviewer for the {ProtocolStep.Bid} entry was not found.");
     }
 }

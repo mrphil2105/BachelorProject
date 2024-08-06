@@ -1,3 +1,3 @@
 namespace Apachi.ViewModels.Models;
 
-public record MatchableSubmissionModel(Guid LogEntryId, DateTime CreatedDate);
+public record MatchableSubmissionModel(byte[] PaperHash);

@@ -15,6 +15,8 @@ public class ReviewViewModel : Conductor<Screen>, IMenuPageViewModel
 
     public string PageName => "Review";
 
+    public int PageNumber => 2;
+
     public bool IsReviewer => true;
 
     public Task GoToList()
@@ -24,7 +26,7 @@ public class ReviewViewModel : Conductor<Screen>, IMenuPageViewModel
 
     public Task GoToReview(ReviewableSubmissionModel model)
     {
-        _assessmentViewModel.ReviewableSubmissionModel = model;
+        _assessmentViewModel.Model = model;
         return ActivateItemAsync(_assessmentViewModel);
     }
 

@@ -30,7 +30,7 @@ public class ReviewListViewModel : Conductor<ReviewableSubmissionModel>.Collecti
             return;
         }
 
-        await _reviewService.DownloadPaperAsync(model.LogEntryId, paperFilePath);
+        await _reviewService.DownloadPaperAsync(model.PaperHash, paperFilePath);
     }
 
     public Task Review(ReviewableSubmissionModel model)
@@ -46,21 +46,20 @@ public class ReviewListViewModel : Conductor<ReviewableSubmissionModel>.Collecti
         {
             IsLoading = true;
             models = await _reviewService.GetReviewableSubmissionsAsync();
+            Items.Clear();
+            Items.AddRange(models);
         }
-        catch (HttpRequestException exception)
+        catch (Exception exception)
         {
             await _viewService.ShowMessageBoxAsync(
-                this,
                 $"Unable to retrieve submissions: {exception.Message}",
                 "Retrieval Failure",
                 kind: MessageBoxKind.Error
             );
-            IsLoading = false;
-            return;
         }
-
-        Items.Clear();
-        Items.AddRange(models);
-        IsLoading = false;
+        finally
+        {
+            IsLoading = false;
+        }
     }
 }

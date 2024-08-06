@@ -1,0 +1,48 @@
+<UserControl
+    x:Class="Apachi.UserApp.Views.Reviewer.DiscussMessagesView"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:c="using:Apachi.UserApp.Converters"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:e="https://github.com/mrphil2105/MvvmElegance"
+    xmlns:m="using:Apachi.ViewModels.Models"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:vm="using:Apachi.ViewModels.Reviewer"
+    x:DataType="vm:DiscussMessagesViewModel"
+    mc:Ignorable="d">
+    <DockPanel>
+        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal">
+            <Button Command="{e:Action Back}" Content="Back" />
+            <TextBlock FontSize="24" Text="Paper Discussion" />
+            <Button Command="{e:Action RefreshMessages}" Content="Refresh" />
+        </StackPanel>
+        <DockPanel DockPanel.Dock="Bottom">
+            <Button
+                Height="50"
+                VerticalContentAlignment="Center"
+                Command="{e:Action SendMessage}"
+                Content="Send"
+                DockPanel.Dock="Right" />
+            <TextBox
+                Height="50"
+                VerticalContentAlignment="Center"
+                AcceptsReturn="True"
+                MaxLength="10000"
+                Text="{Binding Message}"
+                TextWrapping="Wrap"
+                Watermark="Message" />
+        </DockPanel>
+        <ScrollViewer>
+            <ItemsControl ItemsSource="{Binding Items}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate DataType="{x:Type m:DiscussMessageModel}">
+                        <StackPanel Margin="0,8">
+                            <TextBlock FontWeight="Medium" Text="{Binding PublicKeyHash, Converter={x:Static c:CustomConverters.ShortHashHex}}" />
+                            <TextBlock Text="{Binding Message}" TextWrapping="Wrap" />
+                        </StackPanel>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ScrollViewer>
+    </DockPanel>
+</UserControl>

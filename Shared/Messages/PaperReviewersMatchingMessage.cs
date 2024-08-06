@@ -14,25 +14,23 @@ public class PaperReviewersMatchingMessage : IMessage
     public async Task<byte[]> SerializeAsync()
     {
         var serializedPublicKeys = SerializeByteArrays(ReviewerPublicKeys);
-        var commitmentAndKeysAndNonce = SerializeByteArrays(ReviewCommitment, serializedPublicKeys, ReviewNonce);
+        var commitment_Keys_Nonce = SerializeByteArrays(ReviewCommitment, serializedPublicKeys, ReviewNonce);
 
         var pcPrivateKey = GetPCPrivateKey();
-        var signature = await CalculateSignatureAsync(commitmentAndKeysAndNonce, pcPrivateKey);
+        var signature = await CalculateSignatureAsync(commitment_Keys_Nonce, pcPrivateKey);
 
-        var serialized = SerializeByteArrays(commitmentAndKeysAndNonce, signature, EqualityProof);
+        var serialized = SerializeByteArrays(commitment_Keys_Nonce, signature, EqualityProof);
         return serialized;
     }
 
     public static async Task<PaperReviewersMatchingMessage> DeserializeAsync(byte[] data)
     {
-        var (commitmentAndKeysAndNonce, signature, equalityProof) = DeserializeThreeByteArrays(data);
+        var (commitment_Keys_Nonce, signature, equalityProof) = DeserializeThreeByteArrays(data);
 
         var pcPublicKey = GetPCPublicKey();
-        await ThrowIfInvalidSignatureAsync(commitmentAndKeysAndNonce, signature, pcPublicKey);
+        await ThrowIfInvalidSignatureAsync(commitment_Keys_Nonce, signature, pcPublicKey);
 
-        var (reviewCommitment, serializedPublicKeys, reviewNonce) = DeserializeThreeByteArrays(
-            commitmentAndKeysAndNonce
-        );
+        var (reviewCommitment, serializedPublicKeys, reviewNonce) = DeserializeThreeByteArrays(commitment_Keys_Nonce);
         var reviewerPublicKeys = DeserializeByteArrays(serializedPublicKeys);
 
         var message = new PaperReviewersMatchingMessage

@@ -1,0 +1,55 @@
+<UserControl
+    x:Class="Apachi.UserApp.Views.Reviewer.DiscussListView"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:c="using:Apachi.UserApp.Converters"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:e="https://github.com/mrphil2105/MvvmElegance"
+    xmlns:m="using:Apachi.ViewModels.Models"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:vm="using:Apachi.ViewModels.Reviewer"
+    x:DataType="vm:DiscussListViewModel"
+    mc:Ignorable="d">
+    <StackPanel>
+        <TextBlock FontSize="24" Text="Discussable Submissions" />
+        <ScrollViewer>
+            <ItemsControl ItemsSource="{Binding Items}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate DataType="{x:Type m:DiscussableSubmissionModel}">
+                        <StackPanel>
+                            <TextBlock Text="{Binding PaperHash, Converter={x:Static c:CustomConverters.LongHashHex}}" />
+                            <StackPanel Orientation="Horizontal">
+                                <Button
+                                    Command="{e:Action DownloadPaper}"
+                                    CommandParameter="{Binding}"
+                                    Content="Download" />
+                                <Button
+                                    Command="{e:Action Reviews}"
+                                    CommandParameter="{Binding}"
+                                    Content="Reviews" />
+                                <Button
+                                    Command="{e:Action Discuss}"
+                                    CommandParameter="{Binding}"
+                                    Content="Discuss" />
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal">
+                                <ComboBox ItemsSource="{Binding Source={x:Static m:GradeModel.ValidGrades}}" SelectedItem="{Binding Grade}">
+                                    <ComboBox.ItemTemplate>
+                                        <DataTemplate DataType="{x:Type m:GradeModel}">
+                                            <TextBlock Text="{Binding GradeName}" />
+                                        </DataTemplate>
+                                    </ComboBox.ItemTemplate>
+                                </ComboBox>
+                                <Button
+                                    Command="{e:Action SendGrade}"
+                                    CommandParameter="{Binding}"
+                                    Content="Grade"
+                                    IsEnabled="{Binding !!Grade}" />
+                            </StackPanel>
+                        </StackPanel>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ScrollViewer>
+    </StackPanel>
+</UserControl>

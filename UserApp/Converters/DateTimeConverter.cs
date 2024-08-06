@@ -13,7 +13,7 @@ public class DateTimeConverter : IValueConverter
             return humanReadable;
         }
 
-        throw new ArgumentException($"Value must be a {nameof(DateTimeOffset)}.");
+        throw new ArgumentException($"Value must be a {nameof(DateTime)}.", nameof(value));
     }
 
     public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)

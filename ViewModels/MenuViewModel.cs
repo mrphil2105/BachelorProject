@@ -38,7 +38,9 @@ public class MenuViewModel : Conductor<IMenuPageViewModel>.Collection.OneActive
     {
         Reset();
         var pageViewModels = _pageViewModelsFactory();
-        var userPageViewModels = pageViewModels.Where(model => model.IsReviewer == isReviewer);
+        var userPageViewModels = pageViewModels
+            .Where(model => model.IsReviewer == isReviewer)
+            .OrderBy(model => model.PageNumber);
         Items.AddRange(userPageViewModels);
     }
 
