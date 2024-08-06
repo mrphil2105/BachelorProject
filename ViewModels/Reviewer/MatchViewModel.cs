@@ -62,7 +62,7 @@ public class MatchViewModel : Conductor<MatchableSubmissionModel>.Collection.All
                 kind: MessageBoxKind.Information
             );
         }
-        catch (HttpRequestException exception)
+        catch (Exception exception)
         {
             await _viewService.ShowMessageBoxAsync(
                 this,
@@ -82,7 +82,7 @@ public class MatchViewModel : Conductor<MatchableSubmissionModel>.Collection.All
             IsLoading = true;
             models = await _matchingService.GetMatchableSubmissionsAsync();
         }
-        catch (HttpRequestException exception)
+        catch (Exception exception)
         {
             await _viewService.ShowMessageBoxAsync(
                 $"Unable to retrieve submissions: {exception.Message}",

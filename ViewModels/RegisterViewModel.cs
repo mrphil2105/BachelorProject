@@ -72,7 +72,7 @@ public class RegisterViewModel : Screen
         {
             success = await _sessionService.RegisterAsync(Username, Password, IsReviewer);
         }
-        catch (HttpRequestException exception)
+        catch (Exception exception)
         {
             await _viewService.ShowMessageBoxAsync(
                 this,

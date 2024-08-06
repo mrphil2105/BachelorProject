@@ -70,7 +70,7 @@ public class ReviewAssessmentViewModel : Screen
                 kind: MessageBoxKind.Information
             );
         }
-        catch (HttpRequestException exception)
+        catch (Exception exception)
         {
             await _viewService.ShowMessageBoxAsync(
                 this,
