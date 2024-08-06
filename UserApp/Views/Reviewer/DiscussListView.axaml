@@ -32,6 +32,20 @@
                                     CommandParameter="{Binding}"
                                     Content="Discuss" />
                             </StackPanel>
+                            <StackPanel Orientation="Horizontal">
+                                <ComboBox ItemsSource="{Binding Source={x:Static m:GradeModel.ValidGrades}}" SelectedItem="{Binding Grade}">
+                                    <ComboBox.ItemTemplate>
+                                        <DataTemplate DataType="{x:Type m:GradeModel}">
+                                            <TextBlock Text="{Binding GradeName}" />
+                                        </DataTemplate>
+                                    </ComboBox.ItemTemplate>
+                                </ComboBox>
+                                <Button
+                                    Command="{e:Action SendGrade}"
+                                    CommandParameter="{Binding}"
+                                    Content="Grade"
+                                    IsEnabled="{Binding !!Grade}" />
+                            </StackPanel>
                         </StackPanel>
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>

@@ -21,7 +21,7 @@ public class HashHexConverter : IValueConverter
             return shortHex;
         }
 
-        throw new ArgumentException("Value must be a byte array.");
+        throw new ArgumentException("Value must be a byte array.", nameof(value));
     }
 
     public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)

@@ -13,5 +13,7 @@ public enum ProtocolStep
     ReviewCommitmentAndNonceSignature = 9,
     GroupKeyAndGradeRandomnessShare = 10,
     ReviewsShare = 11,
-    Discussion = 12
+    Discussion = 12,
+    GradeCommitmentsAndNonceSignature = 13,
+    Grade = 14
 }

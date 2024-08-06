@@ -11,4 +11,6 @@ public interface IDiscussionService
     Task SendMessageAsync(byte[] paperHash, string message);
 
     Task<List<DiscussMessageModel>> GetMessagesAsync(byte[] paperHash);
+
+    Task SendGradeAsync(byte[] paperHash, int grade);
 }

@@ -55,6 +55,35 @@ public class DiscussListViewModel : Conductor<DiscussableSubmissionModel>.Collec
         return ((DiscussViewModel)Parent!).GoToMessages(model);
     }
 
+    public async Task SendGrade(DiscussableSubmissionModel model)
+    {
+        if (model.Grade == null)
+        {
+            return;
+        }
+
+        try
+        {
+            await _discussionService.SendGradeAsync(model.PaperHash, model.Grade.Value);
+            Items.Remove(model);
+            await _viewService.ShowMessageBoxAsync(
+                this,
+                "The grade has been successfully sent!",
+                "Grading Successful",
+                kind: MessageBoxKind.Information
+            );
+        }
+        catch (Exception exception)
+        {
+            await _viewService.ShowMessageBoxAsync(
+                this,
+                $"Unable to send grade: {exception.Message}",
+                "Grading Failure",
+                kind: MessageBoxKind.Error
+            );
+        }
+    }
+
     protected override async Task OnInitializeAsync(CancellationToken cancellationToken)
     {
         try

@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
 using Apachi.Shared;
+using Apachi.Shared.Crypto;
 using Apachi.Shared.Data;
 using Apachi.Shared.Factories;
 using Apachi.Shared.Messages;
@@ -8,6 +9,7 @@ using Apachi.UserApp.Data;
 using Apachi.ViewModels.Models;
 using Apachi.ViewModels.Services;
 using Microsoft.EntityFrameworkCore;
+using Org.BouncyCastle.Math;
 
 namespace Apachi.UserApp.Services;
 
@@ -51,6 +53,18 @@ public class DiscussionService : IDiscussionService
 
         await foreach (var groupKeyMessage in groupKeyMessages)
         {
+            var paperHash = await Task.Run(() => SHA256.HashData(groupKeyMessage.Paper));
+            var hasGrade = await appDbContext.LogEvents.AnyAsync(@event =>
+                @event.Step == ProtocolStep.Grade
+                && @event.Identifier == paperHash
+                && @event.ReviewerId == _sessionService.UserId!.Value
+            );
+
+            if (hasGrade)
+            {
+                continue;
+            }
+
             var matchingMessage = await messageFactory.GetMatchingMessageByPaperAsync(groupKeyMessage.Paper, sharedKey);
 
             foreach (var reviewsEntry in reviewsEntries)
@@ -85,8 +99,7 @@ public class DiscussionService : IDiscussionService
                     reviewModels.Add(reviewModel);
                 }
 
-                var paperHash = await Task.Run(() => SHA256.HashData(groupKeyMessage.Paper));
-                var model = new DiscussableSubmissionModel(paperHash, reviewModels);
+                var model = new DiscussableSubmissionModel { PaperHash = paperHash, Reviews = reviewModels };
                 models.Add(model);
             }
         }
@@ -224,5 +237,62 @@ public class DiscussionService : IDiscussionService
         }
 
         return messageModels;
+    }
+
+    public async Task SendGradeAsync(byte[] paperHash, int grade)
+    {
+        await using var appDbContext = _appDbContextFactory();
+        var reviewer = await appDbContext.Reviewers.FirstAsync(reviewer =>
+            reviewer.Id == _sessionService.UserId!.Value
+        );
+
+        var privateKey = await _sessionService.SymmetricDecryptAndVerifyAsync(reviewer.EncryptedPrivateKey);
+        var sharedKey = await _sessionService.SymmetricDecryptAndVerifyAsync(reviewer.EncryptedSharedKey);
+
+        await using var messageFactory = _messageFactoryFactory();
+        var groupKeyMessage = await messageFactory.GetGroupKeyAndRandomnessMessageByPaperHashAsync(
+            paperHash,
+            sharedKey
+        );
+        var matchingMessage = await messageFactory.GetMatchingMessageByPaperAsync(groupKeyMessage.Paper, sharedKey);
+
+        var gradeRandomness = new BigInteger(groupKeyMessage.GradeRandomness);
+        var gradeNonce = GenerateBigInteger().ToByteArray();
+        var gradeAndNonce = SerializeByteArrays(new byte[] { (byte)grade }, gradeNonce);
+        var gradeCommitment = Commitment.Create(gradeAndNonce, gradeRandomness);
+
+        var signatureMessage = new GradeCommitmentsAndNonceSignatureMessage
+        {
+            ReviewCommitment = matchingMessage.ReviewCommitment,
+            GradeCommitment = gradeCommitment.ToBytes(),
+            ReviewNonce = matchingMessage.ReviewNonce
+        };
+        var gradeMessage = new GradeMessage { Grade = gradeAndNonce };
+
+        var signatureEntry = new LogEntry
+        {
+            Step = ProtocolStep.GradeCommitmentsAndNonceSignature,
+            Data = await signatureMessage.SerializeAsync(privateKey)
+        };
+        var gradeEntry = new LogEntry
+        {
+            Step = ProtocolStep.Grade,
+            Data = await gradeMessage.SerializeAsync(privateKey, groupKeyMessage.GroupKey)
+        };
+
+        await using var logDbContext = _logDbContextFactory();
+        logDbContext.Entries.Add(signatureEntry);
+        logDbContext.Entries.Add(gradeEntry);
+
+        var logEvent = new LogEvent
+        {
+            Step = gradeEntry.Step,
+            Identifier = paperHash,
+            ReviewerId = _sessionService.UserId!.Value
+        };
+        appDbContext.LogEvents.Add(logEvent);
+
+        await logDbContext.SaveChangesAsync();
+        await appDbContext.SaveChangesAsync();
     }
 }

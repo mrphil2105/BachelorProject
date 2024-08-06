@@ -33,7 +33,7 @@
             Watermark="Review" />
         <Button
             HorizontalAlignment="Right"
-            Command="{e:Action SubmitReview}"
+            Command="{e:Action SendReview}"
             Content="Submit">
             <Button.IsEnabled>
                 <MultiBinding Converter="{x:Static BoolConverters.And}">

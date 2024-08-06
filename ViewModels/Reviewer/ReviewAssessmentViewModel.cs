@@ -49,7 +49,7 @@ public class ReviewAssessmentViewModel : Screen
         set => Set(ref _hasSubmitted, value);
     }
 
-    public async Task SubmitReview()
+    public async Task SendReview()
     {
         var isValid = await ValidateAsync();
 
