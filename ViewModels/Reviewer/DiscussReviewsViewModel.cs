@@ -2,7 +2,7 @@ using Apachi.ViewModels.Models;
 
 namespace Apachi.ViewModels.Reviewer;
 
-public class DiscussReviewsViewModel : Conductor<DiscussReviewModel>.Collection.AllActive
+public class DiscussReviewsViewModel : Conductor<ReviewModel>.Collection.AllActive
 {
     private DiscussableSubmissionModel? _model;
 

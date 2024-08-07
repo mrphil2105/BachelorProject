@@ -70,7 +70,7 @@ public class DiscussionService : IDiscussionService
                 continue;
             }
 
-            var reviewModels = new List<DiscussReviewModel>();
+            var reviewModels = new List<ReviewModel>();
 
             for (var i = 0; i < reviewsMessage.Reviews.Count; i++)
             {
@@ -78,7 +78,7 @@ public class DiscussionService : IDiscussionService
                 var hashString = Convert.ToHexString(publicKeyHash).Remove(10);
                 var review = Encoding.UTF8.GetString(reviewsMessage.Reviews[i]);
 
-                var reviewModel = new DiscussReviewModel(hashString, review);
+                var reviewModel = new ReviewModel(hashString, review);
                 reviewModels.Add(reviewModel);
             }
 

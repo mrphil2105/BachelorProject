@@ -6,7 +6,7 @@ public class DiscussableSubmissionModel : PropertyChangedBase
 
     public required byte[] PaperHash { get; init; }
 
-    public required List<DiscussReviewModel> Reviews { get; init; }
+    public required List<ReviewModel> Reviews { get; init; }
 
     public GradeModel? Grade
     {

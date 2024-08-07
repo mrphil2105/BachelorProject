@@ -18,7 +18,7 @@
         <ScrollViewer>
             <ItemsControl ItemsSource="{Binding Model.Reviews}">
                 <ItemsControl.ItemTemplate>
-                    <DataTemplate DataType="{x:Type m:DiscussReviewModel}">
+                    <DataTemplate DataType="{x:Type m:ReviewModel}">
                         <StackPanel Margin="0,8">
                             <TextBlock FontWeight="Medium" Text="{Binding PublicKeyHash}" />
                             <TextBlock Text="{Binding Review}" TextWrapping="Wrap" />
