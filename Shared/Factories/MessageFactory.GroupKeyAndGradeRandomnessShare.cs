@@ -1,6 +1,5 @@
 using System.Security.Cryptography;
 using Apachi.Shared.Messages;
-using Microsoft.EntityFrameworkCore;
 
 namespace Apachi.Shared.Factories;
 
@@ -32,14 +31,10 @@ public partial class MessageFactory
         byte[] sharedKey
     )
     {
-        var groupKeyEntryIds = await _logDbContext
-            .Entries.Where(entry => entry.Step == ProtocolStep.GroupKeyAndGradeRandomnessShare)
-            .Select(entry => entry.Id)
-            .ToListAsync();
+        var groupKeyEntries = EnumerateEntriesAsync(ProtocolStep.GroupKeyAndGradeRandomnessShare);
 
-        foreach (var groupKeyEntryId in groupKeyEntryIds)
+        await foreach (var groupKeyEntry in groupKeyEntries)
         {
-            var groupKeyEntry = await _logDbContext.Entries.SingleAsync(entry => entry.Id == groupKeyEntryId);
             GroupKeyAndGradeRandomnessShareMessage groupKeyMessage;
 
             try

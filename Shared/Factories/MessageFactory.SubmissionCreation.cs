@@ -1,7 +1,6 @@
 using System.Security.Cryptography;
 using Apachi.Shared.Crypto;
 using Apachi.Shared.Messages;
-using Microsoft.EntityFrameworkCore;
 using Org.BouncyCastle.Math;
 
 namespace Apachi.Shared.Factories;
@@ -52,18 +51,11 @@ public partial class MessageFactory
 
     public async IAsyncEnumerable<SubmissionCreationMessage> GetCreationMessagesAsync()
     {
-        var publicKeyEntries = await _logDbContext
-            .Entries.Where(entry => entry.Step == ProtocolStep.SubmissionCommitmentsAndPublicKey)
-            .ToListAsync();
-        var creationEntryIds = await _logDbContext
-            .Entries.Where(entry => entry.Step == ProtocolStep.SubmissionCreation)
-            .Select(entry => entry.Id)
-            .ToListAsync();
+        var publicKeyEntries = await GetEntriesAsync(ProtocolStep.SubmissionCommitmentsAndPublicKey);
+        var creationEntries = EnumerateEntriesAsync(ProtocolStep.SubmissionCreation);
 
-        foreach (var creationEntryId in creationEntryIds)
+        await foreach (var creationEntry in creationEntries)
         {
-            var creationEntry = await _logDbContext.Entries.SingleAsync(entry => entry.Id == creationEntryId);
-
             foreach (var publicKeyEntry in publicKeyEntries)
             {
                 var publicKeyMessage = await SubmissionCommitmentsAndPublicKeyMessage.DeserializeAsync(

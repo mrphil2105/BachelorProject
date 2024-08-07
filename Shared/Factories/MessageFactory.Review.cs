@@ -1,6 +1,5 @@
 using System.Security.Cryptography;
 using Apachi.Shared.Messages;
-using Microsoft.EntityFrameworkCore;
 
 namespace Apachi.Shared.Factories;
 
@@ -13,14 +12,10 @@ public partial class MessageFactory
     )
     {
         var pcPrivateKey = GetPCPrivateKey();
-        var reviewEntryIds = await _logDbContext
-            .Entries.Where(entry => entry.Step == ProtocolStep.Review)
-            .Select(entry => entry.Id)
-            .ToListAsync();
+        var reviewEntries = EnumerateEntriesAsync(ProtocolStep.Review);
 
-        foreach (var reviewEntryId in reviewEntryIds)
+        await foreach (var reviewEntry in reviewEntries)
         {
-            var reviewEntry = await _logDbContext.Entries.SingleAsync(entry => entry.Id == reviewEntryId);
             ReviewMessage reviewMessage;
 
             try
