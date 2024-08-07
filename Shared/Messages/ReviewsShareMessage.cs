@@ -5,6 +5,8 @@ public class ReviewsShareMessage : IMessage
 {
     public required List<byte[]> Reviews { get; init; }
 
+    public List<byte[]> ReviewSignatures { get; private init; } = null!;
+
     public async Task<byte[]> SerializeAsync(IEnumerable<byte[]> signatures, byte[] groupKey)
     {
         var serializedReviews = SerializeByteArrays(Reviews);
@@ -43,7 +45,7 @@ public class ReviewsShareMessage : IMessage
             index++;
         }
 
-        var message = new ReviewsShareMessage { Reviews = reviews };
+        var message = new ReviewsShareMessage { Reviews = reviews, ReviewSignatures = signatures };
         return message;
     }
 }

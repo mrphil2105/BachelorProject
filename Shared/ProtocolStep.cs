@@ -15,5 +15,6 @@ public enum ProtocolStep
     ReviewsShare = 11,
     Discussion = 12,
     GradeCommitmentsAndNonceSignature = 13,
-    Grade = 14
+    Grade = 14,
+    GradeAndReviewsShare = 15
 }
