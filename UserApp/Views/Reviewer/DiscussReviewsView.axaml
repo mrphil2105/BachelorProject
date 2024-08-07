@@ -16,7 +16,7 @@
             <TextBlock FontSize="24" Text="Paper Reviews" />
         </StackPanel>
         <ScrollViewer>
-            <ItemsControl ItemsSource="{Binding Model.Reviews}">
+            <ItemsControl ItemsSource="{Binding Items}">
                 <ItemsControl.ItemTemplate>
                     <DataTemplate DataType="{x:Type m:ReviewModel}">
                         <StackPanel Margin="0,8">

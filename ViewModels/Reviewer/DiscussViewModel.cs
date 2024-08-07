@@ -32,7 +32,8 @@ public class DiscussViewModel : Conductor<Screen>, IMenuPageViewModel
 
     public Task GoToReviews(DiscussableSubmissionModel model)
     {
-        _reviewsViewModel.Model = model;
+        _reviewsViewModel.Items.Clear();
+        _reviewsViewModel.Items.AddRange(model.Reviews);
         return ActivateItemAsync(_reviewsViewModel);
     }
 
