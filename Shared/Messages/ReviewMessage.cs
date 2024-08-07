@@ -7,7 +7,7 @@ public class ReviewMessage : IMessage
 
     public required byte[] Review { get; init; }
 
-    public byte[] ReviewSignature { get; private init; } = null!;
+    public byte[]? ReviewSignature { get; private init; }
 
     public async Task<byte[]> SerializeAsync(byte[] reviewerPrivateKey, byte[] sharedKey)
     {

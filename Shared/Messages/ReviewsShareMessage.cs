@@ -5,7 +5,7 @@ public class ReviewsShareMessage : IMessage
 {
     public required List<byte[]> Reviews { get; init; }
 
-    public List<byte[]> ReviewSignatures { get; private init; } = null!;
+    public List<byte[]>? ReviewSignatures { get; private init; }
 
     public async Task<byte[]> SerializeAsync(IEnumerable<byte[]> signatures, byte[] groupKey)
     {

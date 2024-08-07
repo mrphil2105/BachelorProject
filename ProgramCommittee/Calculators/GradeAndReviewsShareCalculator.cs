@@ -101,7 +101,7 @@ public class GradeAndReviewsShareCalculator : ICalculator
                 Reviews = reviewsMessage!.Reviews
             };
             var gradeAndReviewsData = await gradeAndReviewsMessage.SerializeAsync(
-                reviewsMessage.ReviewSignatures,
+                reviewsMessage.ReviewSignatures!,
                 creationMessage.SubmissionKey
             );
             var gradeAndReviewsEntry = new LogEntry

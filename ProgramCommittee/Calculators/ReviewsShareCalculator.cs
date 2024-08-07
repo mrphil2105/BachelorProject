@@ -84,7 +84,7 @@ public class ReviewsShareCalculator : ICalculator
                     reviewer.PublicKey
                 );
                 reviews.Add(reviewMessage.Review);
-                reviewSignatures.Add(reviewMessage.ReviewSignature);
+                reviewSignatures.Add(reviewMessage.ReviewSignature!);
 
                 if (groupKey == null)
                 {
