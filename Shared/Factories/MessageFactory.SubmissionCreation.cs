@@ -79,4 +79,31 @@ public partial class MessageFactory
             }
         }
     }
+
+    public async Task<SubmissionCreationMessage> GetCreationMessageBySubmissionKeyAsync(
+        byte[] submissionKey,
+        byte[] submissionPublicKey
+    )
+    {
+        var creationEntries = EnumerateEntriesAsync(ProtocolStep.SubmissionCreation);
+
+        await foreach (var creationEntry in creationEntries)
+        {
+            try
+            {
+                var creationMessage = await SubmissionCreationMessage.DeserializeAsSubmitterAsync(
+                    creationEntry.Data,
+                    submissionKey,
+                    submissionPublicKey
+                );
+                return creationMessage;
+            }
+            catch (CryptographicException)
+            {
+                continue;
+            }
+        }
+
+        throw new MessageCreationException(ProtocolStep.SubmissionCreation);
+    }
 }

@@ -48,4 +48,28 @@ public class SubmissionCreationMessage : IMessage
         };
         return message;
     }
+
+    public static async Task<SubmissionCreationMessage> DeserializeAsSubmitterAsync(
+        byte[] data,
+        byte[] submissionKey,
+        byte[] submissionPublicKey
+    )
+    {
+        var (bytesToVerify, signature) = DeserializeTwoByteArrays(data);
+
+        await ThrowIfInvalidSignatureAsync(bytesToVerify, signature, submissionPublicKey);
+        var (encryptedPaper_Randomnesses, encryptedSubmissionKey) = DeserializeTwoByteArrays(bytesToVerify);
+
+        var paper_Randomnesses = await SymmetricDecryptAsync(encryptedPaper_Randomnesses, submissionKey);
+        var (paper, submissionRandomness, reviewRandomness) = DeserializeThreeByteArrays(paper_Randomnesses);
+
+        var message = new SubmissionCreationMessage
+        {
+            Paper = paper,
+            SubmissionRandomness = submissionRandomness,
+            ReviewRandomness = reviewRandomness,
+            SubmissionKey = submissionKey
+        };
+        return message;
+    }
 }
