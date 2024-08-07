@@ -102,6 +102,8 @@ public static class DataUtils
         BinaryPrimitives.WriteUInt16BigEndian(countPrefix, (ushort)count);
         memoryStream.Write(countPrefix);
 
+        Span<byte> lengthPrefix = stackalloc byte[sizeof(int)];
+
         foreach (var array in collection)
         {
             if (array.Length > MaxByteArrayLength)
@@ -112,7 +114,6 @@ public static class DataUtils
                 );
             }
 
-            Span<byte> lengthPrefix = stackalloc byte[sizeof(int)];
             BinaryPrimitives.WriteInt32BigEndian(lengthPrefix, array.Length);
             memoryStream.Write(lengthPrefix);
             memoryStream.Write(array);
@@ -128,11 +129,12 @@ public static class DataUtils
         Span<byte> countPrefix = stackalloc byte[sizeof(ushort)];
         memoryStream.Read(countPrefix);
         var count = BinaryPrimitives.ReadUInt16BigEndian(countPrefix);
+
+        Span<byte> lengthPrefix = stackalloc byte[sizeof(int)];
         var byteArrays = new List<byte[]>();
 
         for (var i = 0; i < count; i++)
         {
-            Span<byte> lengthPrefix = stackalloc byte[sizeof(int)];
             memoryStream.Read(lengthPrefix);
             var length = BinaryPrimitives.ReadInt32BigEndian(lengthPrefix);
 
