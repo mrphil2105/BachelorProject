@@ -6,6 +6,8 @@ public class Submission
 
     public required byte[] EncryptedPrivateKey { get; set; } // K_S^-1
 
+    public required byte[] EncryptedSubmissionKey { get; set; } // K_PCS
+
     public required byte[] EncryptedIdentityRandomness { get; set; } // r_i
 
     public required Guid SubmitterId { get; set; }
