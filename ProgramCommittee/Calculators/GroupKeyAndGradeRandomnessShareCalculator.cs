@@ -27,9 +27,6 @@ public class GroupKeyAndGradeRandomnessShareCalculator : ICalculator
 
     public async Task CalculateAsync(CancellationToken cancellationToken)
     {
-        var signaturesEntries = await _logDbContext
-            .Entries.Where(entry => entry.Step == ProtocolStep.ReviewCommitmentAndNonceSignature)
-            .ToListAsync();
         var matchingMessages = _messageFactory.GetMatchingMessagesAsync();
 
         await foreach (var matchingMessage in matchingMessages)
@@ -44,31 +41,13 @@ public class GroupKeyAndGradeRandomnessShareCalculator : ICalculator
                 continue;
             }
 
+            var signatureMessagesAndPublicKeys = _messageFactory.GetCommitmentAndNonceSignatureMessagesAsync(
+                matchingMessage.ReviewerPublicKeys
+            );
             var reviewCount = 0;
 
-            foreach (var signatureEntry in signaturesEntries)
+            await foreach (var (signatureMessage, reviewerPublicKey) in signatureMessagesAndPublicKeys)
             {
-                ReviewCommitmentAndNonceSignatureMessage? signatureMessage = null;
-
-                foreach (var reviewerPublicKey in matchingMessage.ReviewerPublicKeys)
-                {
-                    try
-                    {
-                        signatureMessage = await ReviewCommitmentAndNonceSignatureMessage.DeserializeAsync(
-                            signatureEntry.Data,
-                            reviewerPublicKey
-                        );
-                    }
-                    catch (CryptographicException) { }
-                }
-
-                if (signatureMessage == null)
-                {
-                    // The signature message is from a reviewer not involved with the current paper, since no associated
-                    // private key for a public key in 'ReviewerPublicKeys' has signed it.
-                    continue;
-                }
-
                 // The signature message can still be for another paper, in case the reviewer for the other paper is
                 // also reviewing current paper. So we need to check the review commitment to be sure.
                 if (!signatureMessage.ReviewCommitment.SequenceEqual(matchingMessage.ReviewCommitment))
