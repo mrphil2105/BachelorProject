@@ -26,7 +26,7 @@ public partial class MessageFactory : IDisposable, IAsyncDisposable
 
         foreach (var entryId in entryIds)
         {
-            var entry = await _logDbContext.Entries.SingleAsync(entry => entry.Id == entryId);
+            var entry = await _logDbContext.Entries.FirstAsync(entry => entry.Id == entryId);
             yield return entry;
         }
     }
