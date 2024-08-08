@@ -1,5 +1,5 @@
 <UserControl
-    x:Class="Apachi.UserApp.Views.Reviewer.DiscussReviewsView"
+    x:Class="Apachi.UserApp.Views.ReviewsView"
     xmlns="https://github.com/avaloniaui"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:c="using:Apachi.UserApp.Converters"
@@ -7,8 +7,8 @@
     xmlns:e="https://github.com/mrphil2105/MvvmElegance"
     xmlns:m="using:Apachi.ViewModels.Models"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    xmlns:vm="using:Apachi.ViewModels.Reviewer"
-    x:DataType="vm:DiscussReviewsViewModel"
+    xmlns:vm="using:Apachi.ViewModels"
+    x:DataType="vm:ReviewsViewModel"
     mc:Ignorable="d">
     <StackPanel>
         <StackPanel Orientation="Horizontal">

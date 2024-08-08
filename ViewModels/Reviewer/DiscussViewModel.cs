@@ -5,12 +5,12 @@ namespace Apachi.ViewModels.Reviewer;
 public class DiscussViewModel : Conductor<Screen>, IMenuPageViewModel
 {
     private readonly DiscussListViewModel _listViewModel;
-    private readonly DiscussReviewsViewModel _reviewsViewModel;
+    private readonly ReviewsViewModel _reviewsViewModel;
     private readonly DiscussMessagesViewModel _messagesViewModel;
 
     public DiscussViewModel(
         DiscussListViewModel listViewModel,
-        DiscussReviewsViewModel reviewsViewModel,
+        ReviewsViewModel reviewsViewModel,
         DiscussMessagesViewModel messagesViewModel
     )
     {
