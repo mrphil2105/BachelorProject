@@ -1,3 +1,4 @@
+using System.Buffers.Binary;
 using System.Security.Cryptography;
 using System.Text;
 using Apachi.Shared;
@@ -194,7 +195,7 @@ public class DiscussionService : IDiscussionService
 
         var gradeRandomness = new BigInteger(groupKeyMessage.GradeRandomness);
         var gradeNonce = GenerateBigInteger().ToByteArray();
-        var gradeAndNonce = SerializeByteArrays(new byte[] { (byte)grade }, gradeNonce);
+        var gradeAndNonce = SerializeGrade(grade, gradeNonce);
         var gradeCommitment = Commitment.Create(gradeAndNonce, gradeRandomness);
 
         var signatureMessage = new GradeCommitmentsAndNonceSignatureMessage

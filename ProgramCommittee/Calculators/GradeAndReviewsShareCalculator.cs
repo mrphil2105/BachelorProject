@@ -12,7 +12,7 @@ namespace Apachi.ProgramCommittee.Calculators;
 
 public class GradeAndReviewsShareCalculator : ICalculator
 {
-    private static readonly int[] validGrades = new[] { -3, 0, 2, 4, 7, 10, 12 };
+    private static readonly int[] _validGrades = new[] { -3, 0, 2, 4, 7, 10, 12 };
 
     private readonly AppDbContext _appDbContext;
     private readonly LogDbContext _logDbContext;
@@ -121,11 +121,11 @@ public class GradeAndReviewsShareCalculator : ICalculator
 
     private static byte[] CalculateClosestAverageGrade(List<byte[]> gradeAndNonces)
     {
-        var averageGrade = gradeAndNonces.Average(grade => DeserializeOneByteArray(grade)[0]);
-        var closestGrade = validGrades.OrderBy(grade => Math.Abs(averageGrade - grade)).First();
+        var averageGrade = gradeAndNonces.Average(serialized => DeserializeGrade(serialized).Grade);
+        var closestGrade = _validGrades.OrderBy(grade => Math.Abs(averageGrade - grade)).First();
 
         var gradeNonce = GenerateBigInteger().ToByteArray();
-        var gradeAndNonce = SerializeByteArrays(new byte[] { (byte)closestGrade }, gradeNonce);
+        var gradeAndNonce = SerializeGrade(closestGrade, gradeNonce);
         return gradeAndNonce;
     }
 }

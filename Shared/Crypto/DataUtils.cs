@@ -28,8 +28,8 @@ public static class DataUtils
 
         var serializedIntegers = integers.Select(integer => integer.ToByteArray()).ToList();
         var totalLength = serializedIntegers.Sum(bytes => bytes.Length);
-        var combined = new byte[1 + count + totalLength];
-        combined[0] = (byte)count;
+        var serialized = new byte[1 + count + totalLength];
+        serialized[0] = (byte)count;
         var offset = count + 1;
 
         for (var i = 0; i < count; i++)
@@ -45,12 +45,12 @@ public static class DataUtils
                 );
             }
 
-            combined[i + 1] = (byte)length;
-            Buffer.BlockCopy(serializedInteger, 0, combined, offset, length);
+            serialized[i + 1] = (byte)length;
+            Buffer.BlockCopy(serializedInteger, 0, serialized, offset, length);
             offset += length;
         }
 
-        return combined;
+        return serialized;
     }
 
     public static List<BigInteger> DeserializeBigIntegers(byte[] combined)
@@ -225,5 +225,19 @@ public static class DataUtils
         }
 
         return (byteArrays[0], byteArrays[1], byteArrays[2], byteArrays[3], byteArrays[4]);
+    }
+
+    public static byte[] SerializeGrade(int grade, byte[] gradeNonce)
+    {
+        var gradeByte = (byte)(grade + 3);
+        var serialized = SerializeByteArrays(new byte[] { gradeByte }, gradeNonce);
+        return serialized;
+    }
+
+    public static (int Grade, byte[] GradeNonce) DeserializeGrade(byte[] serialized)
+    {
+        var (gradeBytes, gradeNonce) = DeserializeTwoByteArrays(serialized);
+        var grade = (int)gradeBytes[0] - 3;
+        return (grade, gradeNonce);
     }
 }

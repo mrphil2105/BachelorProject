@@ -70,7 +70,7 @@ public class DecisionService : IDecisionService
             }
 
             var paperHash = await Task.Run(() => SHA256.HashData(creationMessage.Paper));
-            var grade = DeserializeOneByteArray(gradeAndReviewsMessage.Grade)[0];
+            var (grade, _) = DeserializeGrade(gradeAndReviewsMessage.Grade);
             var reviewModels = new List<ReviewModel>();
 
             for (var i = 0; i < gradeAndReviewsMessage.Reviews.Count; i++)
