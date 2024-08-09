@@ -52,7 +52,7 @@ public class DiscussionService : IDiscussionService
             var hasGrade = await appDbContext.LogEvents.AnyAsync(@event =>
                 @event.Step == ProtocolStep.Grade
                 && @event.Identifier == paperHash
-                && @event.ReviewerId == _sessionService.UserId!.Value
+                && @event.UserId == _sessionService.UserId!.Value
             );
 
             if (hasGrade)
@@ -132,7 +132,7 @@ public class DiscussionService : IDiscussionService
         {
             Step = messageEntry.Step,
             Identifier = paperHash,
-            ReviewerId = _sessionService.UserId!.Value
+            UserId = _sessionService.UserId!.Value
         };
         appDbContext.LogEvents.Add(logEvent);
 
@@ -225,7 +225,7 @@ public class DiscussionService : IDiscussionService
         {
             Step = gradeEntry.Step,
             Identifier = paperHash,
-            ReviewerId = _sessionService.UserId!.Value
+            UserId = _sessionService.UserId!.Value
         };
         appDbContext.LogEvents.Add(logEvent);
 

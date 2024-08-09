@@ -51,7 +51,7 @@ public class ReviewService : IReviewService
             var hasReview = await appDbContext.LogEvents.AnyAsync(@event =>
                 @event.Step == ProtocolStep.Review
                 && @event.Identifier == paperHash
-                && @event.ReviewerId == _sessionService.UserId!.Value
+                && @event.UserId == _sessionService.UserId!.Value
             );
 
             if (hasReview)
@@ -122,7 +122,7 @@ public class ReviewService : IReviewService
         {
             Step = reviewEntry.Step,
             Identifier = paperHash,
-            ReviewerId = _sessionService.UserId!.Value
+            UserId = _sessionService.UserId!.Value
         };
         appDbContext.LogEvents.Add(logEvent);
 

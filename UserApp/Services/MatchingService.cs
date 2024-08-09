@@ -48,7 +48,7 @@ public class MatchingService : IMatchingService
             var hasBid = await appDbContext.LogEvents.AnyAsync(@event =>
                 @event.Step == ProtocolStep.Bid
                 && @event.Identifier == paperHash
-                && @event.ReviewerId == _sessionService.UserId!.Value
+                && @event.UserId == _sessionService.UserId!.Value
             );
 
             if (hasBid)
@@ -107,7 +107,7 @@ public class MatchingService : IMatchingService
         {
             Step = bidEntry.Step,
             Identifier = paperHash,
-            ReviewerId = _sessionService.UserId!.Value
+            UserId = _sessionService.UserId!.Value
         };
         appDbContext.LogEvents.Add(logEvent);
 
