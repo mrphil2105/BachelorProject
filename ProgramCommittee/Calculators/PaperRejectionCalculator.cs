@@ -45,17 +45,17 @@ public class PaperRejectionCalculator : ICalculator
             }
 
             var matchingMessage = await _messageFactory.GetMatchingMessageByCommitmentAsync(reviewCommitmentBytes);
-            var gradeMessage = await _messageFactory.GetGradeAndReviewsMessageBySubmissionKeyAsync(
+            var gradeAndReviewsMessage = await _messageFactory.GetGradeAndReviewsMessageBySubmissionKeyAsync(
                 creationMessage.SubmissionKey,
                 matchingMessage.ReviewerPublicKeys
             );
 
-            if (gradeMessage == null)
+            if (gradeAndReviewsMessage == null)
             {
                 continue;
             }
 
-            var (grade, _) = DeserializeGrade(gradeMessage.Grade);
+            var (grade, _) = DeserializeGrade(gradeAndReviewsMessage.Grade);
 
             if (grade > FailingGrade)
             {
@@ -77,7 +77,7 @@ public class PaperRejectionCalculator : ICalculator
             var rejectionMessage = new PaperRejectionMessage
             {
                 ReviewCommitment = reviewCommitmentBytes,
-                Grade = gradeMessage.Grade,
+                Grade = gradeAndReviewsMessage.Grade,
                 GradeRandomness = gradeRandomnessMessage.GradeRandomness
             };
             var rejectionEntry = new LogEntry
