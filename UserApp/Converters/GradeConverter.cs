@@ -3,17 +3,22 @@ using Avalonia.Data.Converters;
 
 namespace Apachi.UserApp.Converters;
 
-public class DateTimeConverter : IValueConverter
+public class GradeConverter : IValueConverter
 {
     public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
     {
-        if (value is DateTime dateTime)
+        if (value is int grade)
         {
-            var humanReadable = dateTime.ToString("dd/MM/yyyy HH:mm");
-            return humanReadable;
+            var gradeString = grade switch
+            {
+                0 => "02",
+                2 => "02",
+                _ => grade.ToString()
+            };
+            return gradeString;
         }
 
-        throw new ArgumentException($"Value must be a {nameof(DateTime)}.", nameof(value));
+        throw new ArgumentException("Value must be an integer.", nameof(value));
     }
 
     public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)

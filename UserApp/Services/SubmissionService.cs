@@ -70,12 +70,14 @@ public class SubmissionService : ISubmissionService
 
         var identityRandomnessBytes = identityRandomness.ToByteArray();
         var encryptedSubmissionPrivateKey = await _sessionService.SymmetricEncryptAndMacAsync(submissionPrivateKey);
+        var encryptedSubmissionKey = await _sessionService.SymmetricEncryptAndMacAsync(creationMessage.SubmissionKey);
         var encryptedIdentityRandomness = await _sessionService.SymmetricEncryptAndMacAsync(identityRandomnessBytes);
 
         await using var appDbContext = _appDbContextFactory();
         var submission = new Submission
         {
             EncryptedPrivateKey = encryptedSubmissionPrivateKey,
+            EncryptedSubmissionKey = encryptedSubmissionKey,
             EncryptedIdentityRandomness = encryptedIdentityRandomness,
             SubmitterId = _sessionService.UserId!.Value
         };

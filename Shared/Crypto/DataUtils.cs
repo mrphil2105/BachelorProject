@@ -28,8 +28,8 @@ public static class DataUtils
 
         var serializedIntegers = integers.Select(integer => integer.ToByteArray()).ToList();
         var totalLength = serializedIntegers.Sum(bytes => bytes.Length);
-        var combined = new byte[1 + count + totalLength];
-        combined[0] = (byte)count;
+        var serialized = new byte[1 + count + totalLength];
+        serialized[0] = (byte)count;
         var offset = count + 1;
 
         for (var i = 0; i < count; i++)
@@ -45,12 +45,12 @@ public static class DataUtils
                 );
             }
 
-            combined[i + 1] = (byte)length;
-            Buffer.BlockCopy(serializedInteger, 0, combined, offset, length);
+            serialized[i + 1] = (byte)length;
+            Buffer.BlockCopy(serializedInteger, 0, serialized, offset, length);
             offset += length;
         }
 
-        return combined;
+        return serialized;
     }
 
     public static List<BigInteger> DeserializeBigIntegers(byte[] combined)
@@ -102,6 +102,8 @@ public static class DataUtils
         BinaryPrimitives.WriteUInt16BigEndian(countPrefix, (ushort)count);
         memoryStream.Write(countPrefix);
 
+        Span<byte> lengthPrefix = stackalloc byte[sizeof(int)];
+
         foreach (var array in collection)
         {
             if (array.Length > MaxByteArrayLength)
@@ -112,7 +114,6 @@ public static class DataUtils
                 );
             }
 
-            Span<byte> lengthPrefix = stackalloc byte[sizeof(int)];
             BinaryPrimitives.WriteInt32BigEndian(lengthPrefix, array.Length);
             memoryStream.Write(lengthPrefix);
             memoryStream.Write(array);
@@ -128,11 +129,12 @@ public static class DataUtils
         Span<byte> countPrefix = stackalloc byte[sizeof(ushort)];
         memoryStream.Read(countPrefix);
         var count = BinaryPrimitives.ReadUInt16BigEndian(countPrefix);
+
+        Span<byte> lengthPrefix = stackalloc byte[sizeof(int)];
         var byteArrays = new List<byte[]>();
 
         for (var i = 0; i < count; i++)
         {
-            Span<byte> lengthPrefix = stackalloc byte[sizeof(int)];
             memoryStream.Read(lengthPrefix);
             var length = BinaryPrimitives.ReadInt32BigEndian(lengthPrefix);
 
@@ -223,5 +225,19 @@ public static class DataUtils
         }
 
         return (byteArrays[0], byteArrays[1], byteArrays[2], byteArrays[3], byteArrays[4]);
+    }
+
+    public static byte[] SerializeGrade(int grade, byte[] gradeNonce)
+    {
+        var gradeByte = (byte)(grade + 3);
+        var serialized = SerializeByteArrays(new byte[] { gradeByte }, gradeNonce);
+        return serialized;
+    }
+
+    public static (int Grade, byte[] GradeNonce) DeserializeGrade(byte[] serialized)
+    {
+        var (gradeBytes, gradeNonce) = DeserializeTwoByteArrays(serialized);
+        var grade = (int)gradeBytes[0] - 3;
+        return (grade, gradeNonce);
     }
 }

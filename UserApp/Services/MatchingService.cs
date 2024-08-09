@@ -32,33 +32,18 @@ public class MatchingService : IMatchingService
 
     public async Task<List<MatchableSubmissionModel>> GetMatchableSubmissionsAsync()
     {
-        var models = new List<MatchableSubmissionModel>();
-
         await using var appDbContext = _appDbContextFactory();
         var reviewer = await appDbContext.Reviewers.FirstAsync(reviewer =>
             reviewer.Id == _sessionService.UserId!.Value
         );
-
         var sharedKey = await _sessionService.SymmetricDecryptAndVerifyAsync(reviewer.EncryptedSharedKey);
 
-        await using var logDbContext = _logDbContextFactory();
-        var paperEntries = logDbContext
-            .Entries.Where(entry => entry.Step == ProtocolStep.PaperShare)
-            .AsAsyncEnumerable();
+        await using var messageFactory = _messageFactoryFactory();
+        var paperMessages = messageFactory.GetPaperMessagesAsync(sharedKey);
+        var models = new List<MatchableSubmissionModel>();
 
-        await foreach (var paperEntry in paperEntries)
+        await foreach (var paperMessage in paperMessages)
         {
-            PaperShareMessage paperMessage;
-
-            try
-            {
-                paperMessage = await PaperShareMessage.DeserializeAsync(paperEntry.Data, sharedKey);
-            }
-            catch (CryptographicException)
-            {
-                continue;
-            }
-
             var paperHash = await Task.Run(() => SHA256.HashData(paperMessage.Paper));
             var hasBid = await appDbContext.LogEvents.AnyAsync(@event =>
                 @event.Step == ProtocolStep.Bid

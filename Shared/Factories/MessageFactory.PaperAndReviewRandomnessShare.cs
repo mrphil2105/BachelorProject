@@ -1,6 +1,5 @@
 using System.Security.Cryptography;
 using Apachi.Shared.Messages;
-using Microsoft.EntityFrameworkCore;
 
 namespace Apachi.Shared.Factories;
 
@@ -32,14 +31,10 @@ public partial class MessageFactory
         byte[] sharedKey
     )
     {
-        var paperEntryIds = await _logDbContext
-            .Entries.Where(entry => entry.Step == ProtocolStep.PaperAndReviewRandomnessShare)
-            .Select(entry => entry.Id)
-            .ToListAsync();
+        var paperEntries = EnumerateEntriesAsync(ProtocolStep.PaperAndReviewRandomnessShare);
 
-        foreach (var paperEntryId in paperEntryIds)
+        await foreach (var paperEntry in paperEntries)
         {
-            var paperEntry = await _logDbContext.Entries.SingleAsync(entry => entry.Id == paperEntryId);
             PaperAndReviewRandomnessShareMessage paperMessage;
 
             try

@@ -1,47 +1,34 @@
 using System.Security.Cryptography;
 using Apachi.Shared.Messages;
-using Microsoft.EntityFrameworkCore;
 
 namespace Apachi.Shared.Factories;
 
 public partial class MessageFactory
 {
-    public async Task<ReviewMessage> GetReviewMessageByPaperHashAsync(
-        byte[] paperHash,
-        byte[] sharedKey,
-        byte[] reviewerPublicKey
+    public async Task<ReviewsShareMessage?> GetReviewsMessageByGroupKeyAsync(
+        byte[] groupKey,
+        List<byte[]> reviewerPublicKeys
     )
     {
-        var pcPrivateKey = GetPCPrivateKey();
-        var reviewEntryIds = await _logDbContext
-            .Entries.Where(entry => entry.Step == ProtocolStep.Review)
-            .Select(entry => entry.Id)
-            .ToListAsync();
+        var reviewsEntries = await GetEntriesAsync(ProtocolStep.ReviewsShare);
 
-        foreach (var reviewEntryId in reviewEntryIds)
+        foreach (var reviewsEntry in reviewsEntries)
         {
-            var reviewEntry = await _logDbContext.Entries.SingleAsync(entry => entry.Id == reviewEntryId);
-            ReviewMessage reviewMessage;
-
             try
             {
-                reviewMessage = await ReviewMessage.DeserializeAsync(reviewEntry.Data, sharedKey, reviewerPublicKey);
+                var reviewsMessage = await ReviewsShareMessage.DeserializeAsync(
+                    reviewsEntry.Data,
+                    groupKey,
+                    reviewerPublicKeys
+                );
+                return reviewsMessage;
             }
             catch (CryptographicException)
             {
                 continue;
             }
-
-            var messagePaperHash = SHA256.HashData(reviewMessage.Paper);
-
-            if (!messagePaperHash.SequenceEqual(paperHash))
-            {
-                continue;
-            }
-
-            return reviewMessage;
         }
 
-        throw new MessageCreationException(ProtocolStep.Review);
+        return null;
     }
 }

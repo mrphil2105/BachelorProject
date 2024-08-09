@@ -84,7 +84,7 @@ public class ReviewsShareCalculator : ICalculator
                     reviewer.PublicKey
                 );
                 reviews.Add(reviewMessage.Review);
-                reviewSignatures.Add(reviewMessage.ReviewSignature);
+                reviewSignatures.Add(reviewMessage.ReviewSignature!);
 
                 if (groupKey == null)
                 {
@@ -110,7 +110,7 @@ public class ReviewsShareCalculator : ICalculator
             };
             _logDbContext.Entries.Add(reviewsEntry);
 
-            var logEvent = new LogEvent { Step = ProtocolStep.ReviewsShare, Identifier = reviewCommitmentBytes };
+            var logEvent = new LogEvent { Step = reviewsEntry.Step, Identifier = reviewCommitmentBytes };
             _appDbContext.LogEvents.Add(logEvent);
         }
 

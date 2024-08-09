@@ -1,3 +1,4 @@
+using System.Buffers.Binary;
 using System.Security.Cryptography;
 using System.Text;
 using Apachi.Shared;
@@ -35,21 +36,15 @@ public class DiscussionService : IDiscussionService
 
     public async Task<List<DiscussableSubmissionModel>> GetDiscussableSubmissionsAsync()
     {
-        var models = new List<DiscussableSubmissionModel>();
-
         await using var appDbContext = _appDbContextFactory();
         var reviewer = await appDbContext.Reviewers.FirstAsync(reviewer =>
             reviewer.Id == _sessionService.UserId!.Value
         );
         var sharedKey = await _sessionService.SymmetricDecryptAndVerifyAsync(reviewer.EncryptedSharedKey);
 
-        await using var logDbContext = _logDbContextFactory();
         await using var messageFactory = _messageFactoryFactory();
-
-        var reviewsEntries = await logDbContext
-            .Entries.Where(entry => entry.Step == ProtocolStep.ReviewsShare)
-            .ToListAsync();
         var groupKeyMessages = messageFactory.GetGroupKeyAndRandomnessMessagesAsync(sharedKey);
+        var models = new List<DiscussableSubmissionModel>();
 
         await foreach (var groupKeyMessage in groupKeyMessages)
         {
@@ -66,42 +61,30 @@ public class DiscussionService : IDiscussionService
             }
 
             var matchingMessage = await messageFactory.GetMatchingMessageByPaperAsync(groupKeyMessage.Paper, sharedKey);
+            var reviewsMessage = await messageFactory.GetReviewsMessageByGroupKeyAsync(
+                groupKeyMessage.GroupKey,
+                matchingMessage.ReviewerPublicKeys
+            );
 
-            foreach (var reviewsEntry in reviewsEntries)
+            if (reviewsMessage == null)
             {
-                ReviewsShareMessage reviewsMessage;
-
-                try
-                {
-                    reviewsMessage = await ReviewsShareMessage.DeserializeAsync(
-                        reviewsEntry.Data,
-                        groupKeyMessage.GroupKey,
-                        matchingMessage.ReviewerPublicKeys
-                    );
-                }
-                catch (CryptographicException)
-                {
-                    continue;
-                }
-
-                var reviewModels = new List<DiscussReviewModel>();
-
-                for (var i = 0; i < reviewsMessage.Reviews.Count; i++)
-                {
-                    // TODO: Use the hash array directly in the model and create an IValueConverter that displays longer
-                    // hexes and another that displays short hexes. The former can be used for paper hashes and latter
-                    // for reviewer public key hashes.
-                    var publicKeyHash = await Task.Run(() => SHA256.HashData(matchingMessage.ReviewerPublicKeys[i]));
-                    var hashString = Convert.ToHexString(publicKeyHash).Remove(10);
-                    var review = Encoding.UTF8.GetString(reviewsMessage.Reviews[i]);
-
-                    var reviewModel = new DiscussReviewModel(hashString, review);
-                    reviewModels.Add(reviewModel);
-                }
-
-                var model = new DiscussableSubmissionModel { PaperHash = paperHash, Reviews = reviewModels };
-                models.Add(model);
+                continue;
             }
+
+            var reviewModels = new List<ReviewModel>();
+
+            for (var i = 0; i < reviewsMessage.Reviews.Count; i++)
+            {
+                var publicKeyHash = await Task.Run(() => SHA256.HashData(matchingMessage.ReviewerPublicKeys[i]));
+                var hashString = Convert.ToHexString(publicKeyHash).Remove(10);
+                var review = Encoding.UTF8.GetString(reviewsMessage.Reviews[i]);
+
+                var reviewModel = new ReviewModel(hashString, review);
+                reviewModels.Add(reviewModel);
+            }
+
+            var model = new DiscussableSubmissionModel { PaperHash = paperHash, Reviews = reviewModels };
+            models.Add(model);
         }
 
         return models;
@@ -115,38 +98,9 @@ public class DiscussionService : IDiscussionService
         );
         var sharedKey = await _sessionService.SymmetricDecryptAndVerifyAsync(reviewer.EncryptedSharedKey);
 
-        await using var logDbContext = _logDbContextFactory();
-        var paperEntries = logDbContext
-            .Entries.Where(entry => entry.Step == ProtocolStep.PaperShare)
-            .AsAsyncEnumerable();
-
-        await foreach (var paperEntry in paperEntries)
-        {
-            PaperShareMessage paperMessage;
-
-            try
-            {
-                paperMessage = await PaperShareMessage.DeserializeAsync(paperEntry.Data, sharedKey);
-            }
-            catch (CryptographicException)
-            {
-                continue;
-            }
-
-            var sharePaperHash = await Task.Run(() => SHA256.HashData(paperMessage.Paper));
-
-            if (!sharePaperHash.SequenceEqual(paperHash))
-            {
-                continue;
-            }
-
-            await File.WriteAllBytesAsync(paperFilePath, paperMessage.Paper);
-            return;
-        }
-
-        throw new InvalidOperationException(
-            $"A matching {ProtocolStep.PaperShare} entry for the paper hash was not found."
-        );
+        await using var messageFactory = _messageFactoryFactory();
+        var paperMessage = await messageFactory.GetPaperMessageByPaperHashAsync(paperHash, sharedKey);
+        await File.WriteAllBytesAsync(paperFilePath, paperMessage.Paper);
     }
 
     public async Task SendMessageAsync(byte[] paperHash, string message)
@@ -205,35 +159,18 @@ public class DiscussionService : IDiscussionService
         );
         var matchingMessage = await messageFactory.GetMatchingMessageByPaperAsync(groupKeyMessage.Paper, sharedKey);
 
-        var discussionEntries = await logDbContext
-            .Entries.Where(entry => entry.Step == ProtocolStep.Discussion)
-            .ToListAsync();
+        var discussionMessagesAndPublicKeys = messageFactory.GetDiscussionMessagesByGroupKeyAsync(
+            groupKeyMessage.GroupKey,
+            matchingMessage.ReviewerPublicKeys
+        );
         var messageModels = new List<DiscussMessageModel>();
 
-        foreach (var discussionEntry in discussionEntries)
+        await foreach (var (discussionMessage, reviewerPublicKey) in discussionMessagesAndPublicKeys)
         {
-            foreach (var reviewerPublicKey in matchingMessage.ReviewerPublicKeys)
-            {
-                DiscussionMessage discussionMessage;
-
-                try
-                {
-                    discussionMessage = await DiscussionMessage.DeserializeAsync(
-                        discussionEntry.Data,
-                        groupKeyMessage.GroupKey,
-                        reviewerPublicKey
-                    );
-                }
-                catch (CryptographicException)
-                {
-                    continue;
-                }
-
-                var publicKeyHash = await Task.Run(() => SHA256.HashData(reviewerPublicKey));
-                var message = Encoding.UTF8.GetString(discussionMessage.Message);
-                var messageModel = new DiscussMessageModel(publicKeyHash, message);
-                messageModels.Add(messageModel);
-            }
+            var publicKeyHash = await Task.Run(() => SHA256.HashData(reviewerPublicKey));
+            var message = Encoding.UTF8.GetString(discussionMessage.Message);
+            var messageModel = new DiscussMessageModel(publicKeyHash, message);
+            messageModels.Add(messageModel);
         }
 
         return messageModels;
@@ -258,7 +195,7 @@ public class DiscussionService : IDiscussionService
 
         var gradeRandomness = new BigInteger(groupKeyMessage.GradeRandomness);
         var gradeNonce = GenerateBigInteger().ToByteArray();
-        var gradeAndNonce = SerializeByteArrays(new byte[] { (byte)grade }, gradeNonce);
+        var gradeAndNonce = SerializeGrade(grade, gradeNonce);
         var gradeCommitment = Commitment.Create(gradeAndNonce, gradeRandomness);
 
         var signatureMessage = new GradeCommitmentsAndNonceSignatureMessage

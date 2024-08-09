@@ -27,6 +27,16 @@ public class SubmissionCommitmentSignatureCalculator : ICalculator
 
     public async Task CalculateAsync(CancellationToken cancellationToken)
     {
+        var hasAcceptedGrades = await _appDbContext.LogEvents.AnyAsync(@event =>
+            @event.Step == ProtocolStep.AcceptedGrades
+        );
+
+        if (hasAcceptedGrades)
+        {
+            // The PC has published all accepted grades, so new submissions cannot be confirmed.
+            return;
+        }
+
         var commitmentEntries = await _logDbContext
             .Entries.Where(entry => entry.Step == ProtocolStep.SubmissionCommitmentsAndPublicKey)
             .ToListAsync();

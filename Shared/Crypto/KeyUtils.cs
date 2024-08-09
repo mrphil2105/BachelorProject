@@ -12,6 +12,14 @@ public static class KeyUtils
         return (privateKey, publicKey);
     }
 
+    public static byte[] GetPublicKeyFromPrivateKey(byte[] privateKey)
+    {
+        using var rsa = RSA.Create();
+        rsa.ImportRSAPrivateKey(privateKey, out _);
+        var publicKey = rsa.ExportRSAPublicKey();
+        return publicKey;
+    }
+
     public static async Task<byte[]> CalculateSignatureAsync(byte[] data, byte[] privateKey)
     {
         using var rsa = RSA.Create(Constants.DefaultRSAKeySize);

@@ -1,6 +1,5 @@
 using System.Security.Cryptography;
 using Apachi.Shared.Messages;
-using Microsoft.EntityFrameworkCore;
 
 namespace Apachi.Shared.Factories;
 
@@ -12,14 +11,10 @@ public partial class MessageFactory
         byte[] reviewerPublicKey
     )
     {
-        var bidEntryIds = await _logDbContext
-            .Entries.Where(entry => entry.Step == ProtocolStep.Bid)
-            .Select(entry => entry.Id)
-            .ToListAsync();
+        var bidEntries = EnumerateEntriesAsync(ProtocolStep.Bid);
 
-        foreach (var bidEntryId in bidEntryIds)
+        await foreach (var bidEntry in bidEntries)
         {
-            var bidEntry = await _logDbContext.Entries.SingleAsync(entry => entry.Id == bidEntryId);
             BidMessage bidMessage;
 
             try

@@ -1,7 +1,6 @@
 using System.Security.Cryptography;
 using Apachi.Shared.Crypto;
 using Apachi.Shared.Messages;
-using Microsoft.EntityFrameworkCore;
 using Org.BouncyCastle.Math;
 
 namespace Apachi.Shared.Factories;
@@ -36,14 +35,10 @@ public partial class MessageFactory
 
     public async IAsyncEnumerable<PaperReviewersMatchingMessage> GetMatchingMessagesAsync()
     {
-        var matchingEntryIds = await _logDbContext
-            .Entries.Where(entry => entry.Step == ProtocolStep.PaperReviewersMatching)
-            .Select(entry => entry.Id)
-            .ToListAsync();
+        var matchingEntries = await GetEntriesAsync(ProtocolStep.PaperReviewersMatching);
 
-        foreach (var matchingEntryId in matchingEntryIds)
+        foreach (var matchingEntry in matchingEntries)
         {
-            var matchingEntry = await _logDbContext.Entries.SingleAsync(entry => entry.Id == matchingEntryId);
             var matchingMessage = await PaperReviewersMatchingMessage.DeserializeAsync(matchingEntry.Data);
             yield return matchingMessage;
         }
