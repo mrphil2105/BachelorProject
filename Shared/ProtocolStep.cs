@@ -18,5 +18,6 @@ public enum ProtocolStep
     Grade = 14,
     GradeAndReviewsShare = 15,
     PaperRejection = 16,
-    AcceptedGrades = 17
+    AcceptedGrades = 17,
+    PaperReveal = 18
 }
