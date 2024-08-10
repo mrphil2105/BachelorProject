@@ -1,3 +1,4 @@
+using System.Runtime.Serialization;
 using System.Security.Cryptography;
 using Apachi.Shared.Messages;
 
@@ -21,7 +22,7 @@ public partial class MessageFactory
             {
                 bidMessage = await BidMessage.DeserializeAsync(bidEntry.Data, sharedKey, reviewerPublicKey);
             }
-            catch (CryptographicException)
+            catch (Exception exception) when (exception is CryptographicException or SerializationException)
             {
                 continue;
             }

@@ -1,3 +1,4 @@
+using System.Runtime.Serialization;
 using System.Security.Cryptography;
 using Apachi.Shared.Messages;
 
@@ -16,7 +17,7 @@ public partial class MessageFactory
                 var claimMessage = await PaperClaimMessage.DeserializeAsync(claimEntry.Data, submissionPublicKey);
                 return claimMessage;
             }
-            catch (CryptographicException)
+            catch (Exception exception) when (exception is CryptographicException or SerializationException)
             {
                 continue;
             }

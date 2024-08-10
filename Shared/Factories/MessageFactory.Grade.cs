@@ -1,3 +1,4 @@
+using System.Runtime.Serialization;
 using System.Security.Cryptography;
 using Apachi.Shared.Messages;
 using Microsoft.EntityFrameworkCore;
@@ -17,7 +18,7 @@ public partial class MessageFactory
                 var gradeMessage = await GradeMessage.DeserializeAsync(gradeEntry.Data, groupKey, reviewerPublicKey);
                 return gradeMessage;
             }
-            catch (CryptographicException)
+            catch (Exception exception) when (exception is CryptographicException or SerializationException)
             {
                 continue;
             }

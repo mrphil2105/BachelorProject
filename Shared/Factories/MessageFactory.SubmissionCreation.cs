@@ -1,3 +1,4 @@
+using System.Runtime.Serialization;
 using System.Security.Cryptography;
 using Apachi.Shared.Crypto;
 using Apachi.Shared.Messages;
@@ -67,7 +68,7 @@ public partial class MessageFactory
                         publicKeyMessage.SubmissionPublicKey
                     );
                 }
-                catch (CryptographicException)
+                catch (Exception exception) when (exception is CryptographicException or SerializationException)
                 {
                     continue;
                 }
@@ -95,7 +96,7 @@ public partial class MessageFactory
                 );
                 return creationMessage;
             }
-            catch (CryptographicException)
+            catch (Exception exception) when (exception is CryptographicException or SerializationException)
             {
                 continue;
             }

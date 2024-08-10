@@ -1,3 +1,4 @@
+using System.Runtime.Serialization;
 using System.Security.Cryptography;
 using Apachi.Shared.Messages;
 
@@ -36,7 +37,7 @@ public partial class MessageFactory
             {
                 paperMessage = await PaperShareMessage.DeserializeAsync(paperEntry.Data, sharedKey);
             }
-            catch (CryptographicException)
+            catch (Exception exception) when (exception is CryptographicException or SerializationException)
             {
                 continue;
             }

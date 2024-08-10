@@ -1,4 +1,5 @@
 using System.Buffers.Binary;
+using System.Runtime.Serialization;
 using Org.BouncyCastle.Asn1.Nist;
 using Org.BouncyCastle.Math;
 using Org.BouncyCastle.Security;
@@ -39,10 +40,7 @@ public static class DataUtils
 
             if (length > byte.MaxValue)
             {
-                throw new ArgumentException(
-                    $"All integers must have a byte length less than {byte.MaxValue}.",
-                    nameof(integers)
-                );
+                throw new SerializationException($"All integers must have a byte length less than {byte.MaxValue}.");
             }
 
             serialized[i + 1] = (byte)length;
@@ -108,10 +106,7 @@ public static class DataUtils
         {
             if (array.Length > MaxByteArrayLength)
             {
-                throw new ArgumentException(
-                    $"All byte arrays must not be longer than {MaxByteArrayLength}.",
-                    nameof(byteArrays)
-                );
+                throw new SerializationException($"All byte arrays must not be longer than {MaxByteArrayLength}.");
             }
 
             BinaryPrimitives.WriteInt32BigEndian(lengthPrefix, array.Length);
@@ -140,9 +135,8 @@ public static class DataUtils
 
             if (length > MaxByteArrayLength)
             {
-                throw new ArgumentException(
-                    $"Serialized data contains byte array longer than {MaxByteArrayLength}.",
-                    nameof(serialized)
+                throw new SerializationException(
+                    $"Serialized data contains byte array longer than {MaxByteArrayLength}."
                 );
             }
 
@@ -151,9 +145,8 @@ public static class DataUtils
 
             if (bytesRead != length)
             {
-                throw new ArgumentException(
-                    "Serialized data contains incomplete byte array or incorrect length prefix.",
-                    nameof(serialized)
+                throw new SerializationException(
+                    "Serialized data contains incomplete byte array or incorrect length prefix."
                 );
             }
 
@@ -169,7 +162,7 @@ public static class DataUtils
 
         if (byteArrays.Count == 0)
         {
-            throw new ArgumentException("Serialized data must contain at least one byte array.");
+            throw new SerializationException("Serialized data must contain at least one byte array.");
         }
 
         return byteArrays[0];
@@ -181,7 +174,7 @@ public static class DataUtils
 
         if (byteArrays.Count < 2)
         {
-            throw new ArgumentException("Serialized data must contain at least two byte arrays.");
+            throw new SerializationException("Serialized data must contain at least two byte arrays.");
         }
 
         return (byteArrays[0], byteArrays[1]);
@@ -193,7 +186,7 @@ public static class DataUtils
 
         if (byteArrays.Count < 3)
         {
-            throw new ArgumentException("Serialized data must contain at least three byte arrays.");
+            throw new SerializationException("Serialized data must contain at least three byte arrays.");
         }
 
         return (byteArrays[0], byteArrays[1], byteArrays[2]);
@@ -207,7 +200,7 @@ public static class DataUtils
 
         if (byteArrays.Count < 4)
         {
-            throw new ArgumentException("Serialized data must contain at least four byte arrays.");
+            throw new SerializationException("Serialized data must contain at least four byte arrays.");
         }
 
         return (byteArrays[0], byteArrays[1], byteArrays[2], byteArrays[3]);
@@ -221,7 +214,7 @@ public static class DataUtils
 
         if (byteArrays.Count < 5)
         {
-            throw new ArgumentException("Serialized data must contain at least five byte arrays.");
+            throw new SerializationException("Serialized data must contain at least five byte arrays.");
         }
 
         return (byteArrays[0], byteArrays[1], byteArrays[2], byteArrays[3], byteArrays[4]);
