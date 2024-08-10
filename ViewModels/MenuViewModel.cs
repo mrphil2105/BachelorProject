@@ -5,11 +5,17 @@ namespace Apachi.ViewModels;
 public class MenuViewModel : Conductor<IMenuPageViewModel>.Collection.OneActive
 {
     private readonly ISessionService _sessionService;
+    private readonly IClaimService _claimService;
     private readonly Func<IEnumerable<IMenuPageViewModel>> _pageViewModelsFactory;
 
-    public MenuViewModel(ISessionService sessionService, Func<IEnumerable<IMenuPageViewModel>> pageViewModelsFactory)
+    public MenuViewModel(
+        ISessionService sessionService,
+        IClaimService claimService,
+        Func<IEnumerable<IMenuPageViewModel>> pageViewModelsFactory
+    )
     {
         _sessionService = sessionService;
+        _claimService = claimService;
         _pageViewModelsFactory = pageViewModelsFactory;
     }
 
@@ -68,5 +74,15 @@ public class MenuViewModel : Conductor<IMenuPageViewModel>.Collection.OneActive
         }
 
         return true;
+    }
+
+    protected override Task OnInitializeAsync(CancellationToken cancellationToken = default)
+    {
+        if (!_sessionService.IsReviewer)
+        {
+            return _claimService.ClaimAcceptedPapers();
+        }
+
+        return Task.CompletedTask;
     }
 }
