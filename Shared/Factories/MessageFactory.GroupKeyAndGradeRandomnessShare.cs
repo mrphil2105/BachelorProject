@@ -5,7 +5,7 @@ namespace Apachi.Shared.Factories;
 
 public partial class MessageFactory
 {
-    public async Task<GroupKeyAndGradeRandomnessShareMessage> GetGroupKeyAndRandomnessMessageByPaperHashAsync(
+    public async Task<GroupKeyAndGradeRandomnessShareMessage?> GetGroupKeyAndRandomnessMessageByPaperHashAsync(
         byte[] paperHash,
         byte[] sharedKey
     )
@@ -24,7 +24,7 @@ public partial class MessageFactory
             return groupKeyMessage;
         }
 
-        throw new MessageCreationException(ProtocolStep.GroupKeyAndGradeRandomnessShare);
+        return null;
     }
 
     public async IAsyncEnumerable<GroupKeyAndGradeRandomnessShareMessage> GetGroupKeyAndRandomnessMessagesAsync(

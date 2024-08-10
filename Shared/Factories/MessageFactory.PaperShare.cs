@@ -5,7 +5,7 @@ namespace Apachi.Shared.Factories;
 
 public partial class MessageFactory
 {
-    public async Task<PaperShareMessage> GetPaperMessageByPaperHashAsync(byte[] paperHash, byte[] sharedKey)
+    public async Task<PaperShareMessage?> GetPaperMessageByPaperHashAsync(byte[] paperHash, byte[] sharedKey)
     {
         var paperMessages = GetPaperMessagesAsync(sharedKey);
 
@@ -21,7 +21,7 @@ public partial class MessageFactory
             return paperMessage;
         }
 
-        throw new MessageCreationException(ProtocolStep.PaperShare);
+        return null;
     }
 
     public async IAsyncEnumerable<PaperShareMessage> GetPaperMessagesAsync(byte[] sharedKey)

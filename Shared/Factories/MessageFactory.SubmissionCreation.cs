@@ -7,7 +7,7 @@ namespace Apachi.Shared.Factories;
 
 public partial class MessageFactory
 {
-    public async Task<SubmissionCreationMessage> GetCreationMessageBySubmissionCommitmentAsync(
+    public async Task<SubmissionCreationMessage?> GetCreationMessageBySubmissionCommitmentAsync(
         byte[] submissionCommitment
     )
     {
@@ -26,10 +26,10 @@ public partial class MessageFactory
             return creationMessage;
         }
 
-        throw new MessageCreationException(ProtocolStep.SubmissionCreation);
+        return null;
     }
 
-    public async Task<SubmissionCreationMessage> GetCreationMessageByReviewCommitmentAsync(byte[] reviewCommitment)
+    public async Task<SubmissionCreationMessage?> GetCreationMessageByReviewCommitmentAsync(byte[] reviewCommitment)
     {
         var creationMessages = GetCreationMessagesAsync();
 
@@ -46,7 +46,7 @@ public partial class MessageFactory
             return creationMessage;
         }
 
-        throw new MessageCreationException(ProtocolStep.SubmissionCreation);
+        return null;
     }
 
     public async IAsyncEnumerable<SubmissionCreationMessage> GetCreationMessagesAsync()
@@ -77,7 +77,7 @@ public partial class MessageFactory
         }
     }
 
-    public async Task<SubmissionCreationMessage> GetCreationMessageBySubmissionKeyAsync(
+    public async Task<SubmissionCreationMessage?> GetCreationMessageBySubmissionKeyAsync(
         byte[] submissionKey,
         byte[] submissionPublicKey
     )
@@ -101,6 +101,6 @@ public partial class MessageFactory
             }
         }
 
-        throw new MessageCreationException(ProtocolStep.SubmissionCreation);
+        return null;
     }
 }

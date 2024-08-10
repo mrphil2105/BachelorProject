@@ -5,7 +5,7 @@ namespace Apachi.Shared.Factories;
 
 public partial class MessageFactory
 {
-    public async Task<ReviewMessage> GetReviewMessageByPaperHashAsync(
+    public async Task<ReviewMessage?> GetReviewMessageByPaperHashAsync(
         byte[] paperHash,
         byte[] sharedKey,
         byte[] reviewerPublicKey
@@ -37,6 +37,6 @@ public partial class MessageFactory
             return reviewMessage;
         }
 
-        throw new MessageCreationException(ProtocolStep.Review);
+        return null;
     }
 }
