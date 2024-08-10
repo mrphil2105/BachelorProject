@@ -103,37 +103,30 @@ public class SetMemberProof
         return p1.Equals(p2);
     }
 
-    /* -- DOESN'T WORK --
     public byte[] ToBytes()
     {
-        var serializedGradesSet = _gradesList!.SelectMany(grade =>
+        var serializedGrades = _grades.Select(grade =>
         {
-            var serializedG = DataUtils.SerializeBigIntegers(grade.g);
-            var serializedGr = DataUtils.SerializeBigIntegers(grade.g_r);
-            return serializedG.Concat(serializedGr).ToArray();
-        }).ToArray();
-
-        return DataUtils.SerializeByteArrays(serializedGradesSet);
+            var (g, g_r) = grade;
+            var serializedGrade = SerializeBigIntegers(g, g_r);
+            return serializedGrade;
+        });
+        return SerializeByteArrays(serializedGrades);
     }
-    */
 
-
-    /* -- DOESN'T WORK --
     public static SetMemberProof FromBytes(byte[] bytes)
     {
-        var serializedGradesSet = DataUtils.DeserializeByteArrays(bytes);
-        var gradesList = new List<(BigInteger g, BigInteger g_r)>();
-        
-        for (var i = 0; i < serializedGradesSet.Count; i += 2)
+        var serializedGrades = DeserializeByteArrays(bytes);
+        var grades = new List<(BigInteger g, BigInteger g_r)>();
+
+        for (var i = 0; i < serializedGrades.Count; i++)
         {
-            var g = new BigInteger(serializedGradesSet[i]);
-            var gR = new BigInteger(serializedGradesSet[i + 1]);
-            gradesList.Add((g, gR));
+            var integers = DeserializeBigIntegers(serializedGrades[i]);
+            grades.Add((integers[0], integers[1]));
         }
 
-        return new SetMemberProof(gradesList);
+        return new SetMemberProof(grades);
     }
-    */
 
     private static (BigInteger x0, BigInteger x1, BigInteger x2, BigInteger x3) LipmaaDecomp(BigInteger x)
     {
