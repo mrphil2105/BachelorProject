@@ -20,5 +20,6 @@ public enum ProtocolStep
     PaperRejection = 16,
     AcceptedGrades = 17,
     PaperReveal = 18,
-    PaperClaim = 19
+    PaperClaim = 19,
+    PaperClaimConfirmation = 20
 }

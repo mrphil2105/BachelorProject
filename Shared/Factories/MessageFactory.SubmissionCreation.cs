@@ -51,16 +51,13 @@ public partial class MessageFactory
 
     public async IAsyncEnumerable<SubmissionCreationMessage> GetCreationMessagesAsync()
     {
-        var publicKeyEntries = await GetEntriesAsync(ProtocolStep.SubmissionCommitmentsAndPublicKey);
+        var publicKeyMessages = await GetPublicKeyMessagesAsync().ToListAsync();
         var creationEntries = EnumerateEntriesAsync(ProtocolStep.SubmissionCreation);
 
         await foreach (var creationEntry in creationEntries)
         {
-            foreach (var publicKeyEntry in publicKeyEntries)
+            foreach (var publicKeyMessage in publicKeyMessages)
             {
-                var publicKeyMessage = await SubmissionCommitmentsAndPublicKeyMessage.DeserializeAsync(
-                    publicKeyEntry.Data
-                );
                 SubmissionCreationMessage creationMessage;
 
                 try
