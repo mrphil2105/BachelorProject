@@ -58,7 +58,7 @@ public class PaperAndReviewRandomnessShareCalculator : ICalculator
 
             var pcPrivateKey = GetPCPrivateKey();
             var reviewers = await _logDbContext
-                .Reviewers.Where(reviewer => matchingMessage.ReviewerPublicKeys.Any(key => key == reviewer.PublicKey))
+                .Reviewers.Where(reviewer => matchingMessage!.ReviewerPublicKeys.Any(key => key == reviewer.PublicKey))
                 .ToListAsync();
 
             var paperMessage = new PaperAndReviewRandomnessShareMessage

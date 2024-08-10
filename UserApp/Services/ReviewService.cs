@@ -51,7 +51,7 @@ public class ReviewService : IReviewService
             var hasReview = await appDbContext.LogEvents.AnyAsync(@event =>
                 @event.Step == ProtocolStep.Review
                 && @event.Identifier == paperHash
-                && @event.ReviewerId == _sessionService.UserId!.Value
+                && @event.UserId == _sessionService.UserId!.Value
             );
 
             if (hasReview)
@@ -76,7 +76,7 @@ public class ReviewService : IReviewService
 
         await using var messageFactory = _messageFactoryFactory();
         var paperMessage = await messageFactory.GetPaperAndRandomnessMessageByPaperHashAsync(paperHash, sharedKey);
-        await File.WriteAllBytesAsync(paperFilePath, paperMessage.Paper);
+        await File.WriteAllBytesAsync(paperFilePath, paperMessage!.Paper);
     }
 
     public async Task SendReviewAsync(byte[] paperHash, string review)
@@ -92,14 +92,14 @@ public class ReviewService : IReviewService
         await using var messageFactory = _messageFactoryFactory();
         var paperMessage = await messageFactory.GetPaperAndRandomnessMessageByPaperHashAsync(paperHash, sharedKey);
 
-        var reviewRandomness = new BigInteger(paperMessage.ReviewRandomness);
+        var reviewRandomness = new BigInteger(paperMessage!.ReviewRandomness);
         var reviewCommitment = Commitment.Create(paperMessage.Paper, reviewRandomness);
         var matchingMessage = await messageFactory.GetMatchingMessageByCommitmentAsync(reviewCommitment.ToBytes());
 
         var reviewMessage = new ReviewMessage { Paper = paperMessage.Paper, Review = Encoding.UTF8.GetBytes(review) };
         var signatureMessage = new ReviewCommitmentAndNonceSignatureMessage
         {
-            ReviewCommitment = matchingMessage.ReviewCommitment,
+            ReviewCommitment = matchingMessage!.ReviewCommitment,
             ReviewNonce = matchingMessage.ReviewNonce
         };
 
@@ -122,7 +122,7 @@ public class ReviewService : IReviewService
         {
             Step = reviewEntry.Step,
             Identifier = paperHash,
-            ReviewerId = _sessionService.UserId!.Value
+            UserId = _sessionService.UserId!.Value
         };
         appDbContext.LogEvents.Add(logEvent);
 

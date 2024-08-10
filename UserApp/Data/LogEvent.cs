@@ -12,7 +12,5 @@ public class LogEvent
 
     public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
 
-    public required Guid ReviewerId { get; set; }
-
-    public Reviewer Reviewer { get; set; } = null!;
+    public required Guid UserId { get; set; }
 }

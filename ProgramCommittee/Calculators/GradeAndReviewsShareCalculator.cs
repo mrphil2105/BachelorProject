@@ -48,12 +48,32 @@ public class GradeAndReviewsShareCalculator : ICalculator
                 continue;
             }
 
+            var paperHash = SHA256.HashData(creationMessage.Paper);
+            var hasMatching = await _appDbContext.LogEvents.AnyAsync(@event =>
+                @event.Step == ProtocolStep.PaperReviewersMatching && @event.Identifier == paperHash
+            );
+
+            if (!hasMatching)
+            {
+                continue;
+            }
+
+            var hasGroupKey = await _appDbContext.LogEvents.AnyAsync(@event =>
+                @event.Step == ProtocolStep.GroupKeyAndGradeRandomnessShare
+                && @event.Identifier == reviewCommitmentBytes
+            );
+
+            if (!hasGroupKey)
+            {
+                continue;
+            }
+
             var pcPrivateKey = GetPCPrivateKey();
             byte[]? groupKey = null;
 
             var matchingMessage = await _messageFactory.GetMatchingMessageByCommitmentAsync(reviewCommitmentBytes);
             var reviewers = await _logDbContext
-                .Reviewers.Where(reviewer => matchingMessage.ReviewerPublicKeys.Any(key => key == reviewer.PublicKey))
+                .Reviewers.Where(reviewer => matchingMessage!.ReviewerPublicKeys.Any(key => key == reviewer.PublicKey))
                 .ToListAsync();
             var gradeAndNonces = new List<byte[]>();
 
@@ -64,12 +84,11 @@ public class GradeAndReviewsShareCalculator : ICalculator
                     // The same group key has been sent to all reviewers in the matching, so retrieve it using the first
                     // reviewer's shared key.
                     var sharedKey = await AsymmetricDecryptAsync(reviewer.EncryptedSharedKey, pcPrivateKey);
-                    var paperHash = SHA256.HashData(creationMessage.Paper);
                     var groupKeyMessage = await _messageFactory.GetGroupKeyAndRandomnessMessageByPaperHashAsync(
                         paperHash,
                         sharedKey
                     );
-                    groupKey = groupKeyMessage.GroupKey;
+                    groupKey = groupKeyMessage!.GroupKey;
                 }
 
                 var gradeMessage = await _messageFactory.GetGradeMessageByGroupKeyAsync(groupKey, reviewer.PublicKey);
@@ -83,7 +102,7 @@ public class GradeAndReviewsShareCalculator : ICalculator
                 gradeAndNonces.Add(gradeMessage.Grade);
             }
 
-            if (gradeAndNonces.Count != matchingMessage.ReviewerPublicKeys.Count)
+            if (gradeAndNonces.Count != matchingMessage!.ReviewerPublicKeys.Count)
             {
                 // Not all reviewers have sent their grades yet.
                 continue;

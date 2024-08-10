@@ -6,35 +6,31 @@ namespace Apachi.Shared.Factories;
 
 public partial class MessageFactory
 {
-    public async Task<BidMessage?> GetBidMessageByPaperHashAsync(
-        byte[] paperHash,
-        byte[] sharedKey,
-        byte[] reviewerPublicKey
-    )
+    public async Task<PaperRevealMessage?> GetRevealMessageByPaperHashAsync(byte[] paperHash)
     {
-        var bidEntries = EnumerateEntriesAsync(ProtocolStep.Bid);
+        var revealEntries = EnumerateEntriesAsync(ProtocolStep.PaperReveal);
 
-        await foreach (var bidEntry in bidEntries)
+        await foreach (var revealEntry in revealEntries)
         {
-            BidMessage bidMessage;
+            PaperRevealMessage revealMessage;
 
             try
             {
-                bidMessage = await BidMessage.DeserializeAsync(bidEntry.Data, sharedKey, reviewerPublicKey);
+                revealMessage = await PaperRevealMessage.DeserializeAsync(revealEntry.Data);
             }
             catch (Exception exception) when (exception is CryptographicException or SerializationException)
             {
                 continue;
             }
 
-            var messagePaperHash = await Task.Run(() => SHA256.HashData(bidMessage.Paper));
+            var messagePaperHash = await Task.Run(() => SHA256.HashData(revealMessage.Paper));
 
             if (!messagePaperHash.SequenceEqual(paperHash))
             {
                 continue;
             }
 
-            return bidMessage;
+            return revealMessage;
         }
 
         return null;

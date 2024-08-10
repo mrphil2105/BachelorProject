@@ -1,3 +1,4 @@
+using System.Runtime.Serialization;
 using System.Security.Cryptography;
 using Apachi.Shared.Crypto;
 using Apachi.Shared.Messages;
@@ -7,7 +8,7 @@ namespace Apachi.Shared.Factories;
 
 public partial class MessageFactory
 {
-    public async Task<SubmissionCreationMessage> GetCreationMessageBySubmissionCommitmentAsync(
+    public async Task<SubmissionCreationMessage?> GetCreationMessageBySubmissionCommitmentAsync(
         byte[] submissionCommitment
     )
     {
@@ -26,10 +27,10 @@ public partial class MessageFactory
             return creationMessage;
         }
 
-        throw new MessageCreationException(ProtocolStep.SubmissionCreation);
+        return null;
     }
 
-    public async Task<SubmissionCreationMessage> GetCreationMessageByReviewCommitmentAsync(byte[] reviewCommitment)
+    public async Task<SubmissionCreationMessage?> GetCreationMessageByReviewCommitmentAsync(byte[] reviewCommitment)
     {
         var creationMessages = GetCreationMessagesAsync();
 
@@ -46,21 +47,18 @@ public partial class MessageFactory
             return creationMessage;
         }
 
-        throw new MessageCreationException(ProtocolStep.SubmissionCreation);
+        return null;
     }
 
     public async IAsyncEnumerable<SubmissionCreationMessage> GetCreationMessagesAsync()
     {
-        var publicKeyEntries = await GetEntriesAsync(ProtocolStep.SubmissionCommitmentsAndPublicKey);
+        var publicKeyMessages = await GetPublicKeyMessagesAsync().ToListAsync();
         var creationEntries = EnumerateEntriesAsync(ProtocolStep.SubmissionCreation);
 
         await foreach (var creationEntry in creationEntries)
         {
-            foreach (var publicKeyEntry in publicKeyEntries)
+            foreach (var publicKeyMessage in publicKeyMessages)
             {
-                var publicKeyMessage = await SubmissionCommitmentsAndPublicKeyMessage.DeserializeAsync(
-                    publicKeyEntry.Data
-                );
                 SubmissionCreationMessage creationMessage;
 
                 try
@@ -70,7 +68,7 @@ public partial class MessageFactory
                         publicKeyMessage.SubmissionPublicKey
                     );
                 }
-                catch (CryptographicException)
+                catch (Exception exception) when (exception is CryptographicException or SerializationException)
                 {
                     continue;
                 }
@@ -80,7 +78,7 @@ public partial class MessageFactory
         }
     }
 
-    public async Task<SubmissionCreationMessage> GetCreationMessageBySubmissionKeyAsync(
+    public async Task<SubmissionCreationMessage?> GetCreationMessageBySubmissionKeyAsync(
         byte[] submissionKey,
         byte[] submissionPublicKey
     )
@@ -98,12 +96,12 @@ public partial class MessageFactory
                 );
                 return creationMessage;
             }
-            catch (CryptographicException)
+            catch (Exception exception) when (exception is CryptographicException or SerializationException)
             {
                 continue;
             }
         }
 
-        throw new MessageCreationException(ProtocolStep.SubmissionCreation);
+        return null;
     }
 }

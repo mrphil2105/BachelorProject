@@ -48,7 +48,7 @@ public class MatchingService : IMatchingService
             var hasBid = await appDbContext.LogEvents.AnyAsync(@event =>
                 @event.Step == ProtocolStep.Bid
                 && @event.Identifier == paperHash
-                && @event.ReviewerId == _sessionService.UserId!.Value
+                && @event.UserId == _sessionService.UserId!.Value
             );
 
             if (hasBid)
@@ -73,7 +73,7 @@ public class MatchingService : IMatchingService
 
         await using var messageFactory = _messageFactoryFactory();
         var paperMessage = await messageFactory.GetPaperMessageByPaperHashAsync(paperHash, sharedKey);
-        await File.WriteAllBytesAsync(paperFilePath, paperMessage.Paper);
+        await File.WriteAllBytesAsync(paperFilePath, paperMessage!.Paper);
     }
 
     public async Task SendBidAsync(byte[] paperHash, bool wantsToReview)
@@ -91,7 +91,7 @@ public class MatchingService : IMatchingService
 
         var bidMessage = new BidMessage
         {
-            Paper = paperMessage.Paper,
+            Paper = paperMessage!.Paper,
             Bid = new byte[] { (byte)(wantsToReview ? 1 : 0) }
         };
         var bidEntry = new LogEntry
@@ -107,7 +107,7 @@ public class MatchingService : IMatchingService
         {
             Step = bidEntry.Step,
             Identifier = paperHash,
-            ReviewerId = _sessionService.UserId!.Value
+            UserId = _sessionService.UserId!.Value
         };
         appDbContext.LogEvents.Add(logEvent);
 

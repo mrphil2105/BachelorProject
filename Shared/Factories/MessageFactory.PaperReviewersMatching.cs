@@ -7,10 +7,16 @@ namespace Apachi.Shared.Factories;
 
 public partial class MessageFactory
 {
-    public async Task<PaperReviewersMatchingMessage> GetMatchingMessageByPaperAsync(byte[] paper, byte[] sharedKey)
+    public async Task<PaperReviewersMatchingMessage?> GetMatchingMessageByPaperAsync(byte[] paper, byte[] sharedKey)
     {
         var paperHash = await Task.Run(() => SHA256.HashData(paper));
         var paperMessage = await GetPaperAndRandomnessMessageByPaperHashAsync(paperHash, sharedKey);
+
+        if (paperMessage == null)
+        {
+            return null;
+        }
+
         var reviewRandomness = new BigInteger(paperMessage.ReviewRandomness);
         var reviewCommitment = Commitment.Create(paper, reviewRandomness);
 
@@ -18,7 +24,7 @@ public partial class MessageFactory
         return matchingMessage;
     }
 
-    public async Task<PaperReviewersMatchingMessage> GetMatchingMessageByCommitmentAsync(byte[] reviewCommitment)
+    public async Task<PaperReviewersMatchingMessage?> GetMatchingMessageByCommitmentAsync(byte[] reviewCommitment)
     {
         var matchingMessages = GetMatchingMessagesAsync();
 
@@ -30,7 +36,7 @@ public partial class MessageFactory
             }
         }
 
-        throw new MessageCreationException(ProtocolStep.PaperReviewersMatching);
+        return null;
     }
 
     public async IAsyncEnumerable<PaperReviewersMatchingMessage> GetMatchingMessagesAsync()

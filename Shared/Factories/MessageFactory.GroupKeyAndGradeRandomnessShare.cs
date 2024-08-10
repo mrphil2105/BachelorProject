@@ -1,3 +1,4 @@
+using System.Runtime.Serialization;
 using System.Security.Cryptography;
 using Apachi.Shared.Messages;
 
@@ -5,7 +6,7 @@ namespace Apachi.Shared.Factories;
 
 public partial class MessageFactory
 {
-    public async Task<GroupKeyAndGradeRandomnessShareMessage> GetGroupKeyAndRandomnessMessageByPaperHashAsync(
+    public async Task<GroupKeyAndGradeRandomnessShareMessage?> GetGroupKeyAndRandomnessMessageByPaperHashAsync(
         byte[] paperHash,
         byte[] sharedKey
     )
@@ -24,7 +25,7 @@ public partial class MessageFactory
             return groupKeyMessage;
         }
 
-        throw new MessageCreationException(ProtocolStep.GroupKeyAndGradeRandomnessShare);
+        return null;
     }
 
     public async IAsyncEnumerable<GroupKeyAndGradeRandomnessShareMessage> GetGroupKeyAndRandomnessMessagesAsync(
@@ -44,7 +45,7 @@ public partial class MessageFactory
                     sharedKey
                 );
             }
-            catch (CryptographicException)
+            catch (Exception exception) when (exception is CryptographicException or SerializationException)
             {
                 continue;
             }

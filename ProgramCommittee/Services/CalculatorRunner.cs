@@ -1,18 +1,15 @@
 using Apachi.ProgramCommittee.Calculators;
 using Autofac;
-using Serilog;
 
 namespace Apachi.ProgramCommittee.Services;
 
 public class CalculatorRunner
 {
     private readonly ILifetimeScope _container;
-    private readonly ILogger _logger;
 
-    public CalculatorRunner(ILifetimeScope container, ILogger logger)
+    public CalculatorRunner(ILifetimeScope container)
     {
         _container = container;
-        _logger = logger;
     }
 
     public async Task ExecuteAsync(CancellationToken cancellationToken)
@@ -35,11 +32,7 @@ public class CalculatorRunner
                 }
                 catch (Exception exception)
                 {
-                    _logger.Error(
-                        "Calculator {Type} has failed: {Message}",
-                        calculator.GetType().Name,
-                        exception.Message
-                    );
+                    Console.WriteLine("Calculator {0} has failed: {1}", calculator.GetType().Name, exception.Message);
                 }
             }
         }

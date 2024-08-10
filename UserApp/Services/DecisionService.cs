@@ -2,7 +2,6 @@ using System.Security.Cryptography;
 using System.Text;
 using Apachi.Shared.Crypto;
 using Apachi.Shared.Factories;
-using Apachi.Shared.Messages;
 using Apachi.UserApp.Data;
 using Apachi.ViewModels.Models;
 using Apachi.ViewModels.Services;
@@ -46,15 +45,11 @@ public class DecisionService : IDecisionService
 
             var creationMessage = await messageFactory.GetCreationMessageBySubmissionKeyAsync(submissionKey, publicKey);
 
-            var reviewRandomness = new BigInteger(creationMessage.ReviewRandomness);
+            var reviewRandomness = new BigInteger(creationMessage!.ReviewRandomness);
             var reviewCommitment = Commitment.Create(creationMessage.Paper, reviewRandomness);
-            PaperReviewersMatchingMessage matchingMessage;
+            var matchingMessage = await messageFactory.GetMatchingMessageByCommitmentAsync(reviewCommitment.ToBytes());
 
-            try
-            {
-                matchingMessage = await messageFactory.GetMatchingMessageByCommitmentAsync(reviewCommitment.ToBytes());
-            }
-            catch (MessageCreationException)
+            if (matchingMessage == null)
             {
                 continue;
             }
@@ -101,6 +96,6 @@ public class DecisionService : IDecisionService
 
         await using var messageFactory = _messageFactoryFactory();
         var creationMessage = await messageFactory.GetCreationMessageBySubmissionKeyAsync(submissionKey, publicKey);
-        await File.WriteAllBytesAsync(paperFilePath, creationMessage.Paper);
+        await File.WriteAllBytesAsync(paperFilePath, creationMessage!.Paper);
     }
 }

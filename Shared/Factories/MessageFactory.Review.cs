@@ -1,3 +1,4 @@
+using System.Runtime.Serialization;
 using System.Security.Cryptography;
 using Apachi.Shared.Messages;
 
@@ -5,7 +6,7 @@ namespace Apachi.Shared.Factories;
 
 public partial class MessageFactory
 {
-    public async Task<ReviewMessage> GetReviewMessageByPaperHashAsync(
+    public async Task<ReviewMessage?> GetReviewMessageByPaperHashAsync(
         byte[] paperHash,
         byte[] sharedKey,
         byte[] reviewerPublicKey
@@ -22,7 +23,7 @@ public partial class MessageFactory
             {
                 reviewMessage = await ReviewMessage.DeserializeAsync(reviewEntry.Data, sharedKey, reviewerPublicKey);
             }
-            catch (CryptographicException)
+            catch (Exception exception) when (exception is CryptographicException or SerializationException)
             {
                 continue;
             }
@@ -37,6 +38,6 @@ public partial class MessageFactory
             return reviewMessage;
         }
 
-        throw new MessageCreationException(ProtocolStep.Review);
+        return null;
     }
 }
