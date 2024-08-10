@@ -51,17 +51,17 @@ public static class DataUtils
         return serialized;
     }
 
-    public static List<BigInteger> DeserializeBigIntegers(byte[] combined)
+    public static List<BigInteger> DeserializeBigIntegers(byte[] serialized)
     {
-        var count = combined[0];
+        var count = serialized[0];
         var integers = new List<BigInteger>(count);
         var offset = count + 1;
 
         for (var i = 0; i < count; i++)
         {
-            var length = combined[i + 1];
+            var length = serialized[i + 1];
             var serializedInteger = new byte[length];
-            Buffer.BlockCopy(combined, offset, serializedInteger, 0, length);
+            Buffer.BlockCopy(serialized, offset, serializedInteger, 0, length);
             var integer = new BigInteger(serializedInteger);
             integers.Add(integer);
             offset += length;

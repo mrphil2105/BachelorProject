@@ -9,9 +9,10 @@ public class Commitment
 {
     private const string HPointBase64 =
         "AkJCAYmEWsv4dBo49yya0gRk9+xnUGRRzrSP3oIz30Vrc/dy6tu0lSuxbT4wG0HvyORvpl3jRt4NDCUw9uQstM94XmsYAQCQfxnUJ0Pb9VQ7ZOyW3lai/wfwvjSKN/zvlhUdbPnCvKl1yo4nzbsC0rnepFGQeeh1INu6cXabklrzMzuqd2y4";
-    private static readonly ECPoint HPoint;
 
-    private readonly ECPoint _point;
+    public static readonly ECPoint HPoint;
+
+    public ECPoint Point { get; }
 
     static Commitment()
     {
@@ -26,7 +27,7 @@ public class Commitment
 
     private Commitment(ECPoint point)
     {
-        _point = point;
+        Point = point;
     }
 
     public static Commitment Create(byte[] value, BigInteger randomness, string curveName = Constants.DefaultCurveName)
@@ -49,12 +50,12 @@ public class Commitment
 
         var parameters = NistNamedCurves.GetByName(curveName);
         var otherPoint = parameters.G.Multiply(hashInteger).Add(HPoint.Multiply(randomness));
-        return _point.Equals(otherPoint);
+        return Point.Equals(otherPoint);
     }
 
     public byte[] ToBytes()
     {
-        var normalizedPoint = _point.Normalize();
+        var normalizedPoint = Point.Normalize();
         var xCoord = normalizedPoint.AffineXCoord.ToBigInteger();
         var yCoord = normalizedPoint.AffineYCoord.ToBigInteger();
 
