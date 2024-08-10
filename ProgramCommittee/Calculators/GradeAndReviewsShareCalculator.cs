@@ -48,6 +48,26 @@ public class GradeAndReviewsShareCalculator : ICalculator
                 continue;
             }
 
+            var paperHash = SHA256.HashData(creationMessage.Paper);
+            var hasMatching = await _appDbContext.LogEvents.AnyAsync(@event =>
+                @event.Step == ProtocolStep.PaperReviewersMatching && @event.Identifier == paperHash
+            );
+
+            if (!hasMatching)
+            {
+                continue;
+            }
+
+            var hasGroupKey = await _appDbContext.LogEvents.AnyAsync(@event =>
+                @event.Step == ProtocolStep.GroupKeyAndGradeRandomnessShare
+                && @event.Identifier == reviewCommitmentBytes
+            );
+
+            if (!hasGroupKey)
+            {
+                continue;
+            }
+
             var pcPrivateKey = GetPCPrivateKey();
             byte[]? groupKey = null;
 
@@ -64,7 +84,6 @@ public class GradeAndReviewsShareCalculator : ICalculator
                     // The same group key has been sent to all reviewers in the matching, so retrieve it using the first
                     // reviewer's shared key.
                     var sharedKey = await AsymmetricDecryptAsync(reviewer.EncryptedSharedKey, pcPrivateKey);
-                    var paperHash = SHA256.HashData(creationMessage.Paper);
                     var groupKeyMessage = await _messageFactory.GetGroupKeyAndRandomnessMessageByPaperHashAsync(
                         paperHash,
                         sharedKey

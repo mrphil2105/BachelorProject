@@ -44,6 +44,16 @@ public class PaperRejectionCalculator : ICalculator
                 continue;
             }
 
+            var paperHash = SHA256.HashData(creationMessage.Paper);
+            var hasMatching = await _appDbContext.LogEvents.AnyAsync(@event =>
+                @event.Step == ProtocolStep.PaperReviewersMatching && @event.Identifier == paperHash
+            );
+
+            if (!hasMatching)
+            {
+                continue;
+            }
+
             var matchingMessage = await _messageFactory.GetMatchingMessageByCommitmentAsync(reviewCommitmentBytes);
             var gradeAndReviewsMessage = await _messageFactory.GetGradeAndReviewsMessageBySubmissionKeyAsync(
                 creationMessage.SubmissionKey,
@@ -68,7 +78,6 @@ public class PaperRejectionCalculator : ICalculator
 
             var pcPrivateKey = GetPCPrivateKey();
             var sharedKey = await AsymmetricDecryptAsync(reviewer.EncryptedSharedKey, pcPrivateKey);
-            var paperHash = SHA256.HashData(creationMessage.Paper);
             var gradeRandomnessMessage = await _messageFactory.GetGroupKeyAndRandomnessMessageByPaperHashAsync(
                 paperHash,
                 sharedKey
