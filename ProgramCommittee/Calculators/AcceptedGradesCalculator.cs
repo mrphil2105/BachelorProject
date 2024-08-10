@@ -37,6 +37,12 @@ public class AcceptedGradesCalculator : ICalculator
         var confirmationCount = await _logDbContext.Entries.CountAsync(entry =>
             entry.Step == ProtocolStep.SubmissionCommitmentSignature
         );
+
+        if (confirmationCount == 0)
+        {
+            return;
+        }
+
         var gradedCount = 0;
 
         var creationMessages = _messageFactory.GetCreationMessagesAsync();
