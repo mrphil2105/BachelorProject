@@ -63,7 +63,7 @@ public class PaperRevealCalculator : ICalculator
 
             var gradeAndReviewsMessage = await _messageFactory.GetGradeAndReviewsMessageBySubmissionKeyAsync(
                 creationMessage.SubmissionKey,
-                matchingMessage.ReviewerPublicKeys
+                matchingMessage!.ReviewerPublicKeys
             );
 
             var (grade, _) = DeserializeGrade(gradeAndReviewsMessage!.Grade);

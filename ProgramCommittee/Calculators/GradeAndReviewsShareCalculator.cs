@@ -73,7 +73,7 @@ public class GradeAndReviewsShareCalculator : ICalculator
 
             var matchingMessage = await _messageFactory.GetMatchingMessageByCommitmentAsync(reviewCommitmentBytes);
             var reviewers = await _logDbContext
-                .Reviewers.Where(reviewer => matchingMessage.ReviewerPublicKeys.Any(key => key == reviewer.PublicKey))
+                .Reviewers.Where(reviewer => matchingMessage!.ReviewerPublicKeys.Any(key => key == reviewer.PublicKey))
                 .ToListAsync();
             var gradeAndNonces = new List<byte[]>();
 
@@ -88,7 +88,7 @@ public class GradeAndReviewsShareCalculator : ICalculator
                         paperHash,
                         sharedKey
                     );
-                    groupKey = groupKeyMessage.GroupKey;
+                    groupKey = groupKeyMessage!.GroupKey;
                 }
 
                 var gradeMessage = await _messageFactory.GetGradeMessageByGroupKeyAsync(groupKey, reviewer.PublicKey);
@@ -102,7 +102,7 @@ public class GradeAndReviewsShareCalculator : ICalculator
                 gradeAndNonces.Add(gradeMessage.Grade);
             }
 
-            if (gradeAndNonces.Count != matchingMessage.ReviewerPublicKeys.Count)
+            if (gradeAndNonces.Count != matchingMessage!.ReviewerPublicKeys.Count)
             {
                 // Not all reviewers have sent their grades yet.
                 continue;

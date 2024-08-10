@@ -69,7 +69,7 @@ public class GroupKeyAndGradeRandomnessShareCalculator : ICalculator
             );
             var groupKeyMessage = new GroupKeyAndGradeRandomnessShareMessage
             {
-                Paper = creationMessage.Paper,
+                Paper = creationMessage!.Paper,
                 GroupKey = RandomNumberGenerator.GetBytes(32),
                 GradeRandomness = GenerateBigInteger().ToByteArray()
             };

@@ -73,7 +73,7 @@ public class MatchingService : IMatchingService
 
         await using var messageFactory = _messageFactoryFactory();
         var paperMessage = await messageFactory.GetPaperMessageByPaperHashAsync(paperHash, sharedKey);
-        await File.WriteAllBytesAsync(paperFilePath, paperMessage.Paper);
+        await File.WriteAllBytesAsync(paperFilePath, paperMessage!.Paper);
     }
 
     public async Task SendBidAsync(byte[] paperHash, bool wantsToReview)
@@ -91,7 +91,7 @@ public class MatchingService : IMatchingService
 
         var bidMessage = new BidMessage
         {
-            Paper = paperMessage.Paper,
+            Paper = paperMessage!.Paper,
             Bid = new byte[] { (byte)(wantsToReview ? 1 : 0) }
         };
         var bidEntry = new LogEntry

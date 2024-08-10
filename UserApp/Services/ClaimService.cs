@@ -46,7 +46,7 @@ public class ClaimService : IClaimService
             var publicKey = GetPublicKeyFromPrivateKey(privateKey);
 
             var creationMessage = await messageFactory.GetCreationMessageBySubmissionKeyAsync(submissionKey, publicKey);
-            var paperHash = await Task.Run(() => SHA256.HashData(creationMessage.Paper));
+            var paperHash = await Task.Run(() => SHA256.HashData(creationMessage!.Paper));
             var hasClaimed = await appDbContext.LogEvents.AnyAsync(@event =>
                 @event.Step == ProtocolStep.PaperClaim
                 && @event.Identifier == paperHash
@@ -72,7 +72,7 @@ public class ClaimService : IClaimService
 
             var claimMessage = new PaperClaimMessage
             {
-                Paper = creationMessage.Paper,
+                Paper = creationMessage!.Paper,
                 Identity = idBytes,
                 IdentityRandomness = identityRandomness
             };

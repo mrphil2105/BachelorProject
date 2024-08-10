@@ -62,7 +62,7 @@ public class DiscussionService : IDiscussionService
             var matchingMessage = await messageFactory.GetMatchingMessageByPaperAsync(groupKeyMessage.Paper, sharedKey);
             var reviewsMessage = await messageFactory.GetReviewsMessageByGroupKeyAsync(
                 groupKeyMessage.GroupKey,
-                matchingMessage.ReviewerPublicKeys
+                matchingMessage!.ReviewerPublicKeys
             );
 
             if (reviewsMessage == null)
@@ -99,7 +99,7 @@ public class DiscussionService : IDiscussionService
 
         await using var messageFactory = _messageFactoryFactory();
         var paperMessage = await messageFactory.GetPaperMessageByPaperHashAsync(paperHash, sharedKey);
-        await File.WriteAllBytesAsync(paperFilePath, paperMessage.Paper);
+        await File.WriteAllBytesAsync(paperFilePath, paperMessage!.Paper);
     }
 
     public async Task SendMessageAsync(byte[] paperHash, string message)
@@ -123,7 +123,7 @@ public class DiscussionService : IDiscussionService
         var messageEntry = new LogEntry
         {
             Step = ProtocolStep.Discussion,
-            Data = await discussionMessage.SerializeAsync(privateKey, groupKeyMessage.GroupKey)
+            Data = await discussionMessage.SerializeAsync(privateKey, groupKeyMessage!.GroupKey)
         };
         logDbContext.Entries.Add(messageEntry);
 
@@ -156,11 +156,11 @@ public class DiscussionService : IDiscussionService
             paperHash,
             sharedKey
         );
-        var matchingMessage = await messageFactory.GetMatchingMessageByPaperAsync(groupKeyMessage.Paper, sharedKey);
+        var matchingMessage = await messageFactory.GetMatchingMessageByPaperAsync(groupKeyMessage!.Paper, sharedKey);
 
         var discussionMessagesAndPublicKeys = messageFactory.GetDiscussionMessagesByGroupKeyAsync(
             groupKeyMessage.GroupKey,
-            matchingMessage.ReviewerPublicKeys
+            matchingMessage!.ReviewerPublicKeys
         );
         var messageModels = new List<DiscussMessageModel>();
 
@@ -190,7 +190,7 @@ public class DiscussionService : IDiscussionService
             paperHash,
             sharedKey
         );
-        var matchingMessage = await messageFactory.GetMatchingMessageByPaperAsync(groupKeyMessage.Paper, sharedKey);
+        var matchingMessage = await messageFactory.GetMatchingMessageByPaperAsync(groupKeyMessage!.Paper, sharedKey);
 
         var gradeRandomness = new BigInteger(groupKeyMessage.GradeRandomness);
         var gradeNonce = GenerateBigInteger().ToByteArray();
@@ -199,7 +199,7 @@ public class DiscussionService : IDiscussionService
 
         var signatureMessage = new GradeCommitmentsAndNonceSignatureMessage
         {
-            ReviewCommitment = matchingMessage.ReviewCommitment,
+            ReviewCommitment = matchingMessage!.ReviewCommitment,
             GradeCommitment = gradeCommitment.ToBytes(),
             ReviewNonce = matchingMessage.ReviewNonce
         };

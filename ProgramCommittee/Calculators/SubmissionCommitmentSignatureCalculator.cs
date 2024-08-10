@@ -50,7 +50,7 @@ public class SubmissionCommitmentSignatureCalculator : ICalculator
                 commitmentMessage.SubmissionCommitment
             );
 
-            var paperHash = SHA256.HashData(creationMessage.Paper);
+            var paperHash = SHA256.HashData(creationMessage!.Paper);
             var hasExisting = await _appDbContext.LogEvents.AnyAsync(@event =>
                 @event.Step == ProtocolStep.SubmissionCommitmentSignature && @event.Identifier == paperHash
             );

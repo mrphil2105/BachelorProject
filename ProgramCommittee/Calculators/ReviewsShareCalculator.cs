@@ -54,11 +54,9 @@ public class ReviewsShareCalculator : ICalculator
                 continue;
             }
 
-            PaperReviewersMatchingMessage matchingMessage = await _messageFactory.GetMatchingMessageByCommitmentAsync(
-                reviewCommitmentBytes
-            );
+            var matchingMessage = await _messageFactory.GetMatchingMessageByCommitmentAsync(reviewCommitmentBytes);
 
-            if (shareCount != matchingMessage.ReviewerPublicKeys.Count)
+            if (shareCount != matchingMessage!.ReviewerPublicKeys.Count)
             {
                 // The group key has not been shared with all reviewers yet.
                 continue;
@@ -83,7 +81,7 @@ public class ReviewsShareCalculator : ICalculator
                     sharedKey,
                     reviewer.PublicKey
                 );
-                reviews.Add(reviewMessage.Review);
+                reviews.Add(reviewMessage!.Review);
                 reviewSignatures.Add(reviewMessage.ReviewSignature!);
 
                 if (groupKey == null)
@@ -92,7 +90,7 @@ public class ReviewsShareCalculator : ICalculator
                         paperHash,
                         sharedKey
                     );
-                    groupKey = groupKeyMessage.GroupKey;
+                    groupKey = groupKeyMessage!.GroupKey;
                 }
             }
 

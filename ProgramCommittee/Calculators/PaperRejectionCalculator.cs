@@ -57,7 +57,7 @@ public class PaperRejectionCalculator : ICalculator
             var matchingMessage = await _messageFactory.GetMatchingMessageByCommitmentAsync(reviewCommitmentBytes);
             var gradeAndReviewsMessage = await _messageFactory.GetGradeAndReviewsMessageBySubmissionKeyAsync(
                 creationMessage.SubmissionKey,
-                matchingMessage.ReviewerPublicKeys
+                matchingMessage!.ReviewerPublicKeys
             );
 
             if (gradeAndReviewsMessage == null)
@@ -87,7 +87,7 @@ public class PaperRejectionCalculator : ICalculator
             {
                 ReviewCommitment = reviewCommitmentBytes,
                 Grade = gradeAndReviewsMessage.Grade,
-                GradeRandomness = gradeRandomnessMessage.GradeRandomness
+                GradeRandomness = gradeRandomnessMessage!.GradeRandomness
             };
             var rejectionEntry = new LogEntry
             {

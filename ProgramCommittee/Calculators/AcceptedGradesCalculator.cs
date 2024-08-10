@@ -66,7 +66,7 @@ public class AcceptedGradesCalculator : ICalculator
 
             var gradeAndReviewsMessage = await _messageFactory.GetGradeAndReviewsMessageBySubmissionKeyAsync(
                 creationMessage.SubmissionKey,
-                matchingMessage.ReviewerPublicKeys
+                matchingMessage!.ReviewerPublicKeys
             );
 
             if (gradeAndReviewsMessage == null)
