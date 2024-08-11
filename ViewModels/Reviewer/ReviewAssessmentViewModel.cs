@@ -102,4 +102,12 @@ public class ReviewAssessmentViewModel : Screen
         );
         return result == MessageBoxResult.Yes;
     }
+
+    protected override Task OnInitializeAsync(CancellationToken cancellationToken = default)
+    {
+        Review = string.Empty;
+        IsDirty = false;
+        HasSubmitted = false;
+        return Task.CompletedTask;
+    }
 }

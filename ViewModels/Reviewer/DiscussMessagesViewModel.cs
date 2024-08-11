@@ -92,6 +92,7 @@ public class DiscussMessagesViewModel : Conductor<DiscussMessageModel>.Collectio
 
     protected override Task OnInitializeAsync(CancellationToken cancellationToken = default)
     {
+        Message = string.Empty;
         return RefreshMessages();
     }
 }
