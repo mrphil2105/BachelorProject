@@ -4,7 +4,7 @@ namespace Apachi.Shared.Factories;
 
 public partial class MessageFactory
 {
-    public async IAsyncEnumerable<SubmissionCommitmentsAndPublicKeyMessage> GetPublicKeyMessagesAsync()
+    public async IAsyncEnumerable<SubmissionCommitmentsAndPublicKeyMessage> GetCommitmentsAndPublicKeyMessagesAsync()
     {
         var publicKeyEntries = await GetEntriesAsync(ProtocolStep.SubmissionCommitmentsAndPublicKey);
 

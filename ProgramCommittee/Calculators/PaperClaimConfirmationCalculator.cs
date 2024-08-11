@@ -27,7 +27,7 @@ public class PaperClaimConfirmationCalculator : ICalculator
 
     public async Task CalculateAsync(CancellationToken cancellationToken)
     {
-        var publicKeyMessages = _messageFactory.GetPublicKeyMessagesAsync();
+        var publicKeyMessages = _messageFactory.GetCommitmentsAndPublicKeyMessagesAsync();
 
         await foreach (var publicKeyMessage in publicKeyMessages)
         {

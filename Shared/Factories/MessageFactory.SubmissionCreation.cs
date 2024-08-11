@@ -52,7 +52,7 @@ public partial class MessageFactory
 
     public async IAsyncEnumerable<SubmissionCreationMessage> GetCreationMessagesAsync()
     {
-        var publicKeyMessages = await GetPublicKeyMessagesAsync().ToListAsync();
+        var publicKeyMessages = await GetCommitmentsAndPublicKeyMessagesAsync().ToListAsync();
         var creationEntries = EnumerateEntriesAsync(ProtocolStep.SubmissionCreation);
 
         await foreach (var creationEntry in creationEntries)

@@ -37,15 +37,10 @@ public class SubmissionCommitmentSignatureCalculator : ICalculator
             return;
         }
 
-        var commitmentEntries = await _logDbContext
-            .Entries.Where(entry => entry.Step == ProtocolStep.SubmissionCommitmentsAndPublicKey)
-            .ToListAsync();
+        var commitmentMessages = _messageFactory.GetCommitmentsAndPublicKeyMessagesAsync();
 
-        foreach (var commitmentEntry in commitmentEntries)
+        await foreach (var commitmentMessage in commitmentMessages)
         {
-            var commitmentMessage = await SubmissionCommitmentsAndPublicKeyMessage.DeserializeAsync(
-                commitmentEntry.Data
-            );
             var creationMessage = await _messageFactory.GetCreationMessageBySubmissionCommitmentAsync(
                 commitmentMessage.SubmissionCommitment
             );
