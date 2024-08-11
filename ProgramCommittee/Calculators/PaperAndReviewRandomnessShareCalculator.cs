@@ -56,7 +56,6 @@ public class PaperAndReviewRandomnessShareCalculator : ICalculator
             var reviewCommitment = Commitment.Create(creationMessage.Paper, reviewRandomness);
             var matchingMessage = await _messageFactory.GetMatchingMessageByCommitmentAsync(reviewCommitment.ToBytes());
 
-            var pcPrivateKey = GetPCPrivateKey();
             var reviewers = await _logDbContext
                 .Reviewers.Where(reviewer => matchingMessage!.ReviewerPublicKeys.Any(key => key == reviewer.PublicKey))
                 .ToListAsync();
@@ -69,7 +68,7 @@ public class PaperAndReviewRandomnessShareCalculator : ICalculator
 
             foreach (var reviewer in reviewers)
             {
-                var sharedKey = await AsymmetricDecryptAsync(reviewer.EncryptedSharedKey, pcPrivateKey);
+                var sharedKey = await reviewer.DecryptSharedKeyAsync();
                 var paperEntry = new LogEntry
                 {
                     Step = ProtocolStep.PaperAndReviewRandomnessShare,

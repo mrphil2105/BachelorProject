@@ -54,13 +54,12 @@ public class PaperReviewersMatchingCalculator : ICalculator
                 continue;
             }
 
-            var pcPrivateKey = GetPCPrivateKey();
             var bidCount = 0;
             var reviewerPublicKeys = new List<byte[]>();
 
             foreach (var reviewer in reviewers)
             {
-                var sharedKey = await AsymmetricDecryptAsync(reviewer.EncryptedSharedKey, pcPrivateKey);
+                var sharedKey = await reviewer.DecryptSharedKeyAsync();
                 var bidMessage = await _messageFactory.GetBidMessageByPaperHashAsync(
                     paperHash,
                     sharedKey,

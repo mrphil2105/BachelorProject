@@ -74,14 +74,13 @@ public class GroupKeyAndGradeRandomnessShareCalculator : ICalculator
                 GradeRandomness = GenerateBigInteger().ToByteArray()
             };
 
-            var pcPrivateKey = GetPCPrivateKey();
             var reviewers = await _logDbContext
                 .Reviewers.Where(reviewer => matchingMessage.ReviewerPublicKeys.Any(key => key == reviewer.PublicKey))
                 .ToListAsync();
 
             foreach (var reviewer in reviewers)
             {
-                var sharedKey = await AsymmetricDecryptAsync(reviewer.EncryptedSharedKey, pcPrivateKey);
+                var sharedKey = await reviewer.DecryptSharedKeyAsync();
                 var groupKeyEntry = new LogEntry
                 {
                     Step = ProtocolStep.GroupKeyAndGradeRandomnessShare,

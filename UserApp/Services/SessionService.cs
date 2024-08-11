@@ -124,12 +124,12 @@ public class SessionService : ISessionService
         byte[] authenticationHash
     )
     {
+        var (reviewerPrivateKey, reviewerPublicKey) = await GenerateKeyPairAsync();
         var sharedKey = RandomNumberGenerator.GetBytes(32);
+
         var pcPublicKey = GetPCPublicKey();
         var pcEncryptedSharedKey = await AsymmetricEncryptAsync(sharedKey, pcPublicKey);
-
-        var (reviewerPrivateKey, reviewerPublicKey) = await GenerateKeyPairAsync();
-        var sharedKeySignature = await CalculateSignatureAsync(pcEncryptedSharedKey, reviewerPrivateKey);
+        var sharedKeySignature = await CalculateSignatureAsync(sharedKey, reviewerPrivateKey);
 
         await using var logDbContext = _logDbContextFactory();
         var logReviewer = new LogReviewer

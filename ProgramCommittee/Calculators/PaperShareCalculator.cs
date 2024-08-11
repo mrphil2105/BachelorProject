@@ -46,12 +46,11 @@ public class PaperShareCalculator : ICalculator
                 continue;
             }
 
-            var pcPrivateKey = GetPCPrivateKey();
             var reviewers = await _logDbContext.Reviewers.ToListAsync();
 
             foreach (var reviewer in reviewers)
             {
-                var sharedKey = await AsymmetricDecryptAsync(reviewer.EncryptedSharedKey, pcPrivateKey);
+                var sharedKey = await reviewer.DecryptSharedKeyAsync();
                 var paperMessage = new PaperShareMessage { Paper = creationMessage.Paper };
                 var paperEntry = new LogEntry
                 {

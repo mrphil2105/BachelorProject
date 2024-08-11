@@ -68,13 +68,12 @@ public class GradeAndReviewsShareCalculator : ICalculator
                 continue;
             }
 
-            var pcPrivateKey = GetPCPrivateKey();
-            byte[]? groupKey = null;
-
             var matchingMessage = await _messageFactory.GetMatchingMessageByCommitmentAsync(reviewCommitmentBytes);
             var reviewers = await _logDbContext
                 .Reviewers.Where(reviewer => matchingMessage!.ReviewerPublicKeys.Any(key => key == reviewer.PublicKey))
                 .ToListAsync();
+
+            byte[]? groupKey = null;
             var gradeAndNonces = new List<byte[]>();
 
             foreach (var reviewer in reviewers)
@@ -83,7 +82,7 @@ public class GradeAndReviewsShareCalculator : ICalculator
                 {
                     // The same group key has been sent to all reviewers in the matching, so retrieve it using the first
                     // reviewer's shared key.
-                    var sharedKey = await AsymmetricDecryptAsync(reviewer.EncryptedSharedKey, pcPrivateKey);
+                    var sharedKey = await reviewer.DecryptSharedKeyAsync();
                     var groupKeyMessage = await _messageFactory.GetGroupKeyAndRandomnessMessageByPaperHashAsync(
                         paperHash,
                         sharedKey

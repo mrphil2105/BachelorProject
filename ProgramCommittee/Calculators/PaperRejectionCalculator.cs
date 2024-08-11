@@ -76,8 +76,7 @@ public class PaperRejectionCalculator : ICalculator
                 .Reviewers.Where(reviewer => matchingMessage.ReviewerPublicKeys.Any(key => key == reviewer.PublicKey))
                 .FirstAsync();
 
-            var pcPrivateKey = GetPCPrivateKey();
-            var sharedKey = await AsymmetricDecryptAsync(reviewer.EncryptedSharedKey, pcPrivateKey);
+            var sharedKey = await reviewer.DecryptSharedKeyAsync();
             var gradeRandomnessMessage = await _messageFactory.GetGroupKeyAndRandomnessMessageByPaperHashAsync(
                 paperHash,
                 sharedKey

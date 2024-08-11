@@ -62,9 +62,7 @@ public class ReviewsShareCalculator : ICalculator
                 continue;
             }
 
-            var pcPrivateKey = GetPCPrivateKey();
             var paperHash = SHA256.HashData(creationMessage.Paper);
-
             var reviewers = await _logDbContext
                 .Reviewers.Where(reviewer => matchingMessage.ReviewerPublicKeys.Any(key => key == reviewer.PublicKey))
                 .ToListAsync();
@@ -75,7 +73,7 @@ public class ReviewsShareCalculator : ICalculator
 
             foreach (var reviewer in reviewers)
             {
-                var sharedKey = await AsymmetricDecryptAsync(reviewer.EncryptedSharedKey, pcPrivateKey);
+                var sharedKey = await reviewer.DecryptSharedKeyAsync();
                 var reviewMessage = await _messageFactory.GetReviewMessageByPaperHashAsync(
                     paperHash,
                     sharedKey,
