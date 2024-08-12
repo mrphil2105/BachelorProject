@@ -47,11 +47,11 @@ public class PaperShareCalculator : ICalculator
             }
 
             var reviewers = await _logDbContext.Reviewers.ToListAsync();
+            var paperMessage = new PaperShareMessage { Paper = creationMessage.Paper };
 
             foreach (var reviewer in reviewers)
             {
                 var sharedKey = await reviewer.DecryptSharedKeyAsync();
-                var paperMessage = new PaperShareMessage { Paper = creationMessage.Paper };
                 var paperEntry = new LogEntry
                 {
                     Step = ProtocolStep.PaperShare,
