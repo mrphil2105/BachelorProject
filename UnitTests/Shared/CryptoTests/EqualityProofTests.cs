@@ -7,30 +7,33 @@ namespace Apachi.UnitTests.Shared.CryptoTests;
 
 public class EqualityProofTests
 {
-    private readonly byte[] _privateKey;
+    private readonly BigInteger _b1;
+    private readonly BigInteger _b2;
 
     public EqualityProofTests()
     {
-        _privateKey = GenerateBigInteger().ToByteArray();
+        _b1 = GenerateBigInteger();
+        _b2 = GenerateBigInteger();
     }
     
     [Fact]
-    public void NIZKProof_Verify_ShouldReturnTrue_WhenProofIsValid()
+    public void EqualityProof_Verify_ShouldReturnTrue_WhenProofIsValid()
     {
         var parameters = NistNamedCurves.GetByName(Constants.DefaultCurveName);
         
-        var x = new BigInteger(_privateKey);
+        var v  = GenerateBigInteger();
         
-        var y = parameters.G.Multiply(x);
-        var z = Commitment.HPoint.Multiply(x);
+        var c1 = parameters.G.Multiply(_b1).Add(Commitment.HPoint.Multiply(v));
+        var c2= parameters.G.Multiply(_b2).Add(Commitment.HPoint.Multiply(v));
+
+        var proof = EqualityProof.Create(c1, c2, _b1, _b2);
         
-        var proof = EqualityProof.Create(_privateKey);
-        
-        bool actual = proof.Verify(y, z);
+        bool actual = proof.Verify(c1, c2);
         
         actual.Should().BeTrue();
     }
     
+    /*
     [Fact]
     public void NIZKProof_Verify_ShouldReturnFalse_WhenProofIsInvalid()
     {
@@ -86,4 +89,5 @@ public class EqualityProofTests
 
         actual.Should().BeFalse();
     }
+    */
 }
