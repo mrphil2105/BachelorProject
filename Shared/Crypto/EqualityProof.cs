@@ -1,46 +1,57 @@
 using System.Security.Cryptography;
-using Org.BouncyCastle.Asn1.Nist;
 using Org.BouncyCastle.Math;
-using ECPoint = Org.BouncyCastle.Math.EC.ECPoint;
 
 namespace Apachi.Shared.Crypto;
 
 // Implemented using Schnorr ZKP: https://crypto.stackexchange.com/questions/105725/pedersen-commitments-equivalence
+// And also using Schnorr signatures: https://en.wikipedia.org/wiki/Schnorr_signature
 
 public class EqualityProof
 {
-    private readonly BigInteger _s; // Schnorr Signature
-    private readonly BigInteger _e; // Schnorr Challenge
+    private readonly BigInteger _s;
+    private readonly BigInteger _e;
+    private readonly BigInteger _c;
 
-    private EqualityProof(BigInteger s, BigInteger e)
+    private EqualityProof(BigInteger s, BigInteger e, BigInteger c)
     {
         _s = s;
         _e = e;
+        _c = c;
     }
 
-    // y = g^x, z = h^x
-    public bool Verify(ECPoint c1, ECPoint c2)
+    public bool Verify(Commitment c1, Commitment c2)
     {
-        var parameters = NistNamedCurves.GetByName(Constants.DefaultCurveName);
+        // Switch c1 and c2 to negate the value.
+        var y = c2.Point.Subtract(c1.Point);
+        var r = Commitment.HPoint.Multiply(_s).Add(y.Multiply(_e));
 
-        // compute c1 - c2
-        var diff = c1.Subtract(c2);
+        var rBytes = r.GetEncoded();
+        var cBytes = _c.ToByteArray();
+        var toHash = SerializeByteArrays(rBytes, cBytes);
+        var e = new BigInteger(SHA512.HashData(toHash));
 
-        // compute R = s * G - e * diff
-        var r = parameters.G.Multiply(_s).Subtract(diff.Multiply(_e));
-        
-        // e' = H(diff, R)
-        var hashInput  = SerializeByteArrays(diff.GetEncoded(), r.GetEncoded());
-        var hashBytes = SHA256.HashData(hashInput);
-        var ePrime = new BigInteger(1, hashBytes);
-        
-        // Compare e' and e
-        return _e.Equals(ePrime);
+        return _e.Equals(e);
+    }
+
+    public static EqualityProof Create(BigInteger r1, BigInteger r2)
+    {
+        var x = r1.Subtract(r2);
+        var k = GenerateBigInteger();
+        var r = Commitment.HPoint.Multiply(k);
+        var c = GenerateBigInteger();
+
+        var rBytes = r.GetEncoded();
+        var cBytes = c.ToByteArray();
+        var toHash = SerializeByteArrays(rBytes, cBytes);
+        var e = new BigInteger(SHA512.HashData(toHash));
+
+        var s = k.Add(x.Multiply(e));
+        return new EqualityProof(s, e, c);
     }
 
     public byte[] ToBytes()
     {
-        return SerializeBigIntegers(_s, _e);
+        return SerializeBigIntegers(_s, _e, _c);
     }
 
     public static EqualityProof FromBytes(byte[] bytes)
@@ -48,34 +59,8 @@ public class EqualityProof
         var integers = DeserializeBigIntegers(bytes);
         var s = integers[0];
         var e = integers[1];
-        return new EqualityProof(s, e);
-    }
-
-    // b1 and b2 are blinding factors (randomness)
-    public static EqualityProof Create(ECPoint c1, ECPoint c2, BigInteger b1, BigInteger b2)
-    {
-        var parameters = NistNamedCurves.GetByName(Constants.DefaultCurveName);
-
-        // compute c1 - c2
-        var diff = c1.Subtract(c2);
-        
-        // s = b1 - b2
-        var s = b1.Subtract(b2);
-
-        // k = random
-        var k = GenerateBigInteger();
-        
-        // R = k * G
-        var r = parameters.G.Multiply(k);
-        
-        // e = H(diff, R)
-        var hashInput = SerializeByteArrays(diff.GetEncoded(), r.GetEncoded());
-        var hashBytes = SHA256.HashData(hashInput);
-        var e = new BigInteger(1, hashBytes);
-
-        // s' = k + s * e
-        var sPrime = k.Add(s.Multiply(e));
-
-        return new EqualityProof(sPrime, e);
+        var c = integers[2];
+        return new EqualityProof(s, e, c);
     }
 }
+
