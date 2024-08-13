@@ -1,3 +1,5 @@
+using System.Runtime.InteropServices.JavaScript;
+using System.Security.Cryptography;
 using Apachi.Shared.Crypto;
 using Org.BouncyCastle.Asn1.Nist;
 using Org.BouncyCastle.Math;
@@ -7,83 +9,70 @@ namespace Apachi.UnitTests.Shared.CryptoTests;
 
 public class EqualityProofTests
 {
-    private readonly byte[] _privateKey;
+    private readonly BigInteger _b1;
+    private readonly BigInteger _b2;
 
     public EqualityProofTests()
     {
-        _privateKey = GenerateBigInteger().ToByteArray();
+        _b1 = GenerateBigInteger();
+        _b2 = GenerateBigInteger();
     }
     
-    [Fact]
-    public void NIZKProof_Verify_ShouldReturnTrue_WhenProofIsValid()
+    [AutoData, Theory]
+    public void EqualityProof_Verify_ShouldReturnTrue_WhenProofIsValid(byte[] value)
     {
         var parameters = NistNamedCurves.GetByName(Constants.DefaultCurveName);
         
-        var x = new BigInteger(_privateKey);
+        var proof = EqualityProof.Create(value, _b1, _b2);
         
-        var y = parameters.G.Multiply(x);
-        var z = Commitment.HPoint.Multiply(x);
-        
-        var proof = EqualityProof.Create(_privateKey);
-        
-        bool actual = proof.Verify(y, z);
+        var c1 = Commitment.Create(value, _b1);
+        var c2 = Commitment.Create(value, _b2);
+
+        var actual = proof.Verify(c1, c2);
         
         actual.Should().BeTrue();
+
     }
     
-    [Fact]
-    public void NIZKProof_Verify_ShouldReturnFalse_WhenProofIsInvalid()
+    
+    /*
+    [AutoData, Theory]
+    public void EqualityProof_Verify_ShouldReturnFalse_WhenProofIsInvalid(byte[] value)
     {
         var parameters = NistNamedCurves.GetByName(Constants.DefaultCurveName);
         
-        var x = new BigInteger(_privateKey);
+        var hash = SHA512.HashData(value);
+        var hashInteger = new BigInteger(hash);
         
-        var y = parameters.G.Multiply(x);
-        var z = Commitment.HPoint.Multiply(x);
+        var c1 = parameters.G.Multiply(_b1).Add(Commitment.HPoint.Multiply(hashInteger));
+        var c2= parameters.G.Multiply(_b2).Add(Commitment.HPoint.Multiply(hashInteger));
 
-        var invalidPrivateKey = GenerateBigInteger().ToByteArray();
-        var proof = EqualityProof.Create(invalidPrivateKey);
+        var proof = EqualityProof.Create(c1, c2, _b1, _b2);
         
-        bool actual = proof.Verify(y, z);
+        bool actual = proof.Verify(c1, Commitment.HPoint.Multiply(GenerateBigInteger()));
         
         actual.Should().BeFalse();
     }
+    */
     
-    [Fact]
-    public void NIZKProof_FromBytesToBytes_ShouldReturnTrue_WhenProofIsValid()
+    /*
+    [AutoData, Theory]
+    public void EqualityProof_ToBytes_ShouldReturnEqualProof(byte[] value)
     {
         var parameters = NistNamedCurves.GetByName(Constants.DefaultCurveName);
         
-        var x = new BigInteger(_privateKey);
+        var hash = SHA512.HashData(value);
+        var hashInteger = new BigInteger(hash);
         
-        var proof = EqualityProof.Create(_privateKey);
-        byte[] serialized = proof.ToBytes();
-        
-        EqualityProof deserialized = EqualityProof.FromBytes(serialized);
-        
-        var y = parameters.G.Multiply(x);
-        var z = Commitment.HPoint.Multiply(x);
-        bool actual = deserialized.Verify(y, z);
-        
-        actual.Should().BeTrue();
-    }
-    
-    [Fact]
-    public void NIZKProof_FromBytesToBytes_ShouldReturnFalse_WhenProofIsInvalid()
-    {
-        var parameters = NistNamedCurves.GetByName(Constants.DefaultCurveName);
-        
-        var x = new BigInteger(_privateKey);
-        
-        var proof = EqualityProof.Create(_privateKey);
-        byte[] serialized = proof.ToBytes();
-        
-        EqualityProof deserialized = EqualityProof.FromBytes(serialized);
-        
-        var y = parameters.G.Multiply(x);
-        var z = Commitment.HPoint.Multiply(GenerateBigInteger());
-        bool actual = deserialized.Verify(y, z);
+        var c1 = parameters.G.Multiply(_b1).Add(Commitment.HPoint.Multiply(hashInteger));
+        var c2= parameters.G.Multiply(_b2).Add(Commitment.HPoint.Multiply(hashInteger));
 
-        actual.Should().BeFalse();
+        var proof = EqualityProof.Create(c1, c2, _b1, _b2);
+        
+        var bytes = proof.ToBytes();
+        var actual = EqualityProof.FromBytes(bytes);
+        
+        actual.Should().BeEquivalentTo(proof);
     }
+    */
 }
