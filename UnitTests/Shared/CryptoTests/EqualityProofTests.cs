@@ -26,5 +26,21 @@ public class EqualityProofTests
 
         actual.Should().BeTrue();
     }
+
+    [Theory, AutoData]
+    public void Verify_ShouldReturnFalse_WhenProofIsInvalid(
+        [ArraySize(100)] byte[] value1,
+        [ArraySize(100)] byte[] value2
+    )
+    {
+        var proof = EqualityProof.Create(_b1, _b2);
+
+        var c1 = Commitment.Create(value1, _b1);
+        var c2 = Commitment.Create(value2, _b2);
+
+        var actual = proof.Verify(c1, c2);
+
+        actual.Should().BeFalse();
+    }
 }
 
