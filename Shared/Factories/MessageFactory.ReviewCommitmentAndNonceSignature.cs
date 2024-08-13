@@ -6,10 +6,9 @@ namespace Apachi.Shared.Factories;
 
 public partial class MessageFactory
 {
-    public async IAsyncEnumerable<(
-        ReviewCommitmentAndNonceSignatureMessage SignatureMessage,
-        byte[] ReviewerPublicKey
-    )> GetCommitmentAndNonceSignatureMessagesAsync(List<byte[]> reviewerPublicKeys)
+    public async IAsyncEnumerable<ReviewCommitmentAndNonceSignatureMessage> GetCommitmentAndNonceSignatureMessagesAsync(
+        List<byte[]> reviewerPublicKeys
+    )
     {
         var signatureEntries = await GetEntriesAsync(ProtocolStep.ReviewCommitmentAndNonceSignature);
 
@@ -31,7 +30,7 @@ public partial class MessageFactory
                     continue;
                 }
 
-                yield return (signatureMessage, reviewerPublicKey);
+                yield return signatureMessage;
             }
         }
     }

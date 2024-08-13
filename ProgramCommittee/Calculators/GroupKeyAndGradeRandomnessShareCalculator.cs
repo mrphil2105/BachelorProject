@@ -41,12 +41,12 @@ public class GroupKeyAndGradeRandomnessShareCalculator : ICalculator
                 continue;
             }
 
-            var signatureMessagesAndPublicKeys = _messageFactory.GetCommitmentAndNonceSignatureMessagesAsync(
+            var signatureMessages = _messageFactory.GetCommitmentAndNonceSignatureMessagesAsync(
                 matchingMessage.ReviewerPublicKeys
             );
             var reviewCount = 0;
 
-            await foreach (var (signatureMessage, reviewerPublicKey) in signatureMessagesAndPublicKeys)
+            await foreach (var signatureMessage in signatureMessages)
             {
                 // The signature message can still be for another paper, in case the reviewer for the other paper is
                 // also reviewing current paper. So we need to check the review commitment to be sure.
