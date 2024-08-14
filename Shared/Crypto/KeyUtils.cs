@@ -57,8 +57,24 @@ public static class KeyUtils
 
     public static byte[] GetPCPublicKey()
     {
-        var publicKeyBase64 = EnvironmentVariable.GetValue(EnvironmentVariable.PCPublicKey);
-        var publicKey = Convert.FromBase64String(publicKeyBase64);
+        var publicKeyBase64 = Environment.GetEnvironmentVariable(EnvironmentVariable.PCPublicKey);
+        byte[] publicKey;
+
+        if (publicKeyBase64 != null)
+        {
+            publicKey = Convert.FromBase64String(publicKeyBase64);
+            return publicKey;
+        }
+
+        var privateKeyBase64 = Environment.GetEnvironmentVariable(EnvironmentVariable.PCPrivateKey);
+
+        if (privateKeyBase64 == null)
+        {
+            throw new Exception($"Environment variable {EnvironmentVariable.PCPublicKey} must be set.");
+        }
+
+        var privateKey = Convert.FromBase64String(privateKeyBase64);
+        publicKey = GetPublicKeyFromPrivateKey(privateKey);
         return publicKey;
     }
 }
