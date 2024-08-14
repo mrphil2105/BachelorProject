@@ -92,13 +92,15 @@ public class PaperReviewersMatchingCalculator : ICalculator
             var reviewRandomness = new BigInteger(creationMessage.ReviewRandomness);
             var reviewCommitment = Commitment.Create(creationMessage.Paper, reviewRandomness);
 
+            var submissionRandomness = new BigInteger(creationMessage.SubmissionRandomness);
+            var equalityProof = EqualityProof.Create(submissionRandomness, reviewRandomness);
+
             var matchingMessage = new PaperReviewersMatchingMessage
             {
                 ReviewCommitment = reviewCommitment.ToBytes(),
                 ReviewerPublicKeys = reviewerPublicKeys,
                 ReviewNonce = GenerateBigInteger().ToByteArray(),
-                // TODO: Add proof that the paper submission commitment and paper review commitment hide the same paper.
-                EqualityProof = Array.Empty<byte>()
+                EqualityProof = equalityProof.ToBytes()
             };
             var matchingEntry = new LogEntry
             {
