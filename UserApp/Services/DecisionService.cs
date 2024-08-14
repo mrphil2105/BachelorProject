@@ -71,10 +71,9 @@ public class DecisionService : IDecisionService
             for (var i = 0; i < gradeAndReviewsMessage.Reviews.Count; i++)
             {
                 var publicKeyHash = await Task.Run(() => SHA256.HashData(matchingMessage.ReviewerPublicKeys[i]));
-                var hashString = Convert.ToHexString(publicKeyHash).Remove(10);
                 var review = Encoding.UTF8.GetString(gradeAndReviewsMessage.Reviews[i]);
 
-                var reviewModel = new ReviewModel(hashString, review);
+                var reviewModel = new ReviewModel(publicKeyHash, review);
                 reviewModels.Add(reviewModel);
             }
 
