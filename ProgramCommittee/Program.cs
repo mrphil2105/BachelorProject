@@ -12,6 +12,12 @@ public class Program
 
     public static async Task Main(string[] args)
     {
+        if (args.Length > 0 && args[0] == "--generate-keypair")
+        {
+            await PrintKeyPairAsync();
+            return;
+        }
+
         Console.CancelKeyPress += OnCancelKeyPress;
 
         var containerBuilder = new ContainerBuilder();
@@ -47,5 +53,14 @@ public class Program
         Console.WriteLine("Exiting gracefully... Press Ctrl+C again to exit forcefully.");
         e.Cancel = true;
         _cancellationSource.Cancel();
+    }
+
+    private static async Task PrintKeyPairAsync()
+    {
+        var (privateKey, publicKey) = await GenerateKeyPairAsync();
+        var privateKeyBase64 = Convert.ToBase64String(privateKey);
+        var publicKeyBase64 = Convert.ToBase64String(publicKey);
+        Console.WriteLine("APACHI_PC_PRIVATE_KEY: {0}", privateKeyBase64);
+        Console.WriteLine("APACHI_PC_PUBLIC_KEY: {0}", publicKeyBase64);
     }
 }
