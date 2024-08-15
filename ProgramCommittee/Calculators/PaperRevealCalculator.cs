@@ -47,16 +47,6 @@ public class PaperRevealCalculator : ICalculator
 
         await foreach (var creationMessage in creationMessages)
         {
-            var paperHash = SHA256.HashData(creationMessage.Paper);
-            var hasMatching = await _appDbContext.LogEvents.AnyAsync(@event =>
-                @event.Step == ProtocolStep.PaperReviewersMatching && @event.Identifier == paperHash
-            );
-
-            if (!hasMatching)
-            {
-                return;
-            }
-
             var reviewRandomness = new BigInteger(creationMessage.ReviewRandomness);
             var reviewCommitment = Commitment.Create(creationMessage.Paper, reviewRandomness);
             var matchingMessage = await _messageFactory.GetMatchingMessageByCommitmentAsync(reviewCommitment.ToBytes());
@@ -87,6 +77,7 @@ public class PaperRevealCalculator : ICalculator
             };
             _logDbContext.Entries.Add(revealEntry);
 
+            var paperHash = SHA256.HashData(creationMessage.Paper);
             var logEvent = new LogEvent { Step = revealEntry.Step, Identifier = paperHash };
             _appDbContext.LogEvents.Add(logEvent);
         }
