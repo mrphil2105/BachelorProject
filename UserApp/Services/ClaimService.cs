@@ -29,7 +29,7 @@ public class ClaimService : IClaimService
         _messageFactoryFactory = messageFactoryFactory;
     }
 
-    public async Task ClaimAcceptedPapers()
+    public async Task ClaimAcceptedPapersAsync()
     {
         await using var appDbContext = _appDbContextFactory();
         var submissions = await appDbContext

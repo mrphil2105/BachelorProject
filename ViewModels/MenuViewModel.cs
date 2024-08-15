@@ -80,7 +80,7 @@ public class MenuViewModel : Conductor<IMenuPageViewModel>.Collection.OneActive
     {
         if (!_sessionService.IsReviewer)
         {
-            return _claimService.ClaimAcceptedPapers();
+            return _claimService.ClaimAcceptedPapersAsync();
         }
 
         return Task.CompletedTask;
