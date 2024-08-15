@@ -107,16 +107,13 @@ public class GradeAndReviewsShareCalculator : ICalculator
             var gradeAndReviewsMessage = new GradeAndReviewsShareMessage
             {
                 Grade = closestAverageGrade,
-                Reviews = reviewsMessage!.Reviews
+                Reviews = reviewsMessage!.Reviews,
+                ReviewSignatures = reviewsMessage.ReviewSignatures
             };
-            var gradeAndReviewsData = await gradeAndReviewsMessage.SerializeAsync(
-                reviewsMessage.ReviewSignatures!,
-                creationMessage.SubmissionKey
-            );
             var gradeAndReviewsEntry = new LogEntry
             {
                 Step = ProtocolStep.GradeAndReviewsShare,
-                Data = gradeAndReviewsData
+                Data = await gradeAndReviewsMessage.SerializeAsync(creationMessage.SubmissionKey)
             };
             _logDbContext.Entries.Add(gradeAndReviewsEntry);
 

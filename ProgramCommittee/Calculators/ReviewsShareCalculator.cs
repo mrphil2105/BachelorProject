@@ -98,11 +98,11 @@ public class ReviewsShareCalculator : ICalculator
                 matchingMessage.ReviewerPublicKeys
             );
 
-            var reviewsMessage = new ReviewsShareMessage { Reviews = reviews };
+            var reviewsMessage = new ReviewsShareMessage { Reviews = reviews, ReviewSignatures = reviewSignatures };
             var reviewsEntry = new LogEntry
             {
                 Step = ProtocolStep.ReviewsShare,
-                Data = await reviewsMessage.SerializeAsync(reviewSignatures, groupKey!)
+                Data = await reviewsMessage.SerializeAsync(groupKey!)
             };
             _logDbContext.Entries.Add(reviewsEntry);
 

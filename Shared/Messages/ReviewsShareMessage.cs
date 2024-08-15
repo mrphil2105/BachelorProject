@@ -5,12 +5,12 @@ public class ReviewsShareMessage : IMessage
 {
     public required List<byte[]> Reviews { get; init; }
 
-    public List<byte[]>? ReviewSignatures { get; private init; }
+    public required List<byte[]> ReviewSignatures { get; init; }
 
-    public async Task<byte[]> SerializeAsync(IEnumerable<byte[]> signatures, byte[] groupKey)
+    public async Task<byte[]> SerializeAsync(byte[] groupKey)
     {
         var serializedReviews = SerializeByteArrays(Reviews);
-        var serializedSignatures = SerializeByteArrays(signatures);
+        var serializedSignatures = SerializeByteArrays(ReviewSignatures);
         var reviews_Signatures = SerializeByteArrays(serializedReviews, serializedSignatures);
 
         var pcPrivateKey = GetPCPrivateKey();
