@@ -48,16 +48,6 @@ public class GradeAndReviewsShareCalculator : ICalculator
                 continue;
             }
 
-            var paperHash = SHA256.HashData(creationMessage.Paper);
-            var hasMatching = await _appDbContext.LogEvents.AnyAsync(@event =>
-                @event.Step == ProtocolStep.PaperReviewersMatching && @event.Identifier == paperHash
-            );
-
-            if (!hasMatching)
-            {
-                continue;
-            }
-
             var hasGroupKey = await _appDbContext.LogEvents.AnyAsync(@event =>
                 @event.Step == ProtocolStep.GroupKeyAndGradeRandomnessShare
                 && @event.Identifier == reviewCommitmentBytes
@@ -72,6 +62,7 @@ public class GradeAndReviewsShareCalculator : ICalculator
             var reviewers = await _logDbContext
                 .Reviewers.Where(reviewer => matchingMessage!.ReviewerPublicKeys.Any(key => key == reviewer.PublicKey))
                 .ToListAsync();
+            var paperHash = SHA256.HashData(creationMessage.Paper);
 
             byte[]? groupKey = null;
             var gradeAndNonces = new List<byte[]>();
