@@ -23,14 +23,14 @@ public class EqualityProof
     {
         // Switch c1 and c2 to negate the value.
         var y = c2.Point.Subtract(c1.Point);
-        var r = Commitment.HPoint.Multiply(_s).Add(y.Multiply(_e));
+        var rPrime = Commitment.HPoint.Multiply(_s).Add(y.Multiply(_e));
 
-        var rBytes = r.GetEncoded();
+        var rPrimeBytes = rPrime.GetEncoded();
         var cBytes = _c.ToByteArray();
-        var toHash = SerializeByteArrays(rBytes, cBytes);
-        var e = new BigInteger(SHA512.HashData(toHash));
+        var toHash = SerializeByteArrays(rPrimeBytes, cBytes);
+        var ePrime = new BigInteger(SHA512.HashData(toHash));
 
-        return _e.Equals(e);
+        return _e.Equals(ePrime);
     }
 
     public static EqualityProof Create(BigInteger r1, BigInteger r2)
@@ -63,4 +63,3 @@ public class EqualityProof
         return new EqualityProof(s, e, c);
     }
 }
-
