@@ -44,12 +44,11 @@ public class PaperRejectionCalculator : ICalculator
                 continue;
             }
 
-            var paperHash = SHA256.HashData(creationMessage.Paper);
-            var hasMatching = await _appDbContext.LogEvents.AnyAsync(@event =>
-                @event.Step == ProtocolStep.PaperReviewersMatching && @event.Identifier == paperHash
+            var hasGradeAndReviews = await _appDbContext.LogEvents.AnyAsync(@event =>
+                @event.Step == ProtocolStep.GradeAndReviewsShare && @event.Identifier == reviewCommitmentBytes
             );
 
-            if (!hasMatching)
+            if (!hasGradeAndReviews)
             {
                 continue;
             }
@@ -60,12 +59,7 @@ public class PaperRejectionCalculator : ICalculator
                 matchingMessage!.ReviewerPublicKeys
             );
 
-            if (gradeAndReviewsMessage == null)
-            {
-                continue;
-            }
-
-            var (grade, _) = DeserializeGrade(gradeAndReviewsMessage.Grade);
+            var (grade, _) = DeserializeGrade(gradeAndReviewsMessage!.Grade);
 
             if (grade > FailingGrade)
             {
@@ -77,6 +71,7 @@ public class PaperRejectionCalculator : ICalculator
                 .FirstAsync();
 
             var sharedKey = await reviewer.DecryptSharedKeyAsync();
+            var paperHash = SHA256.HashData(creationMessage.Paper);
             var gradeRandomnessMessage = await _messageFactory.GetGroupKeyAndRandomnessMessageByPaperHashAsync(
                 paperHash,
                 sharedKey

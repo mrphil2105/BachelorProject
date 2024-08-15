@@ -1,4 +1,3 @@
-using System.Security.Cryptography;
 using Apachi.ProgramCommittee.Data;
 using Apachi.Shared;
 using Apachi.Shared.Crypto;
@@ -50,31 +49,27 @@ public class AcceptedGradesCalculator : ICalculator
 
         await foreach (var creationMessage in creationMessages)
         {
-            var paperHash = SHA256.HashData(creationMessage.Paper);
-            var hasMatching = await _appDbContext.LogEvents.AnyAsync(@event =>
-                @event.Step == ProtocolStep.PaperReviewersMatching && @event.Identifier == paperHash
+            var reviewRandomness = new BigInteger(creationMessage.ReviewRandomness);
+            var reviewCommitment = Commitment.Create(creationMessage.Paper, reviewRandomness);
+            var reviewCommitmentBytes = reviewCommitment.ToBytes();
+
+            var hasGradeAndReviews = await _appDbContext.LogEvents.AnyAsync(@event =>
+                @event.Step == ProtocolStep.GradeAndReviewsShare && @event.Identifier == reviewCommitmentBytes
             );
 
-            if (!hasMatching)
+            if (!hasGradeAndReviews)
             {
                 return;
             }
 
-            var reviewRandomness = new BigInteger(creationMessage.ReviewRandomness);
-            var reviewCommitment = Commitment.Create(creationMessage.Paper, reviewRandomness);
-            var matchingMessage = await _messageFactory.GetMatchingMessageByCommitmentAsync(reviewCommitment.ToBytes());
+            var matchingMessage = await _messageFactory.GetMatchingMessageByCommitmentAsync(reviewCommitmentBytes);
 
             var gradeAndReviewsMessage = await _messageFactory.GetGradeAndReviewsMessageBySubmissionKeyAsync(
                 creationMessage.SubmissionKey,
                 matchingMessage!.ReviewerPublicKeys
             );
 
-            if (gradeAndReviewsMessage == null)
-            {
-                return;
-            }
-
-            var (grade, _) = DeserializeGrade(gradeAndReviewsMessage.Grade);
+            var (grade, _) = DeserializeGrade(gradeAndReviewsMessage!.Grade);
 
             if (grade <= FailingGrade)
             {
