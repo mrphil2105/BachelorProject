@@ -13,10 +13,6 @@ public class LoginViewModel : Screen
     public LoginViewModel(ISessionService sessionService)
     {
         _sessionService = sessionService;
-#if DEBUG
-        Username = "foo";
-        Password = "bar";
-#endif
     }
 
     public string Username
