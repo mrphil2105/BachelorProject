@@ -1,5 +1,7 @@
+using System.Security.Cryptography;
 using Org.BouncyCastle.Asn1.Nist;
 using Org.BouncyCastle.Math;
+using ECPoint = Org.BouncyCastle.Math.EC.ECPoint;
 
 namespace Apachi.Shared.Crypto;
 
@@ -8,46 +10,60 @@ namespace Apachi.Shared.Crypto;
 
 public class SetMemberProof
 {
-    private readonly BigInteger _a;
-    private readonly BigInteger _b;
+    private static readonly BigInteger _lowerBound = BigInteger.Zero;
 
-    // G_a = (g, g_L)
-    private readonly List<(BigInteger g, BigInteger g_r)> _grades;
+    private readonly ECPoint _c1;
+    private readonly ECPoint _c2;
 
-    private SetMemberProof(List<(BigInteger g, BigInteger g_r)> grades)
+    private SetMemberProof(ECPoint c1, ECPoint c2)
     {
-        _grades = grades;
-        _a = BigInteger.Zero;
-        _b = new BigInteger(grades.Count.ToString()).Add(BigInteger.One);
+        _c1 = c1;
+        _c2 = c2;
     }
 
-    public static SetMemberProof Create(List<(BigInteger g, BigInteger g_r)> grades)
+    public static SetMemberProof Create(BigInteger index, BigInteger size)
     {
-        return new SetMemberProof(grades);
+        index = index.Add(BigInteger.One);
+        size = size.Add(BigInteger.One);
+
+        var positiveProof = ProofPositive(index);
+        var greaterThanProof = ProofPositive(index.Subtract(_lowerBound));
+        var lessThanProof = ProofPositive(size.Subtract(index));
+
+        if (!positiveProof.IsPositive || !greaterThanProof.IsPositive || !lessThanProof.IsPositive)
+        {
+            throw new CryptographicException(
+                $"Unable to create proof for {index} within range {_lowerBound} to {size}."
+            );
+        }
+
+        var parameters = NistNamedCurves.GetByName(Constants.DefaultCurveName);
+        // c1 = (b − x).G − r.H
+        var c1 = parameters
+            .G.Multiply(size.Subtract(index))
+            .Add(Commitment.HPoint.Multiply(positiveProof.Randomness.Negate()));
+        // c2 = (x − a).G + r.H
+        var c2 = parameters
+            .G.Multiply(index.Subtract(_lowerBound))
+            .Add(Commitment.HPoint.Multiply(positiveProof.Randomness));
+
+        return new SetMemberProof(c1, c2);
     }
 
     // x = the index of the element in the set
-    public bool Verify(BigInteger x)
+    public bool Verify(BigInteger size)
     {
-        var xPlusOne = x.Add(BigInteger.One);
-
-        var positiveCheck = ProofPositive(xPlusOne);
-
-        if (
-            !positiveCheck.IsPositive
-            || !ProofPositive(xPlusOne.Subtract(_a)).IsPositive
-            || !ProofPositive(_b.Subtract(xPlusOne)).IsPositive
-        )
-        {
-            return false;
-        }
-
-        var inRange = ProofInRange(xPlusOne, positiveCheck.Randomness);
-
-        return inRange;
+        size = size.Add(BigInteger.One);
+        var parameters = NistNamedCurves.GetByName(Constants.DefaultCurveName);
+        // p1 = b.G - c1
+        var p1 = parameters.G.Multiply(size).Subtract(_c1);
+        // p2 = a.G + c2
+        var p2 = _c2.Add(parameters.G.Multiply(_lowerBound));
+        var isValid = p1.Equals(p2);
+        return isValid;
     }
 
-    private (bool IsPositive, BigInteger Randomness) ProofPositive(BigInteger x)
+    private static (bool IsPositive, BigInteger Randomness) ProofPositive(BigInteger x)
     {
         var parameters = NistNamedCurves.GetByName(Constants.DefaultCurveName);
 
@@ -84,48 +100,21 @@ public class SetMemberProof
         return !c.Equals(expected) ? (false, totalR) : (true, totalR);
     }
 
-    private bool ProofInRange(BigInteger x, BigInteger r)
-    {
-        var parameters = NistNamedCurves.GetByName(Constants.DefaultCurveName);
-
-        // c1 = (b − x).G − r.H
-        var c1 = parameters.G.Multiply(_b.Subtract(x)).Add(Commitment.HPoint.Multiply(r.Negate()));
-
-        // c2 = (x − a).G + r.H
-        var c2 = parameters.G.Multiply(x.Subtract(_a)).Add(Commitment.HPoint.Multiply(r));
-
-        // p1 = b.G - c1
-        var p1 = parameters.G.Multiply(_b).Subtract(c1);
-
-        // p2 = a.G + c2
-        var p2 = c2.Add(parameters.G.Multiply(_a));
-
-        return p1.Equals(p2);
-    }
-
     public byte[] ToBytes()
     {
-        var serializedGrades = _grades.Select(grade =>
-        {
-            var (g, g_r) = grade;
-            var serializedGrade = SerializeBigIntegers(g, g_r);
-            return serializedGrade;
-        });
-        return SerializeByteArrays(serializedGrades);
+        var c1Bytes = _c1.GetEncoded();
+        var c2Bytes = _c2.GetEncoded();
+        var serialized = SerializeByteArrays(c1Bytes, c2Bytes);
+        return serialized;
     }
 
     public static SetMemberProof FromBytes(byte[] bytes)
     {
-        var serializedGrades = DeserializeByteArrays(bytes);
-        var grades = new List<(BigInteger g, BigInteger g_r)>();
-
-        for (var i = 0; i < serializedGrades.Count; i++)
-        {
-            var integers = DeserializeBigIntegers(serializedGrades[i]);
-            grades.Add((integers[0], integers[1]));
-        }
-
-        return new SetMemberProof(grades);
+        var parameters = NistNamedCurves.GetByName(Constants.DefaultCurveName);
+        var (c1Bytes, c2Bytes) = DeserializeTwoByteArrays(bytes);
+        var c1 = parameters.Curve.DecodePoint(c1Bytes);
+        var c2 = parameters.Curve.DecodePoint(c2Bytes);
+        return new SetMemberProof(c1, c2);
     }
 
     private static (BigInteger x0, BigInteger x1, BigInteger x2, BigInteger x3) LipmaaDecomp(BigInteger x)
@@ -163,4 +152,3 @@ public class SetMemberProof
         return (BigInteger.Zero, BigInteger.Zero, BigInteger.Zero, BigInteger.Zero);
     }
 }
-
