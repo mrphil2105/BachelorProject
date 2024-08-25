@@ -30,19 +30,19 @@ APACHI_LOG_DATABASE_CONNECTION="Host=localhost;Username=postgres;Database=apachi
 Then, generate a key pair for the Programme Committee:
 
 ```
-cd ProgramCommitee
+cd ProgramCommittee
 dotnet run --generate-keypair
 ```
 
-Save the base64 for the private and public key. The private key is required in the `ProgramCommitee` application and the
-public key is required in the `UserApp` application.
+Save the base64 for the private and public key. The private key is required in the `ProgramCommittee` application and
+the public key is required in the `UserApp` application.
 
 # Execute
 
-## ProgramCommitee
+## ProgramCommittee
 
 ```
-cd ProgramCommitee
+cd ProgramCommittee
 APACHI_PC_PRIVATE_KEY=<replace-with-generated-private-key-base64> APACHI_LOG_DATABASE_CONNECTION="Host=localhost;Username=postgres;Database=apachi-log-db" APACHI_APP_DATABASE_FILE="App.db" dotnet run
 ```
 
